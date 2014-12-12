@@ -36,3 +36,5 @@ Add following code to header of your web page:
 Add the tag in the place where widget needs to be displayed:
 
     <input type="hidden" role="uploadcare-uploader">
+
+For more info, see [Documentation](https://uploadcare.com/documentation/)
