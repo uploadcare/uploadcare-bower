@@ -26,12 +26,12 @@ Standalone Uploadcare library with no external dependences:
 
 Add following code to header of your web page:
 
-    <script src="/bower_components/jquery/jquer.js"></script>
-    <script src="/bower_components/uploadcare/uploadcare.js"></script>
-
     <script>
-        UPLOADCARE_PUB_KEY = "<public-key>";
+        // Widget settings
+        UPLOADCARE_PUBLIC_KEY = 'your_public_key';
     </script>
+    <script src="/bower_components/jquery/jquery.js" charset="utf-8"></script>
+    <script src="/bower_components/uploadcare/uploadcare.js" charset="utf-8"></script>
 
 Add the tag in the place where widget needs to be displayed:
 
