@@ -1,12 +1,12 @@
 {
   "name": "Uploadcare",
   "version": "1.5.0",
-  "homepage": "https://uploadcare.com",
+  "homepage": "https://uploadcare.com/",
   "authors": [
     "Uploadcare <support@uploadcare.com>"
   ],
   "description": "HTML5 widget for uploading files from different sources, with image preview, crop and resize capabilities.",
-  "main": "uploadcare.js",
+  "main": "uploadcare.min.js",
   "moduleType": [
     "globals"
   ],
@@ -26,6 +26,6 @@
     "tests"
   ],
   "dependencies": {
-    "jquery": "1.11.1"
+    "jquery": ">=1.10.2"
   }
 }

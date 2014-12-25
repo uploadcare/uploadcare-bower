@@ -31,7 +31,7 @@ Add following code to header of your web page:
         UPLOADCARE_PUBLIC_KEY = 'your_public_key';
     </script>
     <script src="/bower_components/jquery/jquery.js" charset="utf-8"></script>
-    <script src="/bower_components/uploadcare/uploadcare.js" charset="utf-8"></script>
+    <script src="/bower_components/uploadcare/uploadcare.min.js" charset="utf-8"></script>
 
 Add the tag in the place where widget needs to be displayed:
 
