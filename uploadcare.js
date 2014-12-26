@@ -1,7 +1,7 @@
 /*
- * Uploadcare (1.5.0)
- * Date: 2014-12-12 19:17:03 +0000
- * Rev: 7a0db2e01a
+ * Uploadcare (1.5.1)
+ * Date: 2014-12-12 19:43:40 +0300
+ * Rev: a86203f1ad
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -9057,7 +9057,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '1.5.0';
+  uploadcare.version = '1.5.1';
 
   expose = uploadcare.expose;
 
@@ -9117,4 +9117,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/1.5.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/1.5.1/uploadcare/'));
