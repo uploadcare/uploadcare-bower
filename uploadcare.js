@@ -1,7 +1,7 @@
 /*
- * Uploadcare (1.5.3)
- * Date: 2014-12-30 12:46:16 +0300
- * Rev: 58cf69c9cc
+ * Uploadcare (1.5.4)
+ * Date: 2015-01-19 19:32:21 +0300
+ * Rev: 14f38c9bfd
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -7280,13 +7280,18 @@ this.Pusher = Pusher;
       return obj && obj.files && obj.promise;
     };
     utils.valueToGroup = function(value, settings) {
-      var files, item, _i, _len;
+      var files, item;
       if (value) {
         if ($.isArray(value)) {
-          for (_i = 0, _len = value.length; _i < _len; _i++) {
-            item = value[_i];
-            files = utils.valueToFile(item, settings);
-          }
+          files = (function() {
+            var _i, _len, _results;
+            _results = [];
+            for (_i = 0, _len = value.length; _i < _len; _i++) {
+              item = value[_i];
+              _results.push(utils.valueToFile(item, settings));
+            }
+            return _results;
+          })();
           value = uploadcare.FileGroup(files, settings);
         } else {
           if (!utils.isFileGroup(value)) {
@@ -7546,22 +7551,22 @@ this.Pusher = Pusher;
 
       function CanvasRenderer() {
         CanvasRenderer.__super__.constructor.apply(this, arguments);
-        this.canvasSize = Math.floor(Math.min(this.element.width(), this.element.height())) * 2;
-        this.canvasEl = $('<canvas>').prop({
-          width: this.canvasSize,
-          height: this.canvasSize
-        });
-        this.canvasCtx = this.canvasEl.get(0).getContext('2d');
+        this.canvasEl = $('<canvas>').get(0);
         this.element.addClass('uploadcare-widget-circle--canvas');
         this.element.html(this.canvasEl);
         this.setValue(0, true);
       }
 
       CanvasRenderer.prototype.update = function() {
-        var arc, ctx, half;
-        if (this.canvasCtx) {
-          ctx = this.canvasCtx;
-          half = this.canvasSize / 2;
+        var arc, ctx, half, size;
+        half = Math.floor(Math.min(this.element.width(), this.element.height()));
+        size = half * 2;
+        if (half) {
+          if (this.canvasEl.width !== size || this.canvasEl.height !== size) {
+            this.canvasEl.width = size;
+            this.canvasEl.height = size;
+          }
+          ctx = this.canvasEl.getContext('2d');
           arc = function(radius, val) {
             var offset;
             offset = -Math.PI / 2;
@@ -7570,7 +7575,7 @@ this.Pusher = Pusher;
             ctx.arc(half, half, radius, offset, offset + 2 * Math.PI * val, false);
             return ctx.fill();
           };
-          ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
+          ctx.clearRect(0, 0, size, size);
           ctx.globalCompositeOperation = 'source-over';
           ctx.fillStyle = this.element.css('border-left-color');
           arc(half - .5, 1);
@@ -8370,9 +8375,9 @@ this.Pusher = Pusher;
         this.__updateContainerView();
         this.dialogApi.fileColl.onAdd.add([this.__fileAdded, this.__updateContainerView]);
         this.dialogApi.fileColl.onRemove.add([this.__fileRemoved, this.__updateContainerView]);
-        this.dialogApi.fileColl.onAnyProgress.add(this.__fileProgress);
         this.dialogApi.fileColl.onAnyDone.add(this.__fileDone);
         this.dialogApi.fileColl.onAnyFail.add(this.__fileFailed);
+        this.dialogApi.fileColl.onAnyProgress.add(this.__fileProgress);
         this.__setupSorting();
       }
 
@@ -8418,19 +8423,24 @@ this.Pusher = Pusher;
         return this.mobileTitleEl.toggleClass('uploadcare-error', tooManyFiles || tooFewFiles).text(tooManyFiles || tooFewFiles ? footer : title);
       };
 
-      PreviewTabMultiple.prototype.__fileProgress = function(file, progressInfo) {
-        var fileEl, info;
-        fileEl = this.__fileToEl(file);
-        this.__find('file-progressbar-value', fileEl).css('width', Math.round(progressInfo.progress * 100) + '%');
-        info = progressInfo.incompleteFileInfo;
+      PreviewTabMultiple.prototype.__updateFileInfo = function(fileEl, info) {
         this.__find('file-name', fileEl).text(info.name || t('dialog.tabs.preview.unknownName'));
         return this.__find('file-size', fileEl).text(utils.readableFileSize(info.size, '–'));
+      };
+
+      PreviewTabMultiple.prototype.__fileProgress = function(file, progressInfo) {
+        var fileEl;
+        fileEl = this.__fileToEl(file);
+        this.__find('file-progressbar-value', fileEl).css('width', Math.round(progressInfo.progress * 100) + '%');
+        return this.__updateFileInfo(fileEl, progressInfo.incompleteFileInfo);
       };
 
       PreviewTabMultiple.prototype.__fileDone = function(file, info) {
         var fileEl;
         fileEl = this.__fileToEl(file);
         fileEl.addClass(CLASS_PREFIX + 'uploaded');
+        this.__find('file-progressbar-value', fileEl).css('width', '100%');
+        this.__updateFileInfo(fileEl, info);
         if (info.isImage) {
           return this.__find('file-preview-wrap', fileEl).html($('<img>').attr({
             src: "" + info.originalUrl + "-/scale_crop/90x90/center/"
@@ -9194,7 +9204,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '1.5.3';
+  uploadcare.version = '1.5.4';
 
   expose = uploadcare.expose;
 
@@ -9256,4 +9266,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/1.5.3/uploadcare/'));
+}({}, '//ucarecdn.com/widget/1.5.4/uploadcare/'));
