@@ -1,7 +1,7 @@
 /*
- * Uploadcare (1.5.5)
- * Date: 2015-01-28 18:02:48 +0300
- * Rev: 7b97d8c7f3
+ * Uploadcare (2.0.0)
+ * Date: 2015-02-20 15:20:33 +0300
+ * Rev: 3441e31f4e
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -1697,6 +1697,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('uploadcare.utils.abilities', function(ns) {
+    var ios, ver;
     ns.fileAPI = !!(window.File && window.FileList && window.FileReader);
     ns.sendFileAPI = !!(window.FormData && ns.fileAPI);
     ns.blob = (function() {
@@ -1716,7 +1717,13 @@ this.Pusher = Pusher;
       el = document.createElement("canvas");
       return !!(el.getContext && el.getContext('2d'));
     })();
-    return ns.fileDragAndDrop = ns.fileAPI && ns.dragAndDrop;
+    ns.fileDragAndDrop = ns.fileAPI && ns.dragAndDrop;
+    ns.iOSVersion = null;
+    if (ios = /^[^(]+\(iP(?:hone|od|ad);\s*(.+?)\)/.exec(navigator.userAgent)) {
+      if (ver = /OS (\d)_(\d)/.exec(ios[1])) {
+        return ns.iOSVersion = +ver[1] + ver[2] / 10;
+      }
+    }
   });
 
 }).call(this);
@@ -2002,7 +2009,6 @@ this.Pusher = Pusher;
       }
     };
     common = {
-      autostore: "You have enabled autostore in the widget, but not on the server.\nTo use autostore, make sure it's enabled in project settings.\n\nhttps://uploadcare.com/accounts/settings/",
       publicKey: "Global public key not set. Uploads may not work!\nAdd this to the <head> tag to set your key:\n\n<script>\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n</script>"
     };
     return ns.commonWarning = function(name) {
@@ -2306,7 +2312,7 @@ this.Pusher = Pusher;
     ns.plugin = function(fn) {
       return fn(uploadcare);
     };
-    return ns.canvasToBlob = function(canvas, type, quality, callback) {
+    ns.canvasToBlob = function(canvas, type, quality, callback) {
       var arr, binStr, dataURL, i, _i, _ref;
       if (HTMLCanvasElement.prototype.toBlob) {
         return canvas.toBlob(callback, type, quality);
@@ -2322,6 +2328,246 @@ this.Pusher = Pusher;
         type: /:(.+\/.+);/.exec(dataURL[0])[1]
       }));
     };
+    return ns.taskRunner = function(capacity) {
+      var queue, release, run, running;
+      running = 0;
+      queue = [];
+      release = function() {
+        var task;
+        if (queue.length) {
+          task = queue.shift();
+          return ns.defer(function() {
+            return task(release);
+          });
+        } else {
+          return running -= 1;
+        }
+      };
+      return run = function(task) {
+        if (running < capacity) {
+          running += 1;
+          return task(release);
+        } else {
+          return queue.push(task);
+        }
+      };
+    };
+  });
+
+}).call(this);
+(function() {
+  var $, namespace, utils;
+
+  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+
+  namespace('uploadcare.utils.imageProcessor', function(ns) {
+    var Blob, DataView, FileReader, URL, taskRunner, _ref;
+    DataView = window.DataView;
+    FileReader = ((_ref = window.FileReader) != null ? _ref.prototype.readAsArrayBuffer : void 0) && window.FileReader;
+    URL = window.URL || window.webkitURL;
+    URL = URL.createObjectURL && URL;
+    Blob = utils.abilities.blob && window.Blob;
+    taskRunner = utils.taskRunner(1);
+    ns.shrinkFile = function(file, settings) {
+      var df, exif,
+        _this = this;
+      df = $.Deferred();
+      exif = null;
+      if (!(URL && DataView && Blob)) {
+        return df.reject('support');
+      }
+      taskRunner(function(release) {
+        var op;
+        op = ns.readJpegChunks(file);
+        op.progress(function(pos, length, marker, view) {
+          if (!exif && marker === 0xe1) {
+            if (view.byteLength >= 14) {
+              if (view.getUint32(0) === 0x45786966 && view.getUint16(4) === 0) {
+                return exif = view.buffer;
+              }
+            }
+          }
+        });
+        return op.always(function() {
+          var img;
+          df.notify(.1);
+          img = new Image();
+          img.onload = function() {
+            URL.revokeObjectURL(img.src);
+            img.onerror = null;
+            df.notify(.2);
+            op = ns.shrinkImage(img, settings);
+            op.progress(function(progress) {
+              return df.notify(.2 + progress * .6);
+            });
+            op.fail(df.reject, release);
+            op.done(function(canvas) {
+              return utils.canvasToBlob(canvas, 'image/jpeg', settings.quality || 0.8, function(blob) {
+                canvas.width = 1;
+                canvas.height = 1;
+                df.notify(.9);
+                if (exif) {
+                  op = ns.replaceJpegChunk(blob, 0xe1, [exif]);
+                  op.done(df.resolve);
+                  op.fail(function() {
+                    return df.resolve(blob);
+                  });
+                } else {
+                  df.resolve(blob);
+                }
+                return release();
+              });
+            });
+            return img = null;
+          };
+          img.onerror = function() {
+            release();
+            return df.reject('not image');
+          };
+          return img.src = URL.createObjectURL(file);
+        });
+      });
+      return df.promise();
+    };
+    ns.shrinkImage = function(img, settings) {
+      var df, h, maxSize, maxSquare, originalW, ratio, run, sH, sW, step, w;
+      df = $.Deferred();
+      step = 0.71;
+      if (img.width * step * img.height * step < settings.size) {
+        return df.reject('not required');
+      }
+      sW = originalW = img.width;
+      sH = img.height;
+      ratio = sW / sH;
+      w = Math.floor(Math.sqrt(settings.size * ratio));
+      h = Math.floor(settings.size / Math.sqrt(settings.size * ratio));
+      maxSquare = 5000000;
+      maxSize = 4096;
+      (run = function() {
+        if (sW <= w) {
+          df.resolve(img);
+          return;
+        }
+        return utils.defer(function() {
+          var canvas;
+          sW = Math.round(sW * step);
+          sH = Math.round(sH * step);
+          if (sW * step < w) {
+            sW = w;
+            sH = h;
+          }
+          if (sW * sH > maxSquare) {
+            sW = Math.floor(Math.sqrt(maxSquare * ratio));
+            sH = Math.floor(maxSquare / Math.sqrt(maxSquare * ratio));
+          }
+          if (sW > maxSize) {
+            sW = maxSize;
+            sH = Math.round(sW / ratio);
+          }
+          if (sH > maxSize) {
+            sH = maxSize;
+            sW = Math.round(ratio * sH);
+          }
+          canvas = document.createElement('canvas');
+          canvas.width = sW;
+          canvas.height = sH;
+          canvas.getContext('2d').drawImage(img, 0, 0, sW, sH);
+          img.src = 'about:blank';
+          img.width = 1;
+          img.height = 1;
+          img = canvas;
+          df.notify((originalW - sW) / (originalW - w));
+          return run();
+        });
+      })();
+      return df.promise();
+    };
+    ns.readJpegChunks = function(file) {
+      var df, pos, readNext, readToView;
+      readToView = function(file, cb) {
+        var reader;
+        reader = new FileReader();
+        reader.onload = function() {
+          return cb(new DataView(reader.result));
+        };
+        reader.onerror = function(e) {
+          return df.reject('reader', e);
+        };
+        return reader.readAsArrayBuffer(file);
+      };
+      readNext = function() {
+        var startPos;
+        startPos = pos;
+        return readToView(file.slice(pos, pos += 4), function(view) {
+          var length, marker;
+          if (view.byteLength !== 4 || view.getUint8(0) !== 0xff) {
+            return df.reject('corrupted');
+          }
+          marker = view.getUint8(1);
+          if (marker === 0xda) {
+            return df.resolve();
+          }
+          length = view.getUint16(2) - 2;
+          return readToView(file.slice(pos, pos += length), function(view) {
+            if (view.byteLength !== length) {
+              return df.reject('corrupted');
+            }
+            df.notify(startPos, length, marker, view);
+            return readNext();
+          });
+        });
+      };
+      df = $.Deferred();
+      if (!(FileReader && DataView)) {
+        return df.reject('support');
+      }
+      pos = 2;
+      readToView(file.slice(0, 2), function(view) {
+        if (view.getUint16(0) !== 0xffd8) {
+          return df.reject('not jpeg');
+        }
+        return readNext();
+      });
+      return df.promise();
+    };
+    return ns.replaceJpegChunk = function(blob, marker, chunks) {
+      var df, oldChunkLength, oldChunkPos, op;
+      df = $.Deferred();
+      oldChunkPos = [];
+      oldChunkLength = [];
+      op = ns.readJpegChunks(blob);
+      op.fail(df.reject);
+      op.progress(function(pos, length, oldMarker) {
+        if (oldMarker === marker) {
+          oldChunkPos.push(pos);
+          return oldChunkLength.push(length);
+        }
+      });
+      op.done(function() {
+        var chunk, i, intro, newChunks, pos, _i, _j, _len, _ref1;
+        newChunks = [blob.slice(0, 2)];
+        for (_i = 0, _len = chunks.length; _i < _len; _i++) {
+          chunk = chunks[_i];
+          intro = new DataView(new ArrayBuffer(4));
+          intro.setUint16(0, 0xff00 + marker);
+          intro.setUint16(2, chunk.byteLength + 2);
+          newChunks.push(intro.buffer);
+          newChunks.push(chunk);
+        }
+        pos = 2;
+        for (i = _j = 0, _ref1 = oldChunkPos.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+          if (oldChunkPos[i] > pos) {
+            newChunks.push(blob.slice(pos, oldChunkPos[i]));
+          }
+          pos = oldChunkPos[i] + oldChunkLength[i] + 4;
+        }
+        newChunks.push(blob.slice(pos, blob.size));
+        return df.resolve(new Blob(newChunks, {
+          type: blob.type
+        }));
+      });
+      return df.promise();
+    };
   });
 
 }).call(this);
@@ -2333,7 +2579,7 @@ this.Pusher = Pusher;
   expose = uploadcare.expose, namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery;
 
   namespace('uploadcare.settings', function(ns) {
-    var arrayOptions, defaults, flagOptions, intOptions, key, normalize, parseCrop, presets, publicDefaults, str2arr, urlOptions, value, waitForSettingsCb;
+    var arrayOptions, defaults, flagOptions, intOptions, key, normalize, parseCrop, parseShrink, presets, publicDefaults, str2arr, urlOptions, value, waitForSettingsCb;
     defaults = {
       'live': true,
       'manual-start': false,
@@ -2341,18 +2587,19 @@ this.Pusher = Pusher;
       'locale-pluralize': null,
       'locale-translations': null,
       'system-dialog': false,
-      'crop': 'disabled',
+      'crop': false,
       'preview-step': false,
       'images-only': false,
       'clearable': false,
       'multiple': false,
       'multiple-max': 0,
       'multiple-min': 1,
-      'path-value': false,
+      'image-shrink': false,
+      'path-value': true,
       'tabs': 'file camera url facebook gdrive dropbox instagram evernote flickr skydrive',
       'preferred-types': '',
       'input-accept-types': '',
-      'autostore': false,
+      'do-not-store': false,
       'public-key': null,
       'pusher-key': '79ae88bd931ea68464d9',
       'cdn-base': 'http://www.ucarecdn.com',
@@ -2441,12 +2688,29 @@ this.Pusher = Pusher;
         preferedSize: ratio.length ? [+ratio[1], +ratio[3]] : void 0
       };
     };
+    parseShrink = function(val) {
+      var reShrink, shrink, size;
+      reShrink = /^([0-9]+)x([0-9]+)(?:\s+(\d{1,2}|100)%)?$/i;
+      shrink = reShrink.exec($.trim(val.toLowerCase())) || [];
+      if (!shrink.length) {
+        return false;
+      }
+      size = shrink[1] * shrink[2];
+      if (size > 5000000) {
+        utils.warnOnce("Shrinked size can not be larger than 5MP. " + ("You have set " + shrink[1] + "x" + shrink[2] + " (") + ("" + (Math.ceil(size / 1000 / 100) / 10) + "MP)."));
+        return false;
+      }
+      return {
+        quality: shrink[3] ? shrink[3] / 100 : void 0,
+        size: size
+      };
+    };
     normalize = function(settings) {
       arrayOptions(settings, ['tabs', 'preferredTypes']);
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
-      flagOptions(settings, ['autostore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog']);
+      flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog']);
       intOptions(settings, ['multipleMax', 'multipleMin']);
-      if (!$.isArray(settings.crop)) {
+      if (settings.crop !== false && !$.isArray(settings.crop)) {
         if (/^(disabled?|false|null)$/i.test(settings.crop) || settings.multiple) {
           settings.crop = false;
         } else if ($.isPlainObject(settings.crop)) {
@@ -2455,11 +2719,11 @@ this.Pusher = Pusher;
           settings.crop = $.map(settings.crop.split(','), parseCrop);
         }
       }
+      if (settings.imageShrink && !$.isPlainObject(settings.imageShrink)) {
+        settings.imageShrink = parseShrink(settings.imageShrink);
+      }
       if (settings.crop || settings.multiple) {
         settings.previewStep = true;
-      }
-      if (settings.crop) {
-        settings.pathValue = true;
       }
       if (!utils.abilities.sendFileAPI) {
         settings.systemDialog = false;
@@ -6358,13 +6622,14 @@ this.Pusher = Pusher;
         this.cdnUrlModifiers = null;
         this.isImage = null;
         this.imageInfo = null;
+        this.sourceInfo = null;
         this.onInfoReady = $.Callbacks('once memory');
         this.__setupValidation();
         this.__initApi();
       }
 
       BaseFile.prototype.__startUpload = function() {
-        throw new Error('not implemented');
+        return $.Deferred().resolve();
       };
 
       BaseFile.prototype.__completeUpload = function() {
@@ -6372,7 +6637,7 @@ this.Pusher = Pusher;
           _this = this;
         timeout = 100;
         return (check = function() {
-          if (_this.apiPromise.state() === 'pending') {
+          if (_this.apiDeferred.state() === 'pending') {
             return _this.__updateInfo().done(function() {
               setTimeout(check, timeout);
               return timeout += 50;
@@ -6425,13 +6690,13 @@ this.Pusher = Pusher;
           originalImageInfo: this.imageInfo,
           originalUrl: this.fileId ? "" + this.settings.cdnBase + "/" + this.fileId + "/" : null,
           cdnUrl: this.fileId ? "" + this.settings.cdnBase + "/" + this.fileId + "/" + (this.cdnUrlModifiers || '') : null,
-          cdnUrlModifiers: this.cdnUrlModifiers
+          cdnUrlModifiers: this.cdnUrlModifiers,
+          sourceInfo: this.sourceInfo
         };
       };
 
       BaseFile.prototype.__cancel = function() {
-        this.__rejectApi('user');
-        return this.__uploadDf.reject();
+        return this.__rejectApi('user');
       };
 
       BaseFile.prototype.__setupValidation = function() {
@@ -6448,6 +6713,7 @@ this.Pusher = Pusher;
 
       BaseFile.prototype.__runValidators = function(info) {
         var err, v, _i, _len, _ref, _results;
+        info = info || this.__fileInfo();
         try {
           _ref = this.validators;
           _results = [];
@@ -6490,35 +6756,39 @@ this.Pusher = Pusher;
       };
 
       BaseFile.prototype.__initApi = function() {
-        var _this = this;
         this.apiDeferred = $.Deferred();
-        this.apiPromise = this.__extendApi(this.apiDeferred.promise());
         this.__progressState = 'uploading';
         this.__progress = 0;
-        this.__notifyApi();
-        return this.__uploadDf = $.Deferred().done(this.__completeUpload).done(function() {
-          _this.__progressState = 'uploaded';
-          _this.__progress = 1;
-          return _this.__notifyApi();
-        }).progress(function(progress) {
-          if (progress > _this.__progress) {
-            _this.__progress = progress;
-            return _this.__notifyApi();
-          }
-        }).fail(function() {
-          return _this.__rejectApi('upload');
-        });
+        return this.__notifyApi();
       };
 
       BaseFile.prototype.promise = function() {
-        if (!this.__uploadStarted) {
-          this.__uploadStarted = true;
-          this.__runValidators(this.__fileInfo());
-          if (this.apiPromise.state() === 'pending') {
-            this.__startUpload();
+        var op,
+          _this = this;
+        if (!this.__apiPromise) {
+          this.__apiPromise = this.__extendApi(this.apiDeferred.promise());
+          this.__runValidators();
+          if (this.apiDeferred.state() === 'pending') {
+            op = this.__startUpload();
+            op.done(this.__completeUpload);
+            op.done(function() {
+              _this.__progressState = 'uploaded';
+              _this.__progress = 1;
+              return _this.__notifyApi();
+            });
+            op.progress(function(progress) {
+              if (progress > _this.__progress) {
+                _this.__progress = progress;
+                return _this.__notifyApi();
+              }
+            });
+            op.fail(function() {
+              return _this.__rejectApi('upload');
+            });
+            this.apiDeferred.always(op.reject);
           }
         }
-        return this.apiPromise;
+        return this.__apiPromise;
       };
 
       return BaseFile;
@@ -6541,6 +6811,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   var $, namespace, utils,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -6562,47 +6833,80 @@ this.Pusher = Pusher;
 
       function ObjectFile(settings, __file) {
         this.__file = __file;
+        this.setFile = __bind(this.setFile, this);
         ObjectFile.__super__.constructor.apply(this, arguments);
-        this.fileSize = this.__file.size;
         this.fileName = this.__file.name || 'original';
-        this.fileType = this.__file.type || 'application/octet-stream';
         this.__notifyApi();
       }
 
+      ObjectFile.prototype.setFile = function(file) {
+        if (file) {
+          this.__file = file;
+        }
+        this.fileSize = this.__file.size;
+        this.fileType = this.__file.type || 'application/octet-stream';
+        this.__runValidators();
+        return this.__notifyApi();
+      };
+
       ObjectFile.prototype.__startUpload = function() {
+        var df, ios, resizeShare,
+          _this = this;
+        this.apiDeferred.always(function() {
+          return _this.__file = null;
+        });
         if (this.fileSize >= this.MP_MIN_SIZE && utils.abilities.blob) {
+          this.setFile();
           return this.multipartUpload();
         } else {
-          return this.directUpload();
+          ios = utils.abilities.iOSVersion;
+          if (this.settings.imageShrink && (!ios || ios >= 8)) {
+            df = $.Deferred();
+            resizeShare = .4;
+            utils.imageProcessor.shrinkFile(this.__file, this.settings.imageShrink).progress(function(progress) {
+              return df.notify(progress * resizeShare);
+            }).done(this.setFile).fail(function() {
+              _this.setFile();
+              return resizeShare = resizeShare * .1;
+            }).always(function() {
+              df.notify(resizeShare);
+              return _this.directUpload().done(df.resolve).fail(df.reject).progress(function(progress) {
+                return df.notify(resizeShare + progress * (1 - resizeShare));
+              });
+            });
+            return df;
+          } else {
+            this.setFile();
+            return this.directUpload();
+          }
         }
       };
 
       ObjectFile.prototype.__autoAbort = function(xhr) {
-        this.__uploadDf.always(xhr.abort);
+        this.apiDeferred.fail(xhr.abort);
         return xhr;
       };
 
       ObjectFile.prototype.directUpload = function() {
-        var formData,
+        var df, formData,
           _this = this;
         if (this.fileSize > 100 * 1024 * 1024) {
           this.__rejectApi('size');
           return;
         }
+        df = $.Deferred();
         formData = new FormData();
         formData.append('UPLOADCARE_PUB_KEY', this.settings.publicKey);
-        if (this.settings.autostore) {
-          formData.append('UPLOADCARE_STORE', '1');
-        }
+        formData.append('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto');
         formData.append('file', this.__file, this.fileName);
         formData.append('file_name', this.fileName);
-        return this.__autoAbort($.ajax({
+        this.__autoAbort($.ajax({
           xhr: function() {
             var xhr;
             xhr = $.ajaxSettings.xhr();
             if (xhr.upload) {
               xhr.upload.addEventListener('progress', function(e) {
-                return _this.__uploadDf.notify(e.loaded / e.total);
+                return df.notify(e.loaded / e.total);
               }, false);
             }
             return xhr;
@@ -6620,36 +6924,37 @@ this.Pusher = Pusher;
           processData: false,
           data: formData,
           dataType: 'json',
-          error: this.__uploadDf.reject,
+          error: df.reject,
           success: function(data) {
             if (data != null ? data.file : void 0) {
               _this.fileId = data.file;
-              return _this.__uploadDf.resolve();
+              return df.resolve();
             } else {
-              if (_this.settings.autostore && /autostore/i.test(data.error.content)) {
-                utils.commonWarning('autostore');
-              }
-              return _this.__uploadDf.reject();
+              return df.reject();
             }
           }
         }));
+        return df;
       };
 
       ObjectFile.prototype.multipartUpload = function() {
-        var _this = this;
+        var df,
+          _this = this;
         if (this.settings.imagesOnly) {
           this.__rejectApi('image');
           return;
         }
-        return this.multipartStart().done(function(data) {
+        df = $.Deferred();
+        this.multipartStart().done(function(data) {
           return _this.uploadParts(data.parts).done(function() {
             return _this.multipartComplete(data.uuid).done(function(data) {
               _this.fileId = data.uuid;
               _this.__handleFileData(data);
-              return _this.__completeUpload();
-            }).fail(_this.__uploadDf.reject);
-          }).fail(_this.__uploadDf.reject);
-        }).fail(this.__uploadDf.reject);
+              return df.resolve();
+            }).fail(df.reject);
+          }).progress(df.notify).fail(df.reject);
+        }).fail(df.reject);
+        return df;
       };
 
       ObjectFile.prototype.multipartStart = function() {
@@ -6658,11 +6963,9 @@ this.Pusher = Pusher;
           UPLOADCARE_PUB_KEY: this.settings.publicKey,
           filename: this.fileName,
           size: this.fileSize,
-          content_type: this.fileType
+          content_type: this.fileType,
+          UPLOADCARE_STORE: this.settings.doNotStore ? '' : 'auto'
         };
-        if (this.settings.autostore) {
-          data.UPLOADCARE_STORE = '1';
-        }
         return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data));
       };
 
@@ -6683,7 +6986,7 @@ this.Pusher = Pusher;
             loaded = progress[_i];
             total += loaded;
           }
-          return _this.__uploadDf.notify(total / _this.fileSize);
+          return df.notify(total / _this.fileSize);
         };
         df = $.Deferred();
         inProgress = 0;
@@ -6705,7 +7008,7 @@ this.Pusher = Pusher;
           submittedParts += 1;
           attempts = 0;
           return (retry = function() {
-            if (_this.__uploadDf.state() !== 'pending') {
+            if (_this.apiDeferred.state() !== 'pending') {
               return;
             }
             attempts += 1;
@@ -6765,6 +7068,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   var $, namespace, utils,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -6776,6 +7080,7 @@ this.Pusher = Pusher;
 
       function InputFile(settings, __input) {
         this.__input = __input;
+        this.__cleanUp = __bind(this.__cleanUp, this);
         InputFile.__super__.constructor.apply(this, arguments);
         this.fileId = utils.uuid();
         this.fileName = $(this.__input).val().split('\\').pop();
@@ -6783,17 +7088,14 @@ this.Pusher = Pusher;
       }
 
       InputFile.prototype.__startUpload = function() {
-        var formParam, iframeId, targetUrl,
-          _this = this;
+        var df, formParam, iframeId, targetUrl;
+        df = $.Deferred();
         targetUrl = "" + this.settings.urlBase + "/iframe/";
-        this.__uploadDf.always(function() {
-          return _this.__cleanUp();
-        });
         iframeId = "uploadcare-iframe-" + this.fileId;
         this.__iframe = $('<iframe>').attr({
           id: iframeId,
           name: iframeId
-        }).css('display', 'none').appendTo('body').on('load', this.__uploadDf.resolve).on('error', this.__uploadDf.reject);
+        }).css('display', 'none').appendTo('body').on('load', df.resolve).on('error', df.reject);
         formParam = function(name, value) {
           return $('<input/>', {
             type: 'hidden',
@@ -6802,12 +7104,13 @@ this.Pusher = Pusher;
           });
         };
         $(this.__input).attr('name', 'file');
-        return this.__iframeForm = $('<form>').attr({
+        this.__iframeForm = $('<form>').attr({
           method: 'POST',
           action: targetUrl,
           enctype: 'multipart/form-data',
           target: iframeId
-        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(this.settings.autostore ? formParam('UPLOADCARE_STORE', 1) : void 0).append(this.__input).css('display', 'none').appendTo('body').submit();
+        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(formParam('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto')).append(this.__input).css('display', 'none').appendTo('body').submit();
+        return df.always(this.__cleanUp);
       };
 
       InputFile.prototype.__cleanUp = function() {
@@ -6862,9 +7165,9 @@ this.Pusher = Pusher;
         this.__notifyApi();
       }
 
-      UrlFile.prototype.setName = function(name) {
-        this.__realFileName = name;
-        this.fileName = name;
+      UrlFile.prototype.setName = function(fileName) {
+        this.fileName = fileName;
+        this.__realFileName = fileName;
         return this.__notifyApi();
       };
 
@@ -6873,50 +7176,49 @@ this.Pusher = Pusher;
         return this.__notifyApi();
       };
 
+      UrlFile.prototype.setSourceInfo = function(sourceInfo) {
+        this.sourceInfo = sourceInfo;
+        return this.__notifyApi();
+      };
+
       UrlFile.prototype.__startUpload = function() {
-        var data, pollWatcher, pusherWatcher,
+        var data, df, pollWatcher, pusherWatcher,
           _this = this;
+        df = $.Deferred();
         pusherWatcher = new PusherWatcher(this.settings.pusherKey);
         pollWatcher = new PollWatcher("" + this.settings.urlBase + "/status/");
-        this.__listenWatcher($([pusherWatcher, pollWatcher]));
+        this.__listenWatcher(df, $([pusherWatcher, pollWatcher]));
         $(pusherWatcher).one(this.allEvents, function() {
           return pollWatcher.stopWatching();
         });
         data = {
           pub_key: this.settings.publicKey,
           source_url: this.__url,
-          filename: this.__realFileName || ''
+          filename: this.__realFileName || '',
+          store: this.settings.doNotStore ? '' : 'auto'
         };
-        if (this.settings.autostore) {
-          data.store = 1;
-        }
-        utils.jsonp("" + this.settings.urlBase + "/from_url/", data).fail(function(error) {
-          if (_this.settings.autostore && /autostore/i.test(error)) {
-            utils.commonWarning('autostore');
-          }
-          return _this.__uploadDf.reject();
-        }).done(function(data) {
+        utils.jsonp("" + this.settings.urlBase + "/from_url/", data).fail(df.reject).done(function(data) {
           pusherWatcher.watch(data.token);
           return pollWatcher.watch(data.token);
         });
-        return this.__uploadDf.always(function() {
+        return df.always(function() {
           $([pusherWatcher, pollWatcher]).off(_this.allEvents);
           pusherWatcher.stopWatching();
           return pollWatcher.stopWatching();
         });
       };
 
-      UrlFile.prototype.__listenWatcher = function(watcher) {
+      UrlFile.prototype.__listenWatcher = function(df, watcher) {
         var _this = this;
         return watcher.on('progress', function(e, data) {
           _this.fileSize = data.total;
-          return _this.__uploadDf.notify(data.done / data.total);
+          return df.notify(data.done / data.total);
         }).on('success', function(e, data) {
           $(e.target).trigger('progress', data);
           _this.fileId = data.uuid;
           _this.fileName = data.original_filename;
-          return _this.__uploadDf.resolve();
-        }).on('error fail', this.__uploadDf.reject);
+          return df.resolve();
+        }).on('error fail', df.reject);
       };
 
       return UrlFile;
@@ -7012,10 +7314,6 @@ this.Pusher = Pusher;
         }
       }
 
-      UploadedFile.prototype.__startUpload = function() {
-        return this.__uploadDf.resolve();
-      };
-
       return UploadedFile;
 
     })(ns.BaseFile);
@@ -7031,10 +7329,6 @@ this.Pusher = Pusher;
           this.__handleFileData(data);
         }
       }
-
-      ReadyFile.prototype.__startUpload = function() {
-        return this.__uploadDf.resolve();
-      };
 
       return ReadyFile;
 
@@ -7054,6 +7348,7 @@ this.Pusher = Pusher;
     ns.FileGroup = (function() {
       function FileGroup(files, settings) {
         var _this = this;
+        this.__uuid = null;
         this.settings = s.build(settings);
         this.__fileColl = new utils.CollectionOfPromises(files);
         this.__allFilesDf = $.when.apply($, this.files());
@@ -7155,7 +7450,7 @@ this.Pusher = Pusher;
         var info;
         info = {
           uuid: this.__uuid,
-          cdnUrl: "" + this.settings.cdnBase + "/" + this.__uuid + "/",
+          cdnUrl: this.__uuid ? "" + this.settings.cdnBase + "/" + this.__uuid + "/" : null,
           name: t('file', this.__fileColl.length()),
           count: this.__fileColl.length(),
           size: 0,
@@ -7475,9 +7770,6 @@ this.Pusher = Pusher;
       Circle.prototype.listen = function(file, selector) {
         var selectorFn,
           _this = this;
-        if (selector == null) {
-          selector = 'uploadProgress';
-        }
         this.reset();
         selectorFn = selector != null ? function(info) {
           return info[selector];
@@ -7683,7 +7975,7 @@ this.Pusher = Pusher;
       Template.prototype.listen = function(file) {
         var _this = this;
         this.__file = file;
-        this.circle.listen(file);
+        this.circle.listen(file, 'uploadProgress');
         this.setStatus('started');
         return file.progress(function(info) {
           if (file === _this.__file) {
@@ -7725,20 +8017,21 @@ this.Pusher = Pusher;
 
       ROLE_PREFIX = '@' + CLASS_PREFIX;
 
-      function BaseSourceTab(container, tabButton, dialogApi, settings) {
+      function BaseSourceTab(container, tabButton, dialogApi, settings, name) {
         var notDisabled, updateFooter,
           _this = this;
         this.container = container;
         this.tabButton = tabButton;
         this.dialogApi = dialogApi;
         this.settings = settings;
+        this.name = name;
         this.container.append(tpl('source-tab-base'));
         this.wrap = this.container.find(ROLE_PREFIX + 'wrap');
         notDisabled = ':not(.uploadcare-disabled-el)';
         this.container.on('click', ROLE_PREFIX + 'show-files' + notDisabled, function() {
           return _this.dialogApi.switchTab('preview');
         });
-        this.container.on('click', ROLE_PREFIX + 'done' + notDisabled, this.dialogApi.done);
+        this.container.on('click', ROLE_PREFIX + 'done' + notDisabled, this.dialogApi.resolve);
         updateFooter = function() {
           var files, footer, tooFewFiles, tooManyFiles;
           files = _this.dialogApi.fileColl.length();
@@ -7906,12 +8199,12 @@ this.Pusher = Pusher;
         this.video.on('loadeddata', function() {
           return this.play();
         });
-        this.dialogApi.onSwitched.add(function(_, switchedToMe) {
-          if (switchedToMe && !_this.__loaded) {
+        this.dialogApi.progress(function(name) {
+          if (name === _this.name && !_this.__loaded) {
             return _this.__requestCamera();
           }
         });
-        this.dialogApi.dialog.always(function() {
+        this.dialogApi.always(function() {
           var _ref1, _ref2;
           if ((_ref1 = _this.URL) != null) {
             _ref1.revokeObjectURL(_this.video.prop('src'));
@@ -7985,6 +8278,8 @@ this.Pusher = Pusher;
         }
         ctx.drawImage(video, 0, 0, w, h);
         return utils.canvasToBlob(canvas, 'image/jpeg', 0.9, function(blob) {
+          canvas.width = 1;
+          canvas.height = 1;
           blob.name = "camera.jpg";
           _this.dialogApi.addFiles('object', [blob]);
           return _this.dialogApi.switchTab('preview');
@@ -8006,116 +8301,120 @@ this.Pusher = Pusher;
   namespace = uploadcare.namespace, locale = uploadcare.locale, utils = uploadcare.utils, tabsCss = uploadcare.tabsCss, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t), files = uploadcare.files;
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.RemoteTabFor = function(service) {
-      var RemoteTab;
-      return RemoteTab = (function(_super) {
-        __extends(RemoteTab, _super);
+    return ns.RemoteTab = (function(_super) {
+      __extends(RemoteTab, _super);
 
-        function RemoteTab() {
-          this.__createIframe = __bind(this.__createIframe, this);
-          var _this = this;
-          RemoteTab.__super__.constructor.apply(this, arguments);
-          this.wrap.addClass('uploadcare-dialog-remote-iframe-wrap');
-          this.dialogApi.onSwitched.add(function(_, switchedToMe) {
-            if (switchedToMe) {
-              _this.__createIframe();
-            }
-            return _this.__sendMessage({
-              type: 'visibility-changed',
-              visible: switchedToMe
-            });
+      function RemoteTab() {
+        this.__createIframe = __bind(this.__createIframe, this);
+        var _this = this;
+        RemoteTab.__super__.constructor.apply(this, arguments);
+        this.wrap.addClass('uploadcare-dialog-remote-iframe-wrap');
+        this.dialogApi.progress(function(name) {
+          if (name === _this.name) {
+            _this.__createIframe();
+          }
+          return _this.__sendMessage({
+            type: 'visibility-changed',
+            visible: name === _this.name
           });
+        });
+      }
+
+      RemoteTab.prototype.remoteUrl = function() {
+        return ("" + this.settings.socialBase + "/window/" + this.name + "?") + $.param({
+          lang: this.settings.locale,
+          public_key: this.settings.publicKey,
+          widget_version: uploadcare.version,
+          images_only: this.settings.imagesOnly
+        });
+      };
+
+      RemoteTab.prototype.__sendMessage = function(messageObj) {
+        var _ref1;
+        return (_ref1 = this.iframe) != null ? _ref1[0].contentWindow.postMessage(JSON.stringify(messageObj), '*') : void 0;
+      };
+
+      RemoteTab.prototype.__createIframe = function() {
+        var _this = this;
+        if (this.iframe) {
+          return;
         }
-
-        RemoteTab.prototype.remoteUrl = function() {
-          return ("" + this.settings.socialBase + "/window/" + service + "?") + $.param({
-            lang: this.settings.locale,
-            public_key: this.settings.publicKey,
-            widget_version: uploadcare.version,
-            images_only: this.settings.imagesOnly
-          });
-        };
-
-        RemoteTab.prototype.__sendMessage = function(messageObj) {
-          var _ref1;
-          return (_ref1 = this.iframe) != null ? _ref1[0].contentWindow.postMessage(JSON.stringify(messageObj), '*') : void 0;
-        };
-
-        RemoteTab.prototype.__createIframe = function() {
-          var _this = this;
-          if (this.iframe) {
+        this.iframe = $('<iframe>', {
+          src: this.remoteUrl(),
+          marginheight: 0,
+          marginwidth: 0,
+          frameborder: 0,
+          allowTransparency: "true"
+        }).addClass('uploadcare-dialog-remote-iframe').appendTo(this.wrap).on('load', function() {
+          var style, url, _i, _j, _len, _len1, _ref1, _ref2;
+          _this.iframe.css('opacity', '1');
+          _ref1 = tabsCss.urls;
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            url = _ref1[_i];
+            _this.__sendMessage({
+              type: 'embed-css',
+              url: url
+            });
+          }
+          _ref2 = tabsCss.styles;
+          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+            style = _ref2[_j];
+            _this.__sendMessage({
+              type: 'embed-css',
+              style: style
+            });
+          }
+        });
+        return $(window).on("message", function(_arg) {
+          var e, file, info, message, url;
+          e = _arg.originalEvent;
+          if (e.source !== _this.iframe[0].contentWindow) {
             return;
           }
-          this.iframe = $('<iframe>', {
-            src: this.remoteUrl(),
-            marginheight: 0,
-            marginwidth: 0,
-            frameborder: 0,
-            allowTransparency: "true"
-          }).addClass('uploadcare-dialog-remote-iframe').appendTo(this.wrap).on('load', function() {
-            var style, url, _i, _j, _len, _len1, _ref1, _ref2;
-            _this.iframe.css('opacity', '1');
-            _ref1 = tabsCss.urls;
-            for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-              url = _ref1[_i];
-              _this.__sendMessage({
-                type: 'embed-css',
-                url: url
-              });
-            }
-            _ref2 = tabsCss.styles;
-            for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-              style = _ref2[_j];
-              _this.__sendMessage({
-                type: 'embed-css',
-                style: style
-              });
-            }
-          });
-          return $(window).on("message", function(_arg) {
-            var e, file, message, url;
-            e = _arg.originalEvent;
-            if (e.source !== _this.iframe[0].contentWindow) {
-              return;
-            }
-            try {
-              message = JSON.parse(e.data);
-            } catch (_error) {
-              return;
-            }
-            if (message.type === 'file-selected') {
-              url = (function() {
-                var key, type, _i, _len, _ref1;
-                if (message.alternatives) {
-                  _ref1 = _this.settings.preferredTypes;
-                  for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-                    type = _ref1[_i];
-                    type = utils.globRegexp(type);
-                    for (key in message.alternatives) {
-                      if (type.test(key)) {
-                        return message.alternatives[key];
-                      }
+          try {
+            message = JSON.parse(e.data);
+          } catch (_error) {
+            return;
+          }
+          if (message.type === 'file-selected') {
+            url = (function() {
+              var key, type, _i, _len, _ref1;
+              if (message.alternatives) {
+                _ref1 = _this.settings.preferredTypes;
+                for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+                  type = _ref1[_i];
+                  type = utils.globRegexp(type);
+                  for (key in message.alternatives) {
+                    if (type.test(key)) {
+                      return message.alternatives[key];
                     }
                   }
                 }
-                return message.url;
-              })();
-              file = new files.UrlFile(_this.settings, url);
-              if (message.filename) {
-                file.setName(message.filename);
               }
-              if (message.is_image != null) {
-                file.setIsImage(message.is_image);
-              }
-              return _this.dialogApi.addFiles([file.promise()]);
+              return message.url;
+            })();
+            file = new files.UrlFile(_this.settings, url);
+            if (message.filename) {
+              file.setName(message.filename);
             }
-          });
-        };
+            if (message.is_image != null) {
+              file.setIsImage(message.is_image);
+            }
+            info = {
+              source: _this.name
+            };
+            if (message.info) {
+              $.extend(info, message.info);
+            }
+            file.setSourceInfo(info);
+            return _this.dialogApi.addFiles([file.promise()]);
+          }
+        });
+      };
 
-        return RemoteTab;
+      return RemoteTab;
 
-      })(ns.BaseSourceTab);
-    };
+    })(ns.BaseSourceTab);
   });
 
 }).call(this);
@@ -8130,19 +8429,20 @@ this.Pusher = Pusher;
 
       PREFIX = '@uploadcare-dialog-preview-';
 
-      function BasePreviewTab(container, tabButton, dialogApi, settings) {
+      function BasePreviewTab(container, tabButton, dialogApi, settings, name) {
         var notDisabled,
           _this = this;
         this.container = container;
         this.tabButton = tabButton;
         this.dialogApi = dialogApi;
         this.settings = settings;
+        this.name = name;
         this.__initTabButtonCircle();
         notDisabled = ':not(.uploadcare-disabled-el)';
         this.container.on('click', PREFIX + 'back' + notDisabled, function() {
           return _this.dialogApi.fileColl.clear();
         });
-        this.container.on('click', PREFIX + 'done' + notDisabled, this.dialogApi.done);
+        this.container.on('click', PREFIX + 'done' + notDisabled, this.dialogApi.resolve);
       }
 
       BasePreviewTab.prototype.__initTabButtonCircle = function() {
@@ -8158,16 +8458,14 @@ this.Pusher = Pusher;
             progressInfo = infos[_i];
             progress += ((progressInfo != null ? progressInfo.progress : void 0) || 0) / infos.length;
           }
-          return circleDf.notify({
-            progress: progress
-          });
+          return circleDf.notify(progress);
         };
         this.dialogApi.fileColl.onAnyProgress.add(update);
         this.dialogApi.fileColl.onAdd.add(update);
         this.dialogApi.fileColl.onRemove.add(update);
         update();
-        circle = new Circle(circleEl).listen(circleDf.promise(), 'progress');
-        return this.dialogApi.onSwitched.add(circle.update);
+        circle = new Circle(circleEl).listen(circleDf.promise());
+        return this.dialogApi.progress(circle.update);
       };
 
       return BasePreviewTab;
@@ -8489,18 +8787,15 @@ this.Pusher = Pusher;
   namespace = uploadcare.namespace, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.StaticTabWith = function(tplName) {
-      var StaticTab;
-      return StaticTab = (function() {
-        function StaticTab(container) {
-          this.container = container;
-          this.container.append(tpl("tab-" + tplName));
-        }
+    return ns.StaticTab = (function() {
+      function StaticTab(container) {
+        this.container = container;
+        this.container.append(tpl("tab-" + this.name));
+      }
 
-        return StaticTab;
+      return StaticTab;
 
-      })();
-    };
+    })();
   });
 
 }).call(this);
@@ -8568,7 +8863,7 @@ this.Pusher = Pusher;
       });
     };
     ns.openPanel = function(placeholder, files, tab, settings) {
-      var filter, panel, promise;
+      var filter, panel;
       if ($.isPlainObject(tab)) {
         settings = tab;
         tab = null;
@@ -8589,9 +8884,7 @@ this.Pusher = Pusher;
           return files[0];
         }
       };
-      promise = utils.then(panel, filter, filter);
-      promise.reject = panel.reject;
-      return promise;
+      return utils.then(panel, filter, filter).promise(panel);
     };
     registeredTabs = {};
     ns.registerTab = function(tabName, constructor) {
@@ -8600,21 +8893,21 @@ this.Pusher = Pusher;
     ns.registerTab('file', tabs.FileTab);
     ns.registerTab('url', tabs.UrlTab);
     ns.registerTab('camera', tabs.CameraTab);
-    ns.registerTab('facebook', tabs.RemoteTabFor('facebook'));
-    ns.registerTab('dropbox', tabs.RemoteTabFor('dropbox'));
-    ns.registerTab('gdrive', tabs.RemoteTabFor('gdrive'));
-    ns.registerTab('instagram', tabs.RemoteTabFor('instagram'));
-    ns.registerTab('flickr', tabs.RemoteTabFor('flickr'));
-    ns.registerTab('vk', tabs.RemoteTabFor('vk'));
-    ns.registerTab('evernote', tabs.RemoteTabFor('evernote'));
-    ns.registerTab('box', tabs.RemoteTabFor('box'));
-    ns.registerTab('skydrive', tabs.RemoteTabFor('skydrive'));
-    ns.registerTab('huddle', tabs.RemoteTabFor('huddle'));
-    ns.registerTab('welcome', tabs.StaticTabWith('welcome'));
-    ns.registerTab('preview', function(tabPanel, tabButton, apiForTab, settings) {
+    ns.registerTab('facebook', tabs.RemoteTab);
+    ns.registerTab('dropbox', tabs.RemoteTab);
+    ns.registerTab('gdrive', tabs.RemoteTab);
+    ns.registerTab('instagram', tabs.RemoteTab);
+    ns.registerTab('flickr', tabs.RemoteTab);
+    ns.registerTab('vk', tabs.RemoteTab);
+    ns.registerTab('evernote', tabs.RemoteTab);
+    ns.registerTab('box', tabs.RemoteTab);
+    ns.registerTab('skydrive', tabs.RemoteTab);
+    ns.registerTab('huddle', tabs.RemoteTab);
+    ns.registerTab('welcome', tabs.StaticTab);
+    ns.registerTab('preview', function(tabPanel, tabButton, dialogApi, settings, name) {
       var tabCls;
       tabCls = settings.multiple ? tabs.PreviewTabMultiple : tabs.PreviewTab;
-      return new tabCls(tabPanel, tabButton, apiForTab, settings);
+      return new tabCls(tabPanel, tabButton, dialogApi, settings, name);
     });
     return Panel = (function() {
       function Panel(settings, placeholder, files, tab) {
@@ -8651,10 +8944,16 @@ this.Pusher = Pusher;
       }
 
       Panel.prototype.publicPromise = function() {
-        var promise;
-        promise = this.dfd.promise();
-        promise.reject = this.__reject;
-        return promise;
+        if (!this.promise) {
+          this.promise = this.dfd.promise({
+            reject: this.__reject,
+            resolve: this.__resolve,
+            fileColl: this.files,
+            addFiles: this.addFiles,
+            switchTab: this.switchTab
+          });
+        }
+        return this.promise;
       };
 
       Panel.prototype.addFiles = function(files, data) {
@@ -8677,22 +8976,6 @@ this.Pusher = Pusher;
         } else {
           return this.__resolve();
         }
-      };
-
-      Panel.prototype.apiForTab = function(tabName) {
-        var onSwitched;
-        onSwitched = $.Callbacks();
-        this.dfd.progress(function(name) {
-          return onSwitched.fire(name, name === tabName);
-        });
-        return {
-          fileColl: this.files,
-          onSwitched: onSwitched,
-          addFiles: this.addFiles,
-          done: this.__resolve,
-          switchTab: this.switchTab,
-          dialog: this.dfd.promise()
-        };
       };
 
       Panel.prototype.__resolve = function() {
@@ -8743,7 +9026,7 @@ this.Pusher = Pusher;
             return _this.switchTab(name);
           }
         }).appendTo(this.panel.find('.uploadcare-dialog-tabs'));
-        return this.tabs[name] = new TabCls(tabPanel, tabButton, this.apiForTab(name), this.settings);
+        return this.tabs[name] = new TabCls(tabPanel, tabButton, this.publicPromise(), this.settings, name);
       };
 
       Panel.prototype.__addFakeTab = function(name) {
@@ -8868,8 +9151,7 @@ this.Pusher = Pusher;
             object.cancel();
           }
         }
-        this.template.reset();
-        return this.element.val('');
+        return this.template.reset();
       };
 
       BaseWidget.prototype.__setObject = function(newFile) {
@@ -8879,7 +9161,10 @@ this.Pusher = Pusher;
             this.currentObject = newFile;
             this.__watchCurrentObject();
           }
-          return this.__onChange.fire(this.currentObject);
+          this.__onChange.fire(this.currentObject);
+        }
+        if (!newFile) {
+          return this.element.val('');
         }
       };
 
@@ -8908,7 +9193,7 @@ this.Pusher = Pusher;
       };
 
       BaseWidget.prototype.__onUploadingFailed = function(error) {
-        this.__setObject(null);
+        this.template.reset();
         return this.template.error(error);
       };
 
@@ -9031,25 +9316,19 @@ this.Pusher = Pusher;
         var groupPr,
           _this = this;
         this.__lastGroupPr = groupPr = utils.valueToGroup(value, this.settings);
-        this.__reset();
-        this.template.setStatus('started');
-        this.template.statusText.text(t('loadingInfo'));
+        if (value) {
+          this.template.setStatus('started');
+          this.template.statusText.text(t('loadingInfo'));
+        }
         return groupPr.done(function(group) {
           if (_this.__lastGroupPr === groupPr) {
             return _this.__setObject(group);
           }
         }).fail(function() {
           if (_this.__lastGroupPr === groupPr) {
-            return _this.template.error('createGroup');
+            return _this.__onUploadingFailed('createGroup');
           }
         });
-      };
-
-      MultipleWidget.prototype.__onUploadingFailed = function(error) {
-        if (error === 'createGroup') {
-          this.__setObject(null);
-        }
-        return this.template.error(error);
       };
 
       MultipleWidget.prototype.__handleDirectSelection = function(type, data) {
@@ -9086,7 +9365,7 @@ this.Pusher = Pusher;
       return s.build($(el).data());
     };
     initialize = function(targets) {
-      var target, widget, widgetClass, _i, _len, _results;
+      var target, widget, _i, _len, _results;
       _results = [];
       for (_i = 0, _len = targets.length; _i < _len; _i++) {
         target = targets[_i];
@@ -9094,12 +9373,11 @@ this.Pusher = Pusher;
         if (widget && target === widget.element[0]) {
           continue;
         }
-        widgetClass = getSettings(target).multiple ? ns.widget.MultipleWidget : ns.widget.Widget;
-        _results.push(initializeWidget($(target), widgetClass));
+        _results.push(ns.Widget(target));
       }
       return _results;
     };
-    ns.Widget = function(target) {
+    ns.SingleWidget = function(target) {
       var el;
       el = $(target).eq(0);
       if (!getSettings(el).multiple) {
@@ -9116,6 +9394,12 @@ this.Pusher = Pusher;
       } else {
         throw new Error('This element should be processed using Widget');
       }
+    };
+    ns.Widget = function(target) {
+      var el, widgetClass;
+      el = $(target).eq(0);
+      widgetClass = getSettings(el).multiple ? ns.widget.MultipleWidget : ns.widget.Widget;
+      return initializeWidget(el, widgetClass);
     };
     initializeWidget = function(el, Widget) {
       var widget;
@@ -9204,7 +9488,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '1.5.5';
+  uploadcare.version = '2.0.0';
 
   expose = uploadcare.expose;
 
@@ -9247,9 +9531,11 @@ this.Pusher = Pusher;
 
   expose('Circle', uploadcare.ui.progress.Circle);
 
-  expose('Widget');
+  expose('SingleWidget');
 
   expose('MultipleWidget');
+
+  expose('Widget');
 
   expose('plugin', uploadcare.utils.plugin);
 
@@ -9266,4 +9552,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/1.5.5/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.0/uploadcare/'));
