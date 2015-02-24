@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.0)
- * Date: 2015-02-20 15:20:33 +0300
- * Rev: 3441e31f4e
+ * Uploadcare (2.0.1)
+ * Date: 2015-02-24 15:20:44 +0300
+ * Rev: e9fcdf97e1
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -2365,7 +2365,7 @@ this.Pusher = Pusher;
     DataView = window.DataView;
     FileReader = ((_ref = window.FileReader) != null ? _ref.prototype.readAsArrayBuffer : void 0) && window.FileReader;
     URL = window.URL || window.webkitURL;
-    URL = URL.createObjectURL && URL;
+    URL = URL && URL.createObjectURL && URL;
     Blob = utils.abilities.blob && window.Blob;
     taskRunner = utils.taskRunner(1);
     ns.shrinkFile = function(file, settings) {
@@ -9488,7 +9488,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.0';
+  uploadcare.version = '2.0.1';
 
   expose = uploadcare.expose;
 
@@ -9552,4 +9552,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.1/uploadcare/'));
