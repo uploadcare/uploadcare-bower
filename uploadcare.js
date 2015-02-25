@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.1)
- * Date: 2015-02-24 15:20:44 +0300
- * Rev: e9fcdf97e1
+ * Uploadcare (2.0.2)
+ * Date: 2015-02-25 22:07:45 +0300
+ * Rev: 9027215c9c
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -6855,7 +6855,7 @@ this.Pusher = Pusher;
         this.apiDeferred.always(function() {
           return _this.__file = null;
         });
-        if (this.fileSize >= this.MP_MIN_SIZE && utils.abilities.blob) {
+        if (this.__file.size >= this.MP_MIN_SIZE && utils.abilities.blob) {
           this.setFile();
           return this.multipartUpload();
         } else {
@@ -9488,7 +9488,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.1';
+  uploadcare.version = '2.0.2';
 
   expose = uploadcare.expose;
 
@@ -9552,4 +9552,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.1/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.2/uploadcare/'));
