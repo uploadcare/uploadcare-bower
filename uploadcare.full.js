@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.2)
- * Date: 2015-02-25 22:07:45 +0300
- * Rev: 9027215c9c
+ * Uploadcare (2.0.3)
+ * Date: 2015-03-10 04:18:06 +0300
+ * Rev: 2878e58a76
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2374,63 +2374,70 @@ this.Pusher = Pusher;
     Blob = utils.abilities.blob && window.Blob;
     taskRunner = utils.taskRunner(1);
     ns.shrinkFile = function(file, settings) {
-      var df, exif,
+      var df,
         _this = this;
       df = $.Deferred();
-      exif = null;
       if (!(URL && DataView && Blob)) {
         return df.reject('support');
       }
       taskRunner(function(release) {
-        var op;
-        op = ns.readJpegChunks(file);
-        op.progress(function(pos, length, marker, view) {
-          if (!exif && marker === 0xe1) {
-            if (view.byteLength >= 14) {
-              if (view.getUint32(0) === 0x45786966 && view.getUint16(4) === 0) {
-                return exif = view.buffer;
+        var img;
+        df.always(release);
+        img = new Image();
+        img.onerror = function() {
+          return df.reject('not image');
+        };
+        img.onload = function() {
+          var exif, op;
+          URL.revokeObjectURL(img.src);
+          img.onerror = null;
+          df.notify(.10);
+          exif = null;
+          op = ns.readJpegChunks(file);
+          op.progress(function(pos, length, marker, view) {
+            if (!exif && marker === 0xe1) {
+              if (view.byteLength >= 14) {
+                if (view.getUint32(0) === 0x45786966 && view.getUint16(4) === 0) {
+                  return exif = view.buffer;
+                }
               }
             }
-          }
-        });
-        return op.always(function() {
-          var img;
-          df.notify(.1);
-          img = new Image();
-          img.onload = function() {
-            URL.revokeObjectURL(img.src);
-            img.onerror = null;
+          });
+          return op.always(function() {
+            var isJPEG;
             df.notify(.2);
+            isJPEG = op.state() === 'resolved';
             op = ns.shrinkImage(img, settings);
             op.progress(function(progress) {
               return df.notify(.2 + progress * .6);
             });
-            op.fail(df.reject, release);
+            op.fail(df.reject);
             op.done(function(canvas) {
-              return utils.canvasToBlob(canvas, 'image/jpeg', settings.quality || 0.8, function(blob) {
-                canvas.width = 1;
-                canvas.height = 1;
+              var format, quality;
+              format = 'image/jpeg';
+              quality = settings.quality || 0.8;
+              if (!isJPEG && ns.hasTransparency(canvas)) {
+                format = 'image/png';
+                quality = void 0;
+              }
+              return utils.canvasToBlob(canvas, format, quality, function(blob) {
+                canvas.width = canvas.height = 1;
                 df.notify(.9);
                 if (exif) {
                   op = ns.replaceJpegChunk(blob, 0xe1, [exif]);
                   op.done(df.resolve);
-                  op.fail(function() {
+                  return op.fail(function() {
                     return df.resolve(blob);
                   });
                 } else {
-                  df.resolve(blob);
+                  return df.resolve(blob);
                 }
-                return release();
               });
             });
             return img = null;
-          };
-          img.onerror = function() {
-            release();
-            return df.reject('not image');
-          };
-          return img.src = URL.createObjectURL(file);
-        });
+          });
+        };
+        return img.src = URL.createObjectURL(file);
       });
       return df.promise();
     };
@@ -2478,8 +2485,7 @@ this.Pusher = Pusher;
           canvas.height = sH;
           canvas.getContext('2d').drawImage(img, 0, 0, sW, sH);
           img.src = 'about:blank';
-          img.width = 1;
-          img.height = 1;
+          img.width = img.height = 1;
           img = canvas;
           df.notify((originalW - sW) / (originalW - w));
           return run();
@@ -2535,7 +2541,7 @@ this.Pusher = Pusher;
       });
       return df.promise();
     };
-    return ns.replaceJpegChunk = function(blob, marker, chunks) {
+    ns.replaceJpegChunk = function(blob, marker, chunks) {
       var df, oldChunkLength, oldChunkPos, op;
       df = $.Deferred();
       oldChunkPos = [];
@@ -2572,6 +2578,22 @@ this.Pusher = Pusher;
         }));
       });
       return df.promise();
+    };
+    return ns.hasTransparency = function(img) {
+      var canvas, ctx, data, i, pcsn, _i, _ref1;
+      pcsn = 50;
+      canvas = document.createElement('canvas');
+      canvas.width = canvas.height = pcsn;
+      ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, pcsn, pcsn);
+      data = ctx.getImageData(0, 0, pcsn, pcsn).data;
+      canvas.width = canvas.height = 1;
+      for (i = _i = 3, _ref1 = data.length; _i < _ref1; i = _i += 4) {
+        if (data[i] < 254) {
+          return true;
+        }
+      }
+      return false;
     };
   });
 
@@ -6657,6 +6679,7 @@ this.Pusher = Pusher;
         this.isImage = data.is_image;
         this.imageInfo = data.image_info;
         this.isStored = data.is_stored;
+        this.cdnUrlModifiers = data.default_effects || null;
         if (!this.onInfoReady.fired()) {
           this.onInfoReady.fire(this.__fileInfo());
         }
@@ -9493,7 +9516,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.2';
+  uploadcare.version = '2.0.3';
 
   expose = uploadcare.expose;
 
@@ -9561,4 +9584,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.2/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.3/uploadcare/'));
