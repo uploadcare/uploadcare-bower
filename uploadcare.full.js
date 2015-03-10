@@ -1,7 +1,7 @@
 /*
  * Uploadcare (2.0.3)
- * Date: 2015-03-10 04:18:06 +0300
- * Rev: 2878e58a76
+ * Date: 2015-03-10 04:34:29 +0300
+ * Rev: 5f53386e4f
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -6679,7 +6679,9 @@ this.Pusher = Pusher;
         this.isImage = data.is_image;
         this.imageInfo = data.image_info;
         this.isStored = data.is_stored;
-        this.cdnUrlModifiers = data.default_effects || null;
+        if (data.default_effects) {
+          this.cdnUrlModifiers = "-/" + data.default_effects;
+        }
         if (!this.onInfoReady.fired()) {
           this.onInfoReady.fire(this.__fileInfo());
         }
