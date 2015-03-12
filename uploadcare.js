@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.3)
- * Date: 2015-03-10 04:34:29 +0300
- * Rev: 5f53386e4f
+ * Uploadcare (2.0.4)
+ * Date: 2015-03-12 23:51:31 +0300
+ * Rev: abee13cc69
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -6915,11 +6915,14 @@ this.Pusher = Pusher;
       ObjectFile.prototype.directUpload = function() {
         var df, formData,
           _this = this;
+        df = $.Deferred();
+        if (this.apiDeferred.state() !== 'pending') {
+          return df;
+        }
         if (this.fileSize > 100 * 1024 * 1024) {
           this.__rejectApi('size');
-          return;
+          return df;
         }
-        df = $.Deferred();
         formData = new FormData();
         formData.append('UPLOADCARE_PUB_KEY', this.settings.publicKey);
         formData.append('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto');
@@ -6965,11 +6968,14 @@ this.Pusher = Pusher;
       ObjectFile.prototype.multipartUpload = function() {
         var df,
           _this = this;
+        df = $.Deferred();
+        if (this.apiDeferred.state() !== 'pending') {
+          return df;
+        }
         if (this.settings.imagesOnly) {
           this.__rejectApi('image');
-          return;
+          return df;
         }
-        df = $.Deferred();
         this.multipartStart().done(function(data) {
           return _this.uploadParts(data.parts).done(function() {
             return _this.multipartComplete(data.uuid).done(function(data) {
@@ -9513,7 +9519,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.3';
+  uploadcare.version = '2.0.4';
 
   expose = uploadcare.expose;
 
@@ -9577,4 +9583,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.3/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.4/uploadcare/'));
