@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.4)
- * Date: 2015-03-12 23:51:31 +0300
- * Rev: abee13cc69
+ * Uploadcare (2.0.5)
+ * Date: 2015-03-25 19:36:54 +0300
+ * Rev: 73b798d25f
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2484,7 +2484,7 @@ this.Pusher = Pusher;
           canvas.width = sW;
           canvas.height = sH;
           canvas.getContext('2d').drawImage(img, 0, 0, sW, sH);
-          img.src = 'about:blank';
+          img.src = '//:0';
           img.width = img.height = 1;
           img = canvas;
           df.notify((originalW - sW) / (originalW - w));
@@ -4848,7 +4848,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area" role="uploadcare-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button" role="uploadcare-dialog-browse-file">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  ');  if (tabs.length > 1) { ; __p.push('\n    <div class="uploadcare-dialog-file-or">\n      ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-file-sources">\n      ');  for (var i = 0; i < tabs.length; i++) {
+  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area" role="uploadcare-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick" role="uploadcare-dialog-browse-file">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  ');  if (tabs.length > 1) { ; __p.push('\n    <div class="uploadcare-dialog-file-or">\n      ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-file-sources">\n      ');  for (var i = 0; i < tabs.length; i++) {
           var tab = tabs[i];
           if (tab == 'file') continue; ; __p.push('\n        <div\n          class="uploadcare-dialog-file-source"\n          role="uploadcare-dialog-switch-tab"\n          data-tab="',(''+ tab ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n        >',(''+ t('dialog.tabs.names.' + tab) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n      ');  } ; __p.push('\n    </div>\n  ');  } ; __p.push('\n</div>\n');}return __p.join('');};
 }).call(this);
@@ -4898,7 +4898,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div\n  role="uploadcare-widget-file-name"\n  class="uploadcare-widget-file-name uploadcare-link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>,\n',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n');}return __p.join('');};
+  this.JST["uploadcare/templates/widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-file-name uploadcare-link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>,\n',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -8031,7 +8031,7 @@ this.Pusher = Pusher;
       };
 
       Template.prototype.setFileInfo = function(info) {
-        return this.statusText.html(tpl('widget-file-name', info));
+        return this.statusText.html(tpl('widget-file-name', info)).find('.uploadcare-widget-file-name').toggleClass('needsclick', this.settings.systemDialog);
       };
 
       return Template;
@@ -9152,7 +9152,7 @@ this.Pusher = Pusher;
         path = ['buttons.choose'];
         path.push(this.settings.imagesOnly ? 'images' : 'files');
         path.push(this.settings.multiple ? 'other' : 'one');
-        this.template.addButton('open', t(path.join('.'))).on('click', function() {
+        this.template.addButton('open', t(path.join('.'))).toggleClass('needsclick', this.settings.systemDialog).on('click', function() {
           return _this.openDialog();
         });
         this.template.addButton('cancel', t('buttons.cancel')).on('click', function() {
@@ -9163,7 +9163,7 @@ this.Pusher = Pusher;
             return _this.__setObject(null);
           });
         }
-        this.template.content.on('click', '@uploadcare-widget-file-name', function() {
+        this.template.content.on('click', '.uploadcare-widget-file-name', function() {
           return _this.openDialog();
         });
         dragdrop.receiveDrop(this.template.content, this.__handleDirectSelection);
@@ -9524,7 +9524,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.4';
+  uploadcare.version = '2.0.5';
 
   expose = uploadcare.expose;
 
@@ -9592,4 +9592,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.4/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.0.5/uploadcare/'));
