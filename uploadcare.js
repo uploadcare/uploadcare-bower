@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.0.6)
- * Date: 2015-03-28 01:37:02 +0300
- * Rev: d8e96de010
+ * Uploadcare (2.1.0)
+ * Date: 2015-04-10 20:23:10 +0300
+ * Rev: 3670a2acf5
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -1770,11 +1770,11 @@ this.Pusher = Pusher;
       if (hasOwners(key)) {
         return instance.connect();
       } else {
-        return setTimeout((function() {
+        return setTimeout(function() {
           if (!hasOwners(key)) {
             return instance.disconnect();
           }
-        }), 5000);
+        }, 5000);
       }
     };
     pusherInstance = function(key) {
@@ -1851,7 +1851,7 @@ this.Pusher = Pusher;
 
       Collection.prototype.replace = function(oldItem, newItem) {
         var i, item, _i, _len, _ref, _results;
-        if (oldItem !== newItem) {
+        if (!(oldItem === newItem)) {
           _ref = this.__items;
           _results = [];
           for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
@@ -2276,9 +2276,6 @@ this.Pusher = Pusher;
       value = Number(value.toFixed(fixedTo));
       return "" + prefix + value + " " + ns.fileSizeLabels[i] + postfix;
     };
-    ns.imagePath = function(name) {
-      return uploadcare.settings.common().scriptBase + '/images/' + name;
-    };
     ns.ajaxDefaults = {
       dataType: 'json',
       crossDomain: true,
@@ -2601,7 +2598,7 @@ this.Pusher = Pusher;
   expose = uploadcare.expose, namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery;
 
   namespace('uploadcare.settings', function(ns) {
-    var arrayOptions, defaults, flagOptions, intOptions, key, normalize, parseCrop, parseShrink, presets, publicDefaults, str2arr, urlOptions, value, waitForSettingsCb;
+    var arrayOptions, defaults, flagOptions, intOptions, key, normalize, parseCrop, parseShrink, presets, publicDefaults, str2arr, urlOptions, value;
     defaults = {
       'live': true,
       'manual-start': false,
@@ -2773,26 +2770,26 @@ this.Pusher = Pusher;
         value = window["UPLOADCARE_" + (utils.upperCase(key))];
         values[$.camelCase(key)] = value !== void 0 ? value : fallback;
       }
-      if (!values.publicKey) {
-        utils.commonWarning('publicKey');
-      }
       return normalize(values);
     });
     ns.common = utils.once(function(settings) {
       var result;
       result = normalize($.extend({}, ns.globals(), settings || {}));
-      waitForSettingsCb.fire(result);
+      if (!result.publicKey) {
+        utils.commonWarning('publicKey');
+      }
+      ns.waitForSettings.fire(result);
       return result;
     });
     ns.build = function(settings) {
-      return normalize($.extend({}, ns.common(), settings || {}));
+      var result;
+      result = $.extend({}, ns.common());
+      if (!$.isEmptyObject(settings)) {
+        result = normalize($.extend(result, settings));
+      }
+      return result;
     };
-    waitForSettingsCb = $.Callbacks("once memory");
-    ns.waitForSettings = function(settings, fn) {
-      return waitForSettingsCb.add(function(common) {
-        return fn(normalize($.extend({}, common, settings || {})));
-      });
-    };
+    ns.waitForSettings = $.Callbacks("once memory");
     ns.CssCollector = (function() {
       function CssCollector() {
         this.urls = [];
@@ -2803,7 +2800,7 @@ this.Pusher = Pusher;
         if (!/^https?:\/\//i.test(url)) {
           throw new Error('Embedded urls should be absolute. ' + url);
         }
-        if (__indexOf.call(this.urls, url) < 0) {
+        if (!(__indexOf.call(this.urls, url) >= 0)) {
           return this.urls.push(url);
         }
       };
@@ -3277,6 +3274,7 @@ this.Pusher = Pusher;
         showFiles: 'Show files',
         tabs: {
           names: {
+            'empty-pubkey': 'Welcome',
             preview: 'Preview',
             file: 'Local Files',
             url: 'Arbitrary Links',
@@ -4819,7 +4817,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/circle-text"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-circle-back">\n  <div class="uploadcare-widget-circle-text" role="uploadcare-circle-text"></div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/circle-text"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-circle-back">\n  <div class="uploadcare-widget-circle-text"></div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -4827,25 +4825,21 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/panel"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-panel">\n  <div class="uploadcare-dialog-tabs"></div>\n</div>\n<div class="uploadcare-dialog-footer">\n  ',(''+ t('dialog.footer.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  <a href="https://uploadcare.com/" target="_blank">',(''+ t('dialog.footer.link') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</a>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/panel"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-panel">\n  <div class="uploadcare-dialog-tabs"></div>\n\n  <div class="uploadcare-panel-footer uploadcare-panel-footer__summary">\n    <div class="uploadcare-dialog-button uploadcare-dialog-source-base-show-files"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.showFiles') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n      <div class="uploadcare-panel-footer-counter"></div>\n    </div>\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-source-base-done"\n         tabindex="0" role="button">',(''+ t('dialog.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n    <div class="uploadcare-panel-footer-text"></div>\n  </div>\n</div>\n<div class="uploadcare-dialog-footer">\n  ',(''+ t('dialog.footer.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  <a href="https://uploadcare.com/" target="_blank">',(''+ t('dialog.footer.link') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</a>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/source-tab-base"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div \n  class="uploadcare-dialog-source-base-wrap" \n  role="uploadcare-dialog-source-base-wrap"\n></div>\n\n<div class="uploadcare-dialog-inner-footer uploadcare-dialog-source-base-footer">\n  <div class="uploadcare-dialog-button"\n       role="uploadcare-dialog-source-base-show-files">\n    ',(''+ t('dialog.showFiles') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    <div class="uploadcare-dialog-source-base-counter"></div>\n  </div>\n  <div\n    class="uploadcare-dialog-button-success" \n    role="uploadcare-dialog-source-base-done">',(''+ t('dialog.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div \n    class="uploadcare-dialog-inner-footer-text"\n    role="uploadcare-dialog-source-base-footer-text"\n  ></div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons.png");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active.png");background-size:50px}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-image:url(data:image/gif;base64,R0lGODlhCAAIAPABAAAAAKqqqiH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgABACwAAAAACAAIAAACDYQRGadrzVRMB9FZ5SwAIfkECQoAAQAsAAAAAAgACAAAAg8MDqGYaudeW9ChyOyltQAAIfkECQoAAQAsAAAAAAgACAAAAg9MgGCXm+rQYtC0WGl9oQAAIfkECQoAAQAsAAAAAAgACAAAAg+MgWCRernaYmjCWLF7qAAAIfkECQoAAQAsAAAAAAgACAAAAg2MAwmna81UTAfRWeUsACH5BAkKAAEALAAAAAAIAAgAAAIPRB6gmGrnXlvQocjspbUAACH5BAkKAAEALAAAAAAIAAgAAAIPBIJhl5vq0GLQtFhpfaAAACH5BAUKAAEALAAAAAAIAAgAAAIPhINhkHq52mJowlixe6gAADs=)}.uploadcare-dialog-file-sources:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png")}.uploadcare-dpm-file-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-dpm-file-error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-dpm-file-preview{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-default.png")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-image.png")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons@2x.png")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active@2x.png")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;-webkit-box-shadow:0 1px 2px rgba(0,0,0,0.35);-moz-box-shadow:0 1px 2px rgba(0,0,0,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0.05,0.7,0.25,1);transition:transform .25s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-moz-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-moz-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-moz-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal;padding-left:75px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}.uploadcare-dialog-panel :focus{outline:2px dotted #0094c0}.uploadcare-dialog-panel :active,.uploadcare-dialog-panel .uploadcare-mouse-focused:focus{outline:none}.uploadcare-dialog-tabs{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:75px;height:616px;margin-left:-75px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-dialog-tab{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none!important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-multiple .uploadcare-dialog-tabs-panel{height:550px}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:#ddd;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer a{color:#c2c2c2;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f8f8f8;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:-moz-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3786eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:-moz-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#3279d6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:-moz-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3177d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:-moz-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{-webkit-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);-moz-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{-webkit-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);-moz-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;-webkit-box-shadow:inset 0 -2px #1f66c1;-moz-box-shadow:inset 0 -2px #1f66c1;box-shadow:inset 0 -2px #1f66c1;background:#458dee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:-moz-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{-webkit-box-shadow:inset 0 -2px #1652a0;-moz-box-shadow:inset 0 -2px #1652a0;box-shadow:inset 0 -2px #1652a0;background:#3279d6;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:-moz-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{-webkit-box-shadow:inset 0 2px #2561b9;-moz-box-shadow:inset 0 2px #2561b9;box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:-moz-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{height:422px}.uploadcare-dialog-tabs-panel-preview.uploadcare-dialog-tabs-panel_current ~ .uploadcare-panel-footer{display:none}.uploadcare-panel-footer{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-panel-footer .uploadcare-dialog-button-success{float:right}.uploadcare-panel-footer .uploadcare-dialog-button{float:left}.uploadcare-panel-footer .uploadcare-dialog-button-success,.uploadcare-panel-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-panel-footer .uploadcare-error{color:red}.uploadcare-panel-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;border:none;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;transition:transform .8s cubic-bezier(0.23,1,0.32,1);-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{transform:scale(-1,1);-webkit-transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-dpm-file-list{height:484px;overflow:auto;margin:0 -25px -22px 0}.uploadcare-dpm-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px;font-size:13px;line-height:1.2}.uploadcare-dpm-file-item>*{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-dpm-file-item:last-child{margin-bottom:0}.uploadcare-dpm-file-item:hover{background:#ececec}.uploadcare-dpm-file-item:hover .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-dpm-uploaded .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-error .uploadcare-dpm-file-error{display:table-cell}.uploadcare-dpm-error .uploadcare-dpm-file-size,.uploadcare-dpm-error .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-file-preview,.uploadcare-dpm-file-error:before{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-dpm-file-preview-wrap{width:45px;display:table-cell;text-align:center;line-height:0;padding-right:10px}.uploadcare-dpm-file-preview{margin:0}.uploadcare-dpm-file-name{width:100%;word-wrap:break-word}.uploadcare-dpm-file-size{width:3.5em;text-align:left}.uploadcare-dpm-file-progressbar-wrap{width:80px}.uploadcare-dpm-file-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-dpm-file-progressbar-value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-dpm-file-error{width:200px;display:none;color:#f5444b}.uploadcare-dpm-file-remove-wrap{width:20px;text-align:right;line-height:0}.uploadcare-dpm-file-remove{display:none;width:20px;height:20px;cursor:pointer}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-panel-footer__summary{display:none}.uploadcare-dialog-multiple .uploadcare-panel-footer__summary{display:block}.uploadcare-panel-footer-counter{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:760px){.uploadcare-dialog-opened{overflow:visible!important;position:static!important;width:auto!important;height:auto!important;min-width:0!important;background:#efefef!important}body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none!important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;padding:50px 0 0;border-radius:0;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-dpm-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-dpm-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-dpm-file-progressbar-wrap{width:40px}.uploadcare-responsive-panel .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-panel-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-panel-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-panel-footer-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple.uploadcare-dialog-panel{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;margin:0;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current,.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-panel-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:absolute;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:-50px;margin-top:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-color:white;background-position:top left;background-repeat:repeat;font-size:0;position:absolute}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px!important}.uploadcare-crop-widget .jcrop-hline{height:1px!important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-handle{background-color:#333;border:1px #eee solid;font-size:1px}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none}.uploadcare-crop-widget .jcrop-handle.ord-n{left:50%;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-s{bottom:0;left:50%;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-handle.ord-e{margin-right:-4px;margin-top:-4px;right:0;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-w{left:0;margin-left:-4px;margin-top:-4px;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-4px;margin-top:-4px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-4px;margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-n,.uploadcare-crop-widget .jcrop-dragbar.ord-s{height:7px;width:100%}.uploadcare-crop-widget .jcrop-dragbar.ord-e,.uploadcare-crop-widget .jcrop-dragbar.ord-w{height:100%;width:7px}.uploadcare-crop-widget .jcrop-dragbar.ord-n{margin-top:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-s{bottom:0;margin-bottom:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-e{margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-dragbar.ord-w{margin-left:-4px}.uploadcare-crop-widget .jcrop-light .jcrop-vline,.uploadcare-crop-widget .jcrop-light .jcrop-hline{background:#FFF;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-light .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#000;border-color:#FFF;border-radius:3px}.uploadcare-crop-widget .jcrop-dark .jcrop-vline,.uploadcare-crop-widget .jcrop-dark .jcrop-hline{background:#000;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-dark .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#FFF;border-color:#000;border-radius:3px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle:before{content:\'\';display:block;width:26px;height:26px;margin:-9px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0)}.uploadcare-crop-widget>img{filter:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'saturate\' values=\'.5\'/></filter></svg>#grayscale");-webkit-filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:11px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2}.uploadcare-widget :focus{outline:2px dotted #0094c0}.uploadcare-widget :active,.uploadcare-widget .uploadcare-mouse-focused:focus{outline:none}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block!important}.uploadcare-widget-status{display:none!important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none!important;margin-right:1ex;white-space:nowrap}.uploadcare-widget-file-name{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:-moz-initial;border-color:initial}.uploadcare-link:hover{color:#176e8f}.uploadcare-widget-button{display:none!important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default;white-space:nowrap}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:none;position:absolute;white-space:nowrap;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  utils.imagePath('tab-icons.png') ,'");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  utils.imagePath('tab-icons-active.png') ,'");background-size:50px}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-image:url(data:image/gif;base64,R0lGODlhCAAIAPABAAAAAKqqqiH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgABACwAAAAACAAIAAACDYQRGadrzVRMB9FZ5SwAIfkECQoAAQAsAAAAAAgACAAAAg8MDqGYaudeW9ChyOyltQAAIfkECQoAAQAsAAAAAAgACAAAAg9MgGCXm+rQYtC0WGl9oQAAIfkECQoAAQAsAAAAAAgACAAAAg+MgWCRernaYmjCWLF7qAAAIfkECQoAAQAsAAAAAAgACAAAAg2MAwmna81UTAfRWeUsACH5BAkKAAEALAAAAAAIAAgAAAIPRB6gmGrnXlvQocjspbUAACH5BAkKAAEALAAAAAAIAAgAAAIPBIJhl5vq0GLQtFhpfaAAACH5BAUKAAEALAAAAAAIAAgAAAIPhINhkHq52mJowlixe6gAADs=)}.uploadcare-dialog-file-sources:before{background-image:url("',  utils.imagePath('arrow.png') ,'")}.uploadcare-dpm-file-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-dpm-file-error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-dpm-file-preview{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-dialog-error-tab-illustration{background-image:url("',  utils.imagePath('error-default.png') ,'")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  utils.imagePath('error-image.png') ,'")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  utils.imagePath('tab-icons@2x.png') ,'")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  utils.imagePath('tab-icons-active@2x.png') ,'")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;-webkit-box-shadow:0 1px 2px rgba(0,0,0,0.35);-moz-box-shadow:0 1px 2px rgba(0,0,0,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0.05,0.7,0.25,1);transition:transform .25s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-moz-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-moz-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-moz-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal}.uploadcare-dialog-tabs{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:75px;height:616px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-dialog-tab{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none!important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;margin-left:75px;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:#ddd;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer a{color:#c2c2c2;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f8f8f8;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:-moz-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3786eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:-moz-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#3279d6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:-moz-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3177d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:-moz-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{-webkit-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);-moz-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{-webkit-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);-moz-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;-webkit-box-shadow:inset 0 -2px #1f66c1;-moz-box-shadow:inset 0 -2px #1f66c1;box-shadow:inset 0 -2px #1f66c1;background:#458dee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:-moz-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{-webkit-box-shadow:inset 0 -2px #1652a0;-moz-box-shadow:inset 0 -2px #1652a0;box-shadow:inset 0 -2px #1652a0;background:#3279d6;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:-moz-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{-webkit-box-shadow:inset 0 2px #2561b9;-moz-box-shadow:inset 0 2px #2561b9;box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:-moz-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{height:422px}.uploadcare-dialog-inner-footer{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-dialog-inner-footer .uploadcare-dialog-button-success{float:right}.uploadcare-dialog-inner-footer .uploadcare-dialog-button{float:left}.uploadcare-dialog-inner-footer .uploadcare-dialog-button-success,.uploadcare-dialog-inner-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-dialog-inner-footer .uploadcare-error{color:red}.uploadcare-dialog-inner-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;border:none;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;transition:transform .8s cubic-bezier(0.23,1,0.32,1);-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{transform:scale(-1,1);-webkit-transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-dpm-file-list{height:484px;overflow:auto;margin:0 -25px -22px 0}.uploadcare-dpm-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px;font-size:13px;line-height:1.2}.uploadcare-dpm-file-item>*{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-dpm-file-item:last-child{margin-bottom:0}.uploadcare-dpm-file-item:hover{background:#ececec}.uploadcare-dpm-file-item:hover .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-dpm-uploaded .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-error .uploadcare-dpm-file-error{display:table-cell}.uploadcare-dpm-error .uploadcare-dpm-file-size,.uploadcare-dpm-error .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-file-preview,.uploadcare-dpm-file-error:before{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-dpm-file-preview-wrap{width:45px;display:table-cell;text-align:center;line-height:0;padding-right:10px}.uploadcare-dpm-file-preview{margin:0}.uploadcare-dpm-file-name{width:100%;word-wrap:break-word}.uploadcare-dpm-file-size{width:3.5em;text-align:left}.uploadcare-dpm-file-progressbar-wrap{width:80px}.uploadcare-dpm-file-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-dpm-file-progressbar-value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-dpm-file-error{width:200px;display:none;color:#f5444b}.uploadcare-dpm-file-remove-wrap{width:20px;text-align:right;line-height:0}.uploadcare-dpm-file-remove{display:none;width:20px;height:20px;cursor:pointer}.uploadcare-dialog-source-base-wrap{height:616px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}.uploadcare-dialog-multiple .uploadcare-dialog-source-base-wrap{height:550px}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-dialog-source-base-footer{display:none}.uploadcare-dialog-multiple .uploadcare-dialog-source-base-footer{display:block}.uploadcare-dialog-source-base-counter{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:600px){.uploadcare-dialog-opened{overflow:visible!important;position:static!important;width:auto!important;height:auto!important;min-width:0!important;background:#efefef!important}body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none!important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;border-radius:0;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{padding:50px 0 0;margin:0;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-source-base-wrap{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-dpm-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-dpm-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-dpm-file-progressbar-wrap{width:40px}.uploadcare-responsive-panel .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  utils.imagePath('arrow.png') ,'");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-dialog-inner-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-inner-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-dialog-source-base-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-source-base-wrap{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:relative;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:-50px;margin-top:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-color:white;background-position:top left;background-repeat:repeat;font-size:0;position:absolute}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px!important}.uploadcare-crop-widget .jcrop-hline{height:1px!important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-handle{background-color:#333;border:1px #eee solid;font-size:1px}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none}.uploadcare-crop-widget .jcrop-handle.ord-n{left:50%;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-s{bottom:0;left:50%;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-handle.ord-e{margin-right:-4px;margin-top:-4px;right:0;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-w{left:0;margin-left:-4px;margin-top:-4px;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-4px;margin-top:-4px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-4px;margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-n,.uploadcare-crop-widget .jcrop-dragbar.ord-s{height:7px;width:100%}.uploadcare-crop-widget .jcrop-dragbar.ord-e,.uploadcare-crop-widget .jcrop-dragbar.ord-w{height:100%;width:7px}.uploadcare-crop-widget .jcrop-dragbar.ord-n{margin-top:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-s{bottom:0;margin-bottom:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-e{margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-dragbar.ord-w{margin-left:-4px}.uploadcare-crop-widget .jcrop-light .jcrop-vline,.uploadcare-crop-widget .jcrop-light .jcrop-hline{background:#FFF;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-light .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#000;border-color:#FFF;border-radius:3px}.uploadcare-crop-widget .jcrop-dark .jcrop-vline,.uploadcare-crop-widget .jcrop-dark .jcrop-hline{background:#000;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-dark .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#FFF;border-color:#000;border-radius:3px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle:before{content:\'\';display:block;width:26px;height:26px;margin:-9px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0)}.uploadcare-crop-widget>img{filter:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'saturate\' values=\'.5\'/></filter></svg>#grayscale");-webkit-filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:11px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2;white-space:nowrap}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block!important}.uploadcare-widget-status{display:none!important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none!important;margin-right:1ex}.uploadcare-widget-file-name{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:-moz-initial;border-color:initial}.uploadcare-link:hover,.uploadcare-link:active{color:#176e8f}.uploadcare-widget-button{display:none!important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:none;position:absolute;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-camera"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-camera-holder"><!--\n  --><video class="uploadcare-dialog-camera-video uploadcare-dialog-camera--mirrored"></video><!--\n  --><div class="uploadcare-dialog-camera-message">\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-camera-retry uploadcare-dialog-button"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.tabs.camera.retry') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n  </div><!--\n--></div>\n<div class="uploadcare-dialog-camera-controls">\n  <div class="uploadcare-dialog-camera-mirror uploadcare-dialog-button"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.mirror') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-camera-capture uploadcare-dialog-button-success"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.capture') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-camera"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-camera-holder"><!--\n  --><video class="uploadcare-dialog-camera-video uploadcare-dialog-camera--mirrored"></video><!--\n  --><div class="uploadcare-dialog-camera-message">\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-camera-retry uploadcare-dialog-button">\n      ',(''+ t('dialog.tabs.camera.retry') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n  </div><!--\n--></div>\n<div class="uploadcare-dialog-camera-controls">\n  <div class="uploadcare-dialog-camera-mirror uploadcare-dialog-button">\n    ',(''+ t('dialog.tabs.camera.mirror') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-camera-capture uploadcare-dialog-button-success">\n    ',(''+ t('dialog.tabs.camera.capture') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n</div>\n');}return __p.join('');};
-}).call(this);
-(function() {
-  this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area" role="uploadcare-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick" role="uploadcare-dialog-browse-file">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  ');  if (tabs.length > 1) { ; __p.push('\n    <div class="uploadcare-dialog-file-or">\n      ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-file-sources">\n      ');  for (var i = 0; i < tabs.length; i++) {
+  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  ');  if (tabs.length > 1) { ; __p.push('\n    <div class="uploadcare-dialog-file-or">\n      ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-file-sources">\n      ');  for (var i = 0; i < tabs.length; i++) {
           var tab = tabs[i];
-          if (tab == 'file') continue; ; __p.push('\n        <div\n          class="uploadcare-dialog-file-source"\n          role="uploadcare-dialog-switch-tab"\n          data-tab="',(''+ tab ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n        >',(''+ t('dialog.tabs.names.' + tab) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n      ');  } ; __p.push('\n    </div>\n  ');  } ; __p.push('\n</div>\n');}return __p.join('');};
+          if (tab == 'file') continue; ; __p.push('\n        <div class="uploadcare-dialog-file-source"\n             data-tab="',(''+ tab ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n                >',(''+ t('dialog.tabs.names.' + tab) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n      ');  } ; __p.push('\n    </div>\n  ');  } ; __p.push('\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -4853,35 +4847,33 @@ this.Pusher = Pusher;
         t('dialog.tabs.preview.error.'+error+'.title') || t('dialog.tabs.preview.error.default.title')
       ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-normal-text">',(''+ 
         t('dialog.tabs.preview.error.'+error+'.text') || t('dialog.tabs.preview.error.default.text') 
-      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-button-success" \n      role="uploadcare-dialog-preview-back">',(''+ 
-          t('dialog.tabs.preview.error.'+error+'.back') || t('dialog.tabs.preview.error.default.back') 
-      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  </div>\n</div>\n');}return __p.join('');};
+      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-back"\n         tabindex="0" role="button"\n            >',(''+ t('dialog.tabs.preview.error.'+error+'.back') || t('dialog.tabs.preview.error.default.back') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-preview-image"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding" role="uploadcare-dialog-preview-root">\n  <div class="uploadcare-dialog-title" role="uploadcare-dialog-preview-title">\n    ',(''+ t('dialog.tabs.preview.image.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-preview-image-wrap"><!--\n      1162x684 is 1.5 size of conteiner\n    --><img\n      src="',(''+ file.originalUrl ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'-/preview/1162x684/-/setfill/efefef/-/format/jpeg/-/progressive/yes/"\n      title="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      alt="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      role="uploadcare-dialog-preview-image"\n      class="uploadcare-dialog-preview-image"\n    />\n  </div>\n\n  <div class="uploadcare-crop-sizes" role="uploadcare-dialog-preview-crop-sizes">\n    <div class="uploadcare-crop-size" data-caption="free"><div></div></div>\n  </div>\n</div>\n\n<div class="uploadcare-dialog-inner-footer">\n  <div \n    class="uploadcare-dialog-button" \n    role="uploadcare-dialog-preview-back">',(''+ t('dialog.tabs.preview.image.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div \n    class="uploadcare-dialog-button-success"\n    role="uploadcare-dialog-preview-done">',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-preview-image"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding uploadcare-dialog-preview-root">\n  <div class="uploadcare-dialog-title uploadcare-dialog-preview-title">\n    ',(''+ t('dialog.tabs.preview.image.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-preview-image-wrap"><!--\n      1162x684 is 1.5 size of conteiner\n    --><img\n      src="',(''+ file.originalUrl ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'-/preview/1162x684/-/setfill/efefef/-/format/jpeg/-/progressive/yes/"\n      title="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      alt="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      class="uploadcare-dialog-preview-image"\n    />\n  </div>\n\n  <div class="uploadcare-crop-sizes uploadcare-dialog-preview-crop-sizes">\n    <div class="uploadcare-crop-size" data-caption="free"><div></div></div>\n  </div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.image.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div role="uploadcare-dpm-file-item" class="uploadcare-dpm-file-item">\n  <div class="uploadcare-dpm-file-preview-wrap" role="uploadcare-dpm-file-preview-wrap">\n    <div class="uploadcare-dpm-file-preview"></div>\n  </div>\n  <div role="uploadcare-dpm-file-name" class="uploadcare-dpm-file-name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dpm-file-progressbar-wrap">\n    <div class="uploadcare-dpm-file-progressbar">\n      <div\n        role="uploadcare-dpm-file-progressbar-value"\n        class="uploadcare-dpm-file-progressbar-value"\n      ></div>\n    </div>\n  </div>\n  <div role="uploadcare-dpm-file-size" class="uploadcare-dpm-file-size"></div>\n  <div role="uploadcare-dpm-file-error" class="uploadcare-dpm-file-error"></div>\n  <div class="uploadcare-dpm-file-remove-wrap">\n    <div role="uploadcare-dpm-file-remove" class="uploadcare-dpm-file-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dpm-file-item">\n  <div class="uploadcare-dpm-file-preview-wrap">\n    <div class="uploadcare-dpm-file-preview"></div>\n  </div>\n  <div class="uploadcare-dpm-file-name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dpm-file-progressbar-wrap">\n    <div class="uploadcare-dpm-file-progressbar">\n      <div class="uploadcare-dpm-file-progressbar-value"></div>\n    </div>\n  </div>\n  <div class="uploadcare-dpm-file-size"></div>\n  <div class="uploadcare-dpm-file-error"></div>\n  <div class="uploadcare-dpm-file-remove-wrap">\n    <div class="uploadcare-dpm-file-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile" role="uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile" role="uploadcare-dpm-mobile-title"></div>\n\n  <div role="uploadcare-dpm-file-list" class="uploadcare-dpm-file-list"></div>\n</div>\n\n<div class="uploadcare-dialog-inner-footer">\n  <div \n    class="uploadcare-dialog-button" \n    role="uploadcare-dialog-preview-back">',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div \n    class="uploadcare-dialog-button-success" \n    role="uploadcare-dialog-preview-done">',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-inner-footer-text" role="uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile uploadcare-dpm-mobile-title"></div>\n\n  <div class="uploadcare-dpm-file-list"></div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-panel-footer-text uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
   this.JST["uploadcare/templates/tab-preview-regular"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.regular.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label">\n    ',(''+ (file.name || t('dialog.tabs.preview.unknownName')) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'',(''+
-        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n    ',(''+ t('dialog.tabs.preview.regular.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'<br/>\n    ',(''+ t('dialog.tabs.preview.regular.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div\n    class="uploadcare-dialog-button-success"\n    role="uploadcare-dialog-preview-done">',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div\n    class="uploadcare-dialog-button"\n    role="uploadcare-dialog-preview-back">',(''+ t('dialog.tabs.preview.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
+        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n    ',(''+ t('dialog.tabs.preview.regular.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'<br/>\n    ',(''+ t('dialog.tabs.preview.regular.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
   this.JST["uploadcare/templates/tab-preview-unknown"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.unknown.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label">\n    ',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'',(''+
-        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div\n    class="uploadcare-dialog-button-success"\n    role="uploadcare-dialog-preview-done">',(''+ t('dialog.tabs.preview.unknown.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
+        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.unknown.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-url"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.url.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n<div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n  <div>',(''+ t('dialog.tabs.url.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div>',(''+ t('dialog.tabs.url.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n<form role="uploadcare-dialog-url-form">\n  <input type="text" class="uploadcare-dialog-input" role="uploadcare-dialog-url-input" placeholder="',(''+ t('dialog.tabs.url.input') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'">\n  <button class="uploadcare-dialog-button" type="submit" role="uploadcare-dialog-url-submit">',(''+ t('dialog.tabs.url.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</button>\n</form>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-url"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.url.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n<div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n  <div>',(''+ t('dialog.tabs.url.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div>',(''+ t('dialog.tabs.url.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n<form class="uploadcare-dialog-url-form">\n  <input type="text" class="uploadcare-dialog-input" placeholder="',(''+ t('dialog.tabs.url.input') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'">\n  <button class="uploadcare-dialog-button uploadcare-dialog-url-submit" type="submit">',(''+ t('dialog.tabs.url.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</button>\n</form>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -4889,15 +4881,15 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/widget-button"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div\n  class="uploadcare-widget-button uploadcare-widget-button-',  name ,'"\n>',(''+ caption ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/widget-button"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div tabindex="0" role="button"\n     class="uploadcare-widget-button uploadcare-widget-button-',  name ,'"\n>',(''+ caption ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-file-name uploadcare-link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>,\n',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n');}return __p.join('');};
+  this.JST["uploadcare/templates/widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-file-name uploadcare-link"\n     tabindex="0" role="link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>,\n',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/widget"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget">\n  <div class="uploadcare-widget-dragndrop-area" role="uploadcare-drop-area">\n    ',(''+ t('draghere') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div><div role="uploadcare-widget-status" class="uploadcare-widget-status">\n  </div><div role="uploadcare-widget-text" class="uploadcare-widget-text">\n</div></div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/widget"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget">\n  <div class="uploadcare-widget-dragndrop-area">\n    ',(''+ t('draghere') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div><div class="uploadcare-widget-status">\n  </div><div class="uploadcare-widget-text">\n</div></div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   var $, locale, namespace, utils;
@@ -4930,9 +4922,11 @@ this.Pusher = Pusher;
 
   tpl = uploadcare.templates.tpl;
 
-  uploadcare.settings.waitForSettings(null, function() {
+  uploadcare.settings.waitForSettings.add(function(settings) {
     var css, style;
-    css = tpl('styles');
+    css = tpl('styles', {
+      settings: settings
+    });
     style = document.createElement('style');
     style.setAttribute('type', 'text/css');
     if (style.styleSheet != null) {
@@ -6850,7 +6844,7 @@ this.Pusher = Pusher;
 
       ObjectFile.prototype.MP_PART_SIZE = 5 * 1024 * 1024;
 
-      ObjectFile.prototype.MP_MIN_LAST_PART_SIZE = 1 * 1024 * 1024;
+      ObjectFile.prototype.MP_MIN_LAST_PART_SIZE = 1024 * 1024;
 
       ObjectFile.prototype.MP_CONCURRENCY = 4;
 
@@ -7295,7 +7289,7 @@ this.Pusher = Pusher;
             }
           });
         };
-        return this.interval = setTimeout(bind, 0);
+        return this.interval = utils.defer(bind);
       };
 
       PollWatcher.prototype.stopWatching = function() {
@@ -7595,7 +7589,9 @@ this.Pusher = Pusher;
           pub_key: settings.publicKey,
           group_id: id[0]
         }).fail(df.reject).done(function(data) {
-          return df.resolve(new uploadcare.files.SavedFileGroup(data, settings).api());
+          var group;
+          group = new uploadcare.files.SavedFileGroup(data, settings);
+          return df.resolve(group.api());
         });
       } else {
         df.reject();
@@ -7631,37 +7627,25 @@ this.Pusher = Pusher;
       return utils.wrapToPromise(value);
     };
     return utils.isFileGroupsEqual = function(group1, group2) {
-      var file, files1, files2, i, mismatches;
+      var file, files1, files2, i, _i, _len;
       if (group1 === group2) {
         return true;
-      } else {
-        if (utils.isFileGroup(group1) && utils.isFileGroup(group2)) {
-          files1 = group1.files();
-          files2 = group2.files();
-          if (files1.length !== files2.length) {
-            return false;
-          } else {
-            mismatches = (function() {
-              var _i, _len, _results;
-              _results = [];
-              for (i = _i = 0, _len = files1.length; _i < _len; i = ++_i) {
-                file = files1[i];
-                if (file !== files2[i]) {
-                  _results.push(1);
-                }
-              }
-              return _results;
-            })();
-            if (mismatches.length) {
-              return false;
-            } else {
-              return true;
-            }
-          }
-        } else {
+      }
+      if (!(utils.isFileGroup(group1) && utils.isFileGroup(group2))) {
+        return false;
+      }
+      files1 = group1.files();
+      files2 = group2.files();
+      if (files1.length !== files2.length) {
+        return false;
+      }
+      for (i = _i = 0, _len = files1.length; _i < _len; i = ++_i) {
+        file = files1[i];
+        if (file !== files2[i]) {
           return false;
         }
       }
+      return true;
     };
   });
 
@@ -7861,7 +7845,7 @@ this.Pusher = Pusher;
         TextRenderer.__super__.constructor.apply(this, arguments);
         this.element.addClass('uploadcare-widget-circle--text');
         this.element.html(tpl('circle-text'));
-        this.text = this.element.find('@uploadcare-circle-text');
+        this.text = this.element.find('.uploadcare-widget-circle-text');
       }
 
       TextRenderer.prototype.setValue = function(val) {
@@ -7932,8 +7916,8 @@ this.Pusher = Pusher;
       CanvasRenderer.prototype.__stopAnimation = function() {
         if (this.__animIntervalId) {
           clearInterval(this.__animIntervalId);
-          return this.__animIntervalId = null;
         }
+        return this.__animIntervalId = null;
       };
 
       CanvasRenderer.prototype.__setValue = function(val) {
@@ -7971,8 +7955,8 @@ this.Pusher = Pusher;
         this.element = element;
         this.content = $(tpl('widget'));
         this.element.after(this.content);
-        this.circle = new progress.Circle(this.content.find('@uploadcare-widget-status'));
-        this.statusText = this.content.find('@uploadcare-widget-text');
+        this.circle = new progress.Circle(this.content.find('.uploadcare-widget-status'));
+        this.statusText = this.content.find('.uploadcare-widget-text');
       }
 
       Template.prototype.addButton = function(name, caption) {
@@ -8039,74 +8023,24 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace, t, tpl, _ref, _ref1;
+  var $, dragdrop, namespace, tpl, utils, _ref;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl), (_ref1 = uploadcare.locale, t = _ref1.t);
+  namespace = uploadcare.namespace, utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.BaseSourceTab = (function() {
-      var CLASS_PREFIX, ROLE_PREFIX;
-
-      CLASS_PREFIX = 'uploadcare-dialog-source-base-';
-
-      ROLE_PREFIX = '@' + CLASS_PREFIX;
-
-      function BaseSourceTab(container, tabButton, dialogApi, settings, name) {
-        var notDisabled, updateFooter,
-          _this = this;
+    return ns.FileTab = (function() {
+      function FileTab(container, tabButton, dialogApi, settings, name) {
+        var _this = this;
         this.container = container;
         this.tabButton = tabButton;
         this.dialogApi = dialogApi;
         this.settings = settings;
         this.name = name;
-        this.container.append(tpl('source-tab-base'));
-        this.wrap = this.container.find(ROLE_PREFIX + 'wrap');
-        notDisabled = ':not(.uploadcare-disabled-el)';
-        this.container.on('click', ROLE_PREFIX + 'show-files' + notDisabled, function() {
-          return _this.dialogApi.switchTab('preview');
-        });
-        this.container.on('click', ROLE_PREFIX + 'done' + notDisabled, this.dialogApi.resolve);
-        updateFooter = function() {
-          var files, footer, tooFewFiles, tooManyFiles;
-          files = _this.dialogApi.fileColl.length();
-          tooManyFiles = _this.settings.multipleMax !== 0 && files > _this.settings.multipleMax;
-          tooFewFiles = files < _this.settings.multipleMin;
-          _this.container.find(ROLE_PREFIX + 'done').toggleClass('uploadcare-disabled-el', tooManyFiles || tooFewFiles);
-          _this.container.find(ROLE_PREFIX + 'show-files').toggleClass('uploadcare-disabled-el', files === 0);
-          footer = tooManyFiles ? t('dialog.tabs.preview.multiple.tooManyFiles').replace('%max%', _this.settings.multipleMax) : files && tooFewFiles ? t('dialog.tabs.preview.multiple.tooFewFiles').replace('%min%', _this.settings.multipleMin) : t('dialog.tabs.preview.multiple.title');
-          _this.container.find(ROLE_PREFIX + 'footer-text').toggleClass('uploadcare-error', tooManyFiles).text(footer.replace('%files%', t('file', files)));
-          return _this.container.find("." + CLASS_PREFIX + "counter").toggleClass('uploadcare-error', tooManyFiles).text(files ? "(" + files + ")" : "");
-        };
-        updateFooter();
-        this.dialogApi.fileColl.onAdd.add(updateFooter);
-        this.dialogApi.fileColl.onRemove.add(updateFooter);
-      }
-
-      return BaseSourceTab;
-
-    })();
-  });
-
-}).call(this);
-(function() {
-  var $, dragdrop, namespace, tpl, utils, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  namespace = uploadcare.namespace, utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
-
-  namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.FileTab = (function(_super) {
-      __extends(FileTab, _super);
-
-      function FileTab() {
-        var _this = this;
-        FileTab.__super__.constructor.apply(this, arguments);
-        this.wrap.append(tpl('tab-file', {
+        this.container.append(tpl('tab-file', {
           tabs: this.settings.tabs
         }));
-        this.wrap.addClass('uploadcare-dialog-padding');
-        this.wrap.on('click', '@uploadcare-dialog-switch-tab', function(e) {
+        this.container.addClass('uploadcare-dialog-padding');
+        this.container.on('click', '.uploadcare-dialog-file-source', function(e) {
           return _this.dialogApi.switchTab($(e.target).data('tab'));
         });
         this.__setupFileButton();
@@ -8116,20 +8050,20 @@ this.Pusher = Pusher;
       FileTab.prototype.__initDragNDrop = function() {
         var dropArea,
           _this = this;
-        dropArea = this.wrap.find('@uploadcare-drop-area');
+        dropArea = this.container.find('.uploadcare-dialog-file-drop-area');
         if (utils.abilities.fileDragAndDrop) {
           dragdrop.receiveDrop(dropArea, function(type, data) {
             _this.dialogApi.addFiles(type, data);
             return _this.dialogApi.switchTab('preview');
           });
-          return this.wrap.addClass("uploadcare-draganddrop");
+          return this.container.addClass("uploadcare-draganddrop");
         }
       };
 
       FileTab.prototype.__setupFileButton = function() {
         var fileButton,
           _this = this;
-        fileButton = this.wrap.find('@uploadcare-dialog-browse-file');
+        fileButton = this.container.find('.uploadcare-dialog-big-button');
         return utils.fileInput(fileButton, this.settings, function(input) {
           if (utils.abilities.sendFileAPI) {
             _this.dialogApi.addFiles('object', input.files);
@@ -8142,24 +8076,20 @@ this.Pusher = Pusher;
 
       return FileTab;
 
-    })(ns.BaseSourceTab);
+    })();
   });
 
 }).call(this);
 (function() {
-  var $, namespace, t, tpl, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var $, namespace, t, tpl, _ref;
 
   namespace = uploadcare.namespace, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
   t = uploadcare.locale.t;
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.UrlTab = (function(_super) {
+    return ns.UrlTab = (function() {
       var fixUrl, urlRegexp;
-
-      __extends(UrlTab, _super);
 
       urlRegexp = /^[a-z][a-z0-9+\-.]*:?\/\//;
 
@@ -8172,18 +8102,22 @@ this.Pusher = Pusher;
         }
       };
 
-      function UrlTab() {
+      function UrlTab(container, tabButton, dialogApi, settings, name) {
         var button, input,
           _this = this;
-        UrlTab.__super__.constructor.apply(this, arguments);
-        this.wrap.append(tpl('tab-url'));
-        this.wrap.addClass('uploadcare-dialog-padding');
-        input = this.wrap.find('@uploadcare-dialog-url-input');
+        this.container = container;
+        this.tabButton = tabButton;
+        this.dialogApi = dialogApi;
+        this.settings = settings;
+        this.name = name;
+        this.container.append(tpl('tab-url'));
+        this.container.addClass('uploadcare-dialog-padding');
+        input = this.container.find('.uploadcare-dialog-input');
         input.on('change keyup input', function() {
           return button.prop('disabled', !$.trim(this.value));
         });
-        button = this.wrap.find('@uploadcare-dialog-url-submit').prop('disabled', true);
-        this.wrap.find('@uploadcare-dialog-url-form').on('submit', function() {
+        button = this.container.find('.uploadcare-dialog-url-submit').prop('disabled', true);
+        this.container.find('.uploadcare-dialog-url-form').on('submit', function() {
           var url;
           if (url = fixUrl(input.val())) {
             _this.dialogApi.addFiles('url', [url]);
@@ -8195,41 +8129,40 @@ this.Pusher = Pusher;
 
       return UrlTab;
 
-    })(ns.BaseSourceTab);
+    })();
   });
 
 }).call(this);
 (function() {
   var $, namespace, tpl, utils, _ref,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.CameraTab = (function(_super) {
-      __extends(CameraTab, _super);
-
-      function CameraTab() {
+    return ns.CameraTab = (function() {
+      function CameraTab(container, tabButton, dialogApi, settings, name) {
+        var _this = this;
+        this.container = container;
+        this.tabButton = tabButton;
+        this.dialogApi = dialogApi;
+        this.settings = settings;
+        this.name = name;
         this.__capture = __bind(this.__capture, this);
         this.__mirror = __bind(this.__mirror, this);
         this.__requestCamera = __bind(this.__requestCamera, this);
-        var _this = this;
-        CameraTab.__super__.constructor.apply(this, arguments);
         if (!this.__checkCompatibility()) {
-          this.wrap.hide();
-          this.tabButton.hide();
+          this.dialogApi.hideTab(this.name);
           return;
         }
         this.__loaded = false;
         this.mirrored = true;
-        this.wrap.append(tpl('tab-camera'));
-        this.wrap.addClass('uploadcare-dialog-padding uploadcare-dialog-camera-requested');
-        this.wrap.find('.uploadcare-dialog-camera-capture').on('click', this.__capture);
-        this.wrap.find('.uploadcare-dialog-camera-mirror').on('click', this.__mirror);
-        this.wrap.find('.uploadcare-dialog-camera-retry').on('click', this.__requestCamera);
-        this.video = this.wrap.find('video');
+        this.container.append(tpl('tab-camera'));
+        this.container.addClass('uploadcare-dialog-padding uploadcare-dialog-camera-requested');
+        this.container.find('.uploadcare-dialog-camera-capture').on('click', this.__capture);
+        this.container.find('.uploadcare-dialog-camera-mirror').on('click', this.__mirror);
+        this.container.find('.uploadcare-dialog-camera-retry').on('click', this.__requestCamera);
+        this.video = this.container.find('video');
         this.video.on('loadeddata', function() {
           return this.play();
         });
@@ -8273,7 +8206,7 @@ this.Pusher = Pusher;
             ]
           }
         }, function(stream) {
-          _this.wrap.removeClass('uploadcare-dialog-camera-requested').removeClass('uploadcare-dialog-camera-denied').addClass('uploadcare-dialog-camera-ready');
+          _this.container.removeClass('uploadcare-dialog-camera-requested').removeClass('uploadcare-dialog-camera-denied').addClass('uploadcare-dialog-camera-ready');
           _this.__stream = stream;
           if (_this.URL) {
             _this.video.prop('src', _this.URL.createObjectURL(stream));
@@ -8283,9 +8216,9 @@ this.Pusher = Pusher;
           return _this.video[0].play();
         }, function(error) {
           if (error === "NO_DEVICES_FOUND" || error.name === 'DevicesNotFoundError') {
-            _this.wrap.addClass('uploadcare-dialog-camera-not-founded');
+            _this.container.addClass('uploadcare-dialog-camera-not-founded');
           } else {
-            _this.wrap.addClass('uploadcare-dialog-camera-denied');
+            _this.container.addClass('uploadcare-dialog-camera-denied');
           }
           return _this.__loaded = false;
         });
@@ -8322,27 +8255,27 @@ this.Pusher = Pusher;
 
       return CameraTab;
 
-    })(ns.BaseSourceTab);
+    })();
   });
 
 }).call(this);
 (function() {
   var $, files, locale, namespace, t, tabsCss, utils, _ref,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   namespace = uploadcare.namespace, locale = uploadcare.locale, utils = uploadcare.utils, tabsCss = uploadcare.tabsCss, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t), files = uploadcare.files;
 
   namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.RemoteTab = (function(_super) {
-      __extends(RemoteTab, _super);
-
-      function RemoteTab() {
-        this.__createIframe = __bind(this.__createIframe, this);
+    return ns.RemoteTab = (function() {
+      function RemoteTab(container, tabButton, dialogApi, settings, name) {
         var _this = this;
-        RemoteTab.__super__.constructor.apply(this, arguments);
-        this.wrap.addClass('uploadcare-dialog-remote-iframe-wrap');
+        this.container = container;
+        this.tabButton = tabButton;
+        this.dialogApi = dialogApi;
+        this.settings = settings;
+        this.name = name;
+        this.__createIframe = __bind(this.__createIframe, this);
+        this.container.addClass('uploadcare-dialog-remote-iframe-wrap');
         this.dialogApi.progress(function(name) {
           if (name === _this.name) {
             _this.__createIframe();
@@ -8379,7 +8312,7 @@ this.Pusher = Pusher;
           marginwidth: 0,
           frameborder: 0,
           allowTransparency: "true"
-        }).addClass('uploadcare-dialog-remote-iframe').appendTo(this.wrap).on('load', function() {
+        }).addClass('uploadcare-dialog-remote-iframe').appendTo(this.container).on('load', function() {
           var style, url, _i, _j, _len, _len1, _ref1, _ref2;
           _this.iframe.css('opacity', '1');
           _ref1 = tabsCss.urls;
@@ -8448,7 +8381,7 @@ this.Pusher = Pusher;
 
       return RemoteTab;
 
-    })(ns.BaseSourceTab);
+    })();
   });
 
 }).call(this);
@@ -8461,7 +8394,7 @@ this.Pusher = Pusher;
     return ns.BasePreviewTab = (function() {
       var PREFIX;
 
-      PREFIX = '@uploadcare-dialog-preview-';
+      PREFIX = '.uploadcare-dialog-preview-';
 
       function BasePreviewTab(container, tabButton, dialogApi, settings, name) {
         var notDisabled,
@@ -8563,7 +8496,7 @@ this.Pusher = Pusher;
       };
 
       PreviewTab.prototype.element = function(name) {
-        return this.container.find('@uploadcare-dialog-preview-' + name);
+        return this.container.find('.uploadcare-dialog-preview-' + name);
       };
 
       PreviewTab.prototype.__setState = function(state, data) {
@@ -8595,14 +8528,15 @@ this.Pusher = Pusher;
           _this.widget = new CropWidget(img, imgSize, _this.settings.crop[0]);
           _this.widget.setSelectionFromModifiers(info.cdnUrlModifiers);
           return done.click(function() {
-            var opts;
+            var newFile, opts;
             opts = _this.widget.getSelectionWithModifiers();
-            return _this.dialogApi.fileColl.replace(_this.file, _this.file.then(function(info) {
+            newFile = _this.file.then(function(info) {
               info.cdnUrlModifiers = opts.modifiers;
               info.cdnUrl = "" + info.originalUrl + (opts.modifiers || '');
               info.crop = opts.crop;
               return info;
-            }));
+            });
+            return _this.dialogApi.fileColl.replace(_this.file, newFile);
           });
         };
         if (this.settings.crop) {
@@ -8670,13 +8604,11 @@ this.Pusher = Pusher;
 
   namespace('uploadcare.widget.tabs', function(ns) {
     return ns.PreviewTabMultiple = (function(_super) {
-      var CLASS_PREFIX, ROLE_PREFIX;
+      var CLASS_PREFIX;
 
       __extends(PreviewTabMultiple, _super);
 
       CLASS_PREFIX = 'uploadcare-dpm-';
-
-      ROLE_PREFIX = '@' + CLASS_PREFIX;
 
       function PreviewTabMultiple() {
         this.__fileRemoved = __bind(this.__fileRemoved, this);
@@ -8693,7 +8625,7 @@ this.Pusher = Pusher;
         this.titleEl = this.__find('title');
         this.mobileTitleEl = this.__find('mobile-title');
         this.footerTextEl = this.__find('footer-text');
-        this.doneBtnEl = this.container.find('@uploadcare-dialog-preview-done');
+        this.doneBtnEl = this.container.find('.uploadcare-dialog-preview-done');
         $.each(this.dialogApi.fileColl.get(), function(i, file) {
           _this.__fileAdded(file);
           return file.then(function(info) {
@@ -8705,8 +8637,8 @@ this.Pusher = Pusher;
           });
         });
         this.__updateContainerView();
-        this.dialogApi.fileColl.onAdd.add([this.__fileAdded, this.__updateContainerView]);
-        this.dialogApi.fileColl.onRemove.add([this.__fileRemoved, this.__updateContainerView]);
+        this.dialogApi.fileColl.onAdd.add(this.__fileAdded, this.__updateContainerView);
+        this.dialogApi.fileColl.onRemove.add(this.__fileRemoved, this.__updateContainerView);
         this.dialogApi.fileColl.onAnyDone.add(this.__fileDone);
         this.dialogApi.fileColl.onAnyFail.add(this.__fileFailed);
         this.dialogApi.fileColl.onAnyProgress.add(this.__fileProgress);
@@ -8739,7 +8671,7 @@ this.Pusher = Pusher;
         if (context == null) {
           context = this.container;
         }
-        return $(ROLE_PREFIX + s, context);
+        return $('.' + CLASS_PREFIX + s, context);
       };
 
       PreviewTabMultiple.prototype.__updateContainerView = function() {
@@ -8774,9 +8706,7 @@ this.Pusher = Pusher;
         this.__find('file-progressbar-value', fileEl).css('width', '100%');
         this.__updateFileInfo(fileEl, info);
         if (info.isImage) {
-          return this.__find('file-preview-wrap', fileEl).html($('<img>').attr({
-            src: "" + info.originalUrl + "-/scale_crop/90x90/center/"
-          }).css({
+          return this.__find('file-preview-wrap', fileEl).html($('<img>').attr('src', "" + info.originalUrl + "-/scale_crop/90x90/center/").css({
             width: 'auto',
             height: 45
           }));
@@ -8804,7 +8734,7 @@ this.Pusher = Pusher;
 
       PreviewTabMultiple.prototype.__createFileEl = function(file) {
         var _this = this;
-        return this.__fileTpl.clone().appendTo(this.fileListEl).on('click', ROLE_PREFIX + 'file-remove', function() {
+        return this.__fileTpl.clone().appendTo(this.fileListEl).on('click', '.' + CLASS_PREFIX + 'file-remove', function() {
           return _this.dialogApi.fileColl.remove(file);
         });
       };
@@ -8812,24 +8742,6 @@ this.Pusher = Pusher;
       return PreviewTabMultiple;
 
     })(ns.BasePreviewTab);
-  });
-
-}).call(this);
-(function() {
-  var namespace, tpl, _ref;
-
-  namespace = uploadcare.namespace, (_ref = uploadcare.templates, tpl = _ref.tpl);
-
-  namespace('uploadcare.widget.tabs', function(ns) {
-    return ns.StaticTab = (function() {
-      function StaticTab(container) {
-        this.container = container;
-        this.container.append(tpl("tab-" + this.name));
-      }
-
-      return StaticTab;
-
-    })();
   });
 
 }).call(this);
@@ -8937,7 +8849,9 @@ this.Pusher = Pusher;
     ns.registerTab('box', tabs.RemoteTab);
     ns.registerTab('skydrive', tabs.RemoteTab);
     ns.registerTab('huddle', tabs.RemoteTab);
-    ns.registerTab('welcome', tabs.StaticTab);
+    ns.registerTab('empty-pubkey', function(tabPanel) {
+      return tabPanel.append(tpl("tab-welcome"));
+    });
     ns.registerTab('preview', function(tabPanel, tabButton, dialogApi, settings, name) {
       var tabCls;
       tabCls = settings.multiple ? tabs.PreviewTabMultiple : tabs.PreviewTab;
@@ -8948,8 +8862,11 @@ this.Pusher = Pusher;
         var sel,
           _this = this;
         this.settings = settings;
+        this.hideTab = __bind(this.hideTab, this);
+        this.showTab = __bind(this.showTab, this);
         this.switchTab = __bind(this.switchTab, this);
         this.__closePanel = __bind(this.__closePanel, this);
+        this.__updateFooter = __bind(this.__updateFooter, this);
         this.__reject = __bind(this.__reject, this);
         this.__resolve = __bind(this.__resolve, this);
         this.addFiles = __bind(this.addFiles, this);
@@ -8966,11 +8883,12 @@ this.Pusher = Pusher;
         this.files = new utils.CollectionOfPromises(files);
         this.files.onRemove.add(function() {
           if (_this.files.length() === 0) {
-            return _this.__hideTab('preview');
+            return _this.hideTab('preview');
           }
         });
         this.tabs = {};
         if (this.settings.publicKey) {
+          this.__prepareFooter();
           this.__prepareTabs(tab);
         } else {
           this.__welcome();
@@ -8984,7 +8902,9 @@ this.Pusher = Pusher;
             resolve: this.__resolve,
             fileColl: this.files,
             addFiles: this.addFiles,
-            switchTab: this.switchTab
+            switchTab: this.switchTab,
+            hideTab: this.hideTab,
+            showTab: this.showTab
           });
         }
         return this.promise;
@@ -9003,7 +8923,7 @@ this.Pusher = Pusher;
           this.files.add(file);
         }
         if (this.settings.previewStep) {
-          this.__showTab('preview');
+          this.showTab('preview');
           if (!this.settings.multiple) {
             return this.switchTab('preview');
           }
@@ -9029,12 +8949,38 @@ this.Pusher = Pusher;
           this.addTab(tabName);
         }
         if (this.files.length()) {
-          this.__showTab('preview');
+          this.showTab('preview');
           return this.switchTab('preview');
         } else {
-          this.__hideTab('preview');
+          this.hideTab('preview');
           return this.switchTab(tab || this.settings.tabs[0]);
         }
+      };
+
+      Panel.prototype.__prepareFooter = function() {
+        var notDisabled,
+          _this = this;
+        this.footer = this.panel.find('.uploadcare-panel-footer');
+        notDisabled = ':not(.uploadcare-disabled-el)';
+        this.footer.on('click', '.uploadcare-dialog-button' + notDisabled, function() {
+          return _this.switchTab('preview');
+        });
+        this.footer.on('click', '.uploadcare-dialog-button-success' + notDisabled, this.__resolve);
+        this.__updateFooter();
+        this.files.onAdd.add(this.__updateFooter);
+        return this.files.onRemove.add(this.__updateFooter);
+      };
+
+      Panel.prototype.__updateFooter = function() {
+        var footer, tooFewFiles, tooManyFiles;
+        files = this.files.length();
+        tooManyFiles = this.settings.multipleMax !== 0 && files > this.settings.multipleMax;
+        tooFewFiles = files < this.settings.multipleMin;
+        this.footer.find('.uploadcare-dialog-button-success').toggleClass('uploadcare-disabled-el', tooManyFiles || tooFewFiles);
+        this.footer.find('.uploadcare-dialog-button').toggleClass('uploadcare-disabled-el', files === 0);
+        footer = tooManyFiles ? t('dialog.tabs.preview.multiple.tooManyFiles').replace('%max%', this.settings.multipleMax) : files && tooFewFiles ? t('dialog.tabs.preview.multiple.tooFewFiles').replace('%min%', this.settings.multipleMin) : t('dialog.tabs.preview.multiple.title');
+        this.footer.find('.uploadcare-panel-footer-text').toggleClass('uploadcare-error', tooManyFiles).text(footer.replace('%files%', t('file', files)));
+        return this.footer.find('.uploadcare-panel-footer-counter').toggleClass('uploadcare-error', tooManyFiles).text(files ? "(" + files + ")" : "");
       };
 
       Panel.prototype.__closePanel = function() {
@@ -9052,19 +8998,18 @@ this.Pusher = Pusher;
         if (!TabCls) {
           throw new Error("No such tab: " + name);
         }
-        tabPanel = $('<div>').addClass("uploadcare-dialog-tabs-panel").addClass("uploadcare-dialog-tabs-panel-" + name).appendTo(this.panel);
-        tabButton = $('<div>').addClass("uploadcare-dialog-tab").addClass("uploadcare-dialog-tab-" + name).attr('title', t("dialog.tabs.names." + name)).on('click', function() {
+        tabPanel = $('<div>').addClass("uploadcare-dialog-tabs-panel").addClass("uploadcare-dialog-tabs-panel-" + name).insertBefore(this.footer);
+        tabButton = $('<div>', {
+          role: 'button',
+          tabindex: "0"
+        }).addClass("uploadcare-dialog-tab").addClass("uploadcare-dialog-tab-" + name).attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find('.uploadcare-dialog-tabs')).on('click', function() {
           if (name === _this.currentTab) {
             return _this.panel.toggleClass('uploadcare-dialog-opened-tabs');
           } else {
             return _this.switchTab(name);
           }
-        }).appendTo(this.panel.find('.uploadcare-dialog-tabs'));
+        });
         return this.tabs[name] = new TabCls(tabPanel, tabButton, this.publicPromise(), this.settings, name);
-      };
-
-      Panel.prototype.__addFakeTab = function(name) {
-        return $('<div>').addClass("uploadcare-dialog-tab uploadcare-dialog-tab-" + name).addClass('uploadcare-dialog-disabled-tab').attr('title', t("tabs." + name + ".title")).appendTo(this.panel.find('.uploadcare-dialog-tabs'));
       };
 
       Panel.prototype.switchTab = function(currentTab) {
@@ -9078,13 +9023,13 @@ this.Pusher = Pusher;
         return this.dfd.notify(this.currentTab);
       };
 
-      Panel.prototype.__showTab = function(tab) {
+      Panel.prototype.showTab = function(tab) {
         var className;
         className = 'uploadcare-dialog-tab';
         return this.panel.find("." + className + "-" + tab).removeClass("" + className + "_hidden");
       };
 
-      Panel.prototype.__hideTab = function(tab) {
+      Panel.prototype.hideTab = function(tab) {
         var className;
         if (this.currentTab === tab) {
           this.switchTab(this.settings.tabs[0]);
@@ -9094,14 +9039,20 @@ this.Pusher = Pusher;
       };
 
       Panel.prototype.__welcome = function() {
-        var tabName, _i, _len, _ref5;
-        this.addTab('welcome');
+        var tabName, _i, _len, _ref5, _results;
+        this.addTab('empty-pubkey');
+        this.switchTab('empty-pubkey');
         _ref5 = this.settings.tabs;
+        _results = [];
         for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
           tabName = _ref5[_i];
-          this.__addFakeTab(tabName);
+          _results.push(this.__addFakeTab(tabName));
         }
-        return this.switchTab('welcome');
+        return _results;
+      };
+
+      Panel.prototype.__addFakeTab = function(name) {
+        return $('<div>').addClass("uploadcare-dialog-tab uploadcare-dialog-tab-" + name).addClass('uploadcare-dialog-disabled-tab').attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find('.uploadcare-dialog-tabs'));
       };
 
       return Panel;
@@ -9111,20 +9062,20 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, dragdrop, namespace, s, t, utils, _ref,
+  var $, dragdrop, namespace, t, utils, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, s = uploadcare.settings, $ = uploadcare.jQuery, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t);
+  namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t);
 
   namespace('uploadcare.widget', function(ns) {
     return ns.BaseWidget = (function() {
-      function BaseWidget(element) {
+      function BaseWidget(element, settings) {
+        var _this = this;
+        this.element = element;
+        this.settings = settings;
         this.reloadInfo = __bind(this.reloadInfo, this);
         this.__setObject = __bind(this.__setObject, this);
         this.__reset = __bind(this.__reset, this);
-        var _this = this;
-        this.element = $(element);
-        this.settings = s.build(this.element.data());
         this.validators = this.settings.validators = [];
         this.currentObject = null;
         this.__onUploadComplete = $.Callbacks();
@@ -9136,11 +9087,11 @@ this.Pusher = Pusher;
         this.__setupWidget();
         this.element.on('change.uploadcare', this.reloadInfo);
         this.__hasValue = false;
-        setTimeout(function() {
+        utils.defer(function() {
           if (!_this.__hasValue) {
             return _this.reloadInfo();
           }
-        }, 0);
+        });
       }
 
       BaseWidget.prototype.__setupWidget = function() {
@@ -9382,12 +9333,12 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace, s, utils;
+  var $, namespace, settings, utils;
 
-  utils = uploadcare.utils, namespace = uploadcare.namespace, s = uploadcare.settings, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, namespace = uploadcare.namespace, settings = uploadcare.settings, $ = uploadcare.jQuery;
 
   namespace('uploadcare', function(ns) {
-    var cleanup, dataAttr, getSettings, initialize, initializeWidget;
+    var cleanup, dataAttr, initialize, initializeWidget;
     dataAttr = 'uploadcareWidget';
     ns.initialize = function(container) {
       if (container == null) {
@@ -9395,79 +9346,67 @@ this.Pusher = Pusher;
       }
       return initialize($(container).find('@uploadcare-uploader'));
     };
-    getSettings = function(el) {
-      return s.build($(el).data());
-    };
     initialize = function(targets) {
       var target, widget, _i, _len, _results;
       _results = [];
       for (_i = 0, _len = targets.length; _i < _len; _i++) {
         target = targets[_i];
         widget = $(target).data(dataAttr);
-        if (widget && target === widget.element[0]) {
+        if (widget && widget.inputElement === target) {
           continue;
         }
-        _results.push(ns.Widget(target));
+        _results.push(initializeWidget(target));
       }
       return _results;
     };
-    ns.SingleWidget = function(target) {
-      var el;
-      el = $(target).eq(0);
-      if (!getSettings(el).multiple) {
-        return initializeWidget(el, ns.widget.Widget);
-      } else {
-        throw new Error('This element should be processed using MultipleWidget');
+    ns.SingleWidget = function(el) {
+      return initializeWidget(el, ns.widget.Widget);
+    };
+    ns.MultipleWidget = function(el) {
+      return initializeWidget(el, ns.widget.MultipleWidget);
+    };
+    ns.Widget = function(el) {
+      return initializeWidget(el);
+    };
+    initializeWidget = function(input, targetClass) {
+      var Widget, api, s, widget;
+      input = $(input).eq(0);
+      s = settings.build(input.data());
+      Widget = s.multiple ? ns.widget.MultipleWidget : ns.widget.Widget;
+      if (targetClass && Widget !== targetClass) {
+        throw new Error("This element should be processed using " + targetClass.name);
       }
-    };
-    ns.MultipleWidget = function(target) {
-      var el;
-      el = $(target).eq(0);
-      if (getSettings(el).multiple) {
-        return initializeWidget(el, ns.widget.MultipleWidget);
-      } else {
-        throw new Error('This element should be processed using Widget');
+      api = input.data(dataAttr);
+      if (!api || api.inputElement !== input[0]) {
+        cleanup(input);
+        widget = new Widget(input, s);
+        api = widget.api();
+        input.data(dataAttr, api);
+        widget.template.content.data(dataAttr, api);
       }
+      return api;
     };
-    ns.Widget = function(target) {
-      var el, widgetClass;
-      el = $(target).eq(0);
-      widgetClass = getSettings(el).multiple ? ns.widget.MultipleWidget : ns.widget.Widget;
-      return initializeWidget(el, widgetClass);
+    cleanup = function(input) {
+      return input.off('.uploadcare').each(function() {
+        var widget, widgetElement;
+        widgetElement = $(this).next('.uploadcare-widget');
+        widget = widgetElement.data(dataAttr);
+        if (widget && widget.inputElement === this) {
+          return widgetElement.remove();
+        }
+      });
     };
-    initializeWidget = function(el, Widget) {
-      var widget;
-      widget = el.data(dataAttr);
-      if (!widget || el[0] !== widget.element[0]) {
-        cleanup(el);
-        widget = new Widget(el);
-        el.data(dataAttr, widget);
-        widget.template.content.data(dataAttr, widget.template);
-      }
-      return widget.api();
-    };
-    cleanup = function(el) {
-      var template;
-      el.off('.uploadcare');
-      el = el.next('.uploadcare-widget');
-      template = el.data(dataAttr);
-      if (el.length && (!template || el[0] !== template.content[0])) {
-        return el.remove();
-      }
-    };
-    ns.start = function(settings) {
+    ns.start = function(s) {
       var live;
-      live = function() {
-        return initialize($('@uploadcare-uploader'));
-      };
-      if (s.common(settings).live) {
-        return setInterval(live, 100);
-      } else {
-        return live();
+      if (settings.common(s).live) {
+        setInterval(live, 100);
       }
+      return (live = function() {
+        return initialize($('@uploadcare-uploader'));
+      })();
     };
     return $(function() {
-      if (!s.globals().manualStart) {
+      if (!window["UPLOADCARE_MANUAL_START"]) {
         return ns.start();
       }
     });
@@ -9519,10 +9458,38 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
+  var fakeButtons, mouseFocusedClass, utils;
+
+  utils = uploadcare.utils;
+
+  fakeButtons = ['div.uploadcare-link', 'div.uploadcare-widget-button', 'div.uploadcare-dialog-tab', 'div.uploadcare-dialog-button', 'div.uploadcare-dialog-button-success'].join(', ');
+
+  mouseFocusedClass = 'uploadcare-mouse-focused';
+
+  $(document.documentElement).on('mousedown', fakeButtons, function(e) {
+    return utils.defer(function() {
+      var activeElement;
+      activeElement = document.activeElement;
+      if (activeElement && activeElement !== document.body) {
+        return $(activeElement).addClass(mouseFocusedClass).one('blur', function() {
+          return $(activeElement).removeClass(mouseFocusedClass);
+        });
+      }
+    });
+  }).on('keypress', fakeButtons, function(e) {
+    if (e.which === 13 || e.which === 32) {
+      $(this).click();
+      e.preventDefault();
+      return e.stopPropagation();
+    }
+  });
+
+}).call(this);
+(function() {
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.0.6';
+  uploadcare.version = '2.1.0';
 
   expose = uploadcare.expose;
 
@@ -9530,7 +9497,7 @@ this.Pusher = Pusher;
 
   expose('jQuery');
 
-  expose('globals', uploadcare.settings.globals);
+  expose('globals', uploadcare.settings.common);
 
   expose('start');
 
@@ -9586,4 +9553,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.0.6/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.1.0/uploadcare/'));
