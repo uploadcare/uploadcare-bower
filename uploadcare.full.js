@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.1.0)
- * Date: 2015-04-10 20:23:10 +0300
- * Rev: 3670a2acf5
+ * Uploadcare (2.1.1)
+ * Date: 2015-04-21 21:24:06 +0300
+ * Rev: a9dc4e1d63
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -9463,9 +9463,9 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var fakeButtons, mouseFocusedClass, utils;
+  var $, fakeButtons, mouseFocusedClass, utils;
 
-  utils = uploadcare.utils;
+  utils = uploadcare.utils, $ = uploadcare.jQuery;
 
   fakeButtons = ['div.uploadcare-link', 'div.uploadcare-widget-button', 'div.uploadcare-dialog-tab', 'div.uploadcare-dialog-button', 'div.uploadcare-dialog-button-success'].join(', ');
 
@@ -9494,7 +9494,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.1.0';
+  uploadcare.version = '2.1.1';
 
   expose = uploadcare.expose;
 
@@ -9562,4 +9562,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.1.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.1.1/uploadcare/'));
