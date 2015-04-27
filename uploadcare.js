@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.1.1)
- * Date: 2015-04-21 21:24:06 +0300
- * Rev: a9dc4e1d63
+ * Uploadcare (2.1.2)
+ * Date: 2015-04-27 19:23:23 +0300
+ * Rev: da4740b1e8
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -2812,7 +2812,8 @@ this.Pusher = Pusher;
       return CssCollector;
 
     })();
-    return uploadcare.tabsCss = new ns.CssCollector;
+    uploadcare.tabsCss = new ns.CssCollector;
+    return defaults['_empty-key-text'] = "<div class=\"uploadcare-dialog-message-center\">\n<div class=\"uploadcare-dialog-big-title\">Hello!</div>\n<div class=\"uploadcare-dialog-large-text\">\n  <div>Your <a class=\"uploadcare-link\" href=\"https://uploadcare.com/dashboard/\">public key</a> is not set.</div>\n  <div>Add this to the &lt;head&gt; tag to start uploading files:</div>\n  <div class=\"uploadcare-pre\">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n&lt;/script&gt;</div>\n</div>\n</div>";
   });
 
 }).call(this);
@@ -4874,10 +4875,6 @@ this.Pusher = Pusher;
 (function() {
   this.JST || (this.JST = {});
   this.JST["uploadcare/templates/tab-url"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.url.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n<div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n  <div>',(''+ t('dialog.tabs.url.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div>',(''+ t('dialog.tabs.url.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n<form class="uploadcare-dialog-url-form">\n  <input type="text" class="uploadcare-dialog-input" placeholder="',(''+ t('dialog.tabs.url.input') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'">\n  <button class="uploadcare-dialog-button uploadcare-dialog-url-submit" type="submit">',(''+ t('dialog.tabs.url.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</button>\n</form>\n');}return __p.join('');};
-}).call(this);
-(function() {
-  this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-welcome"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-message-center">\n  <div class="uploadcare-dialog-big-title">Hello!</div>\n  <div class="uploadcare-dialog-large-text">\n    <div>Your <a class="uploadcare-link" href="https://uploadcare.com/dashboard/">public key</a> is not set.</div>\n    <div>Add this to the &lt;head&gt; tag to start uploading files:</div>\n    <div class="uploadcare-pre">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = \'your_public_key\';\n&lt;/script&gt;</div>\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -8849,8 +8846,8 @@ this.Pusher = Pusher;
     ns.registerTab('box', tabs.RemoteTab);
     ns.registerTab('skydrive', tabs.RemoteTab);
     ns.registerTab('huddle', tabs.RemoteTab);
-    ns.registerTab('empty-pubkey', function(tabPanel) {
-      return tabPanel.append(tpl("tab-welcome"));
+    ns.registerTab('empty-pubkey', function(tabPanel, _1, _2, settings) {
+      return tabPanel.append(settings._emptyKeyText);
     });
     ns.registerTab('preview', function(tabPanel, tabButton, dialogApi, settings, name) {
       var tabCls;
@@ -8887,8 +8884,8 @@ this.Pusher = Pusher;
           }
         });
         this.tabs = {};
+        this.__prepareFooter();
         if (this.settings.publicKey) {
-          this.__prepareFooter();
           this.__prepareTabs(tab);
         } else {
           this.__welcome();
@@ -9489,7 +9486,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.1.1';
+  uploadcare.version = '2.1.2';
 
   expose = uploadcare.expose;
 
@@ -9553,4 +9550,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.1.1/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.1.2/uploadcare/'));
