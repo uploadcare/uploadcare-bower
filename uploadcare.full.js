@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.1.3)
- * Date: 2015-05-15 17:28:30 +0300
- * Rev: 3f97c4f324
+ * Uploadcare (2.1.4)
+ * Date: 2015-05-18 19:36:18 +0300
+ * Rev: c4d4ecb607
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -4655,6 +4655,146 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+    return ns.zhTW = {
+      uploading: '上傳中...請等待',
+      loadingInfo: '正在讀取資訊...',
+      errors: {
+        "default": '錯誤',
+        baddata: '錯誤資料',
+        size: '檔案太大',
+        upload: '無法上傳',
+        user: '上傳被取消',
+        info: '無法讀取資訊',
+        image: '只允許圖片檔案',
+        createGroup: '無法建立檔案群組',
+        deleted: '檔案已被刪除'
+      },
+      draghere: '拖放檔案到這裡',
+      file: {
+        other: '%1 個檔案'
+      },
+      buttons: {
+        cancel: '取消',
+        remove: '刪除',
+        choose: {
+          files: {
+            one: '選擇檔案',
+            other: '選擇檔案'
+          },
+          images: {
+            one: '選擇圖片',
+            other: '選擇圖片'
+          }
+        }
+      },
+      dialog: {
+        done: '完成',
+        showFiles: '顯示檔案',
+        tabs: {
+          names: {
+            'empty-pubkey': '歡迎',
+            preview: '預覽',
+            file: '從電腦中選取檔案',
+            url: '任意圖片連結',
+            camera: '相機'
+          },
+          file: {
+            drag: '拖放檔案到這裡',
+            nodrop: '從你的電腦中上傳',
+            cloudsTip: '雲端硬碟<br>與社群網站',
+            or: '或者',
+            button: '從電腦中選取檔案',
+            also: '你也可以選自'
+          },
+          url: {
+            title: '來自網際網路的檔案',
+            line1: '從網際網路選取檔案',
+            line2: '只需提供連結',
+            input: '將連結複製至此...',
+            button: '上傳'
+          },
+          camera: {
+            capture: '拍照',
+            mirror: '鏡像',
+            retry: '重新取得相機權限',
+            pleaseAllow: {
+              title: '請允許使存取您的相機',
+              text: '你一直在提示允許來自這個網站的訪問攝像頭。' + '為了拍照用你的相機，你必須批准這一請求。'
+            },
+            notFound: {
+              title: '沒有找到相機',
+              text: '看起來你有沒有將連接相機。'
+            }
+          },
+          preview: {
+            unknownName: '未知',
+            change: '取消',
+            back: '返回',
+            done: '加入',
+            unknown: {
+              title: '上傳中...請等待預覽',
+              done: '跳過預覽，直接接受'
+            },
+            regular: {
+              title: '加入這個檔案？',
+              line1: '你將加入上面的檔案。',
+              line2: '請確認。'
+            },
+            image: {
+              title: '加入這個圖片？',
+              change: '取消'
+            },
+            crop: {
+              title: '裁切並加入這個圖片',
+              done: '完成',
+              free: '剩餘'
+            },
+            error: {
+              "default": {
+                title: '錯誤！',
+                text: '上傳過程中出錯。',
+                back: '請重試'
+              },
+              image: {
+                title: '只允許上傳圖片檔案。',
+                text: '請選擇其他檔案重新上傳。',
+                back: '選擇圖片'
+              },
+              size: {
+                title: '你選取的檔案超過了100MB的上限',
+                text: '請用另一個檔案再試一次。'
+              },
+              loadImage: {
+                title: '錯誤',
+                text: '無法讀取圖片'
+              }
+            },
+            multiple: {
+              title: '你已經選擇 %files%',
+              question: '你要加入所有檔案嗎？',
+              tooManyFiles: '你選了太多的檔案. 最多可選擇%max%. 請刪除一些。',
+              tooFewFiles: '你所選擇的檔案 %files%. 至少要 %min% .',
+              clear: '清空',
+              done: '完成'
+            }
+          }
+        },
+        footer: {
+          text: '為您提供檔案上傳、存儲和編輯功能。 Copyright ©'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+    return ns.zhTW = function(n) {
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
     return ns.zh = {
       uploading: '上传中...请等待',
       loadingInfo: '正在读取信息...',
@@ -4851,9 +4991,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  ');  if (tabs.length > 1) { ; __p.push('\n    <div class="uploadcare-dialog-file-or">\n      ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-file-sources">\n      ');  for (var i = 0; i < tabs.length; i++) {
-          var tab = tabs[i];
-          if (tab == 'file') continue; ; __p.push('\n        <div class="uploadcare-dialog-file-source"\n             data-tab="',(''+ tab ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n                >',(''+ t('dialog.tabs.names.' + tab) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n      ');  } ; __p.push('\n    </div>\n  ');  } ; __p.push('\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-dialog-file-source-or">\n    ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-sources">\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -8033,9 +8171,10 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, dragdrop, namespace, tpl, utils, _ref;
+  var $, dragdrop, namespace, t, tpl, utils, _ref, _ref1,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
+  namespace = uploadcare.namespace, utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t), $ = uploadcare.jQuery, (_ref1 = uploadcare.templates, tpl = _ref1.tpl);
 
   namespace('uploadcare.widget.tabs', function(ns) {
     return ns.FileTab = (function() {
@@ -8046,15 +8185,16 @@ this.Pusher = Pusher;
         this.dialogApi = dialogApi;
         this.settings = settings;
         this.name = name;
-        this.container.append(tpl('tab-file', {
-          tabs: this.settings.tabs
-        }));
+        this.__updateTabsList = __bind(this.__updateTabsList, this);
+        this.container.append(tpl('tab-file'));
         this.container.addClass('uploadcare-dialog-padding');
         this.container.on('click', '.uploadcare-dialog-file-source', function(e) {
           return _this.dialogApi.switchTab($(e.target).data('tab'));
         });
         this.__setupFileButton();
         this.__initDragNDrop();
+        this.__updateTabsList();
+        this.dialogApi.onTabVisibility(this.__updateTabsList);
       }
 
       FileTab.prototype.__initDragNDrop = function() {
@@ -8082,6 +8222,32 @@ this.Pusher = Pusher;
           }
           return _this.dialogApi.switchTab('preview');
         });
+      };
+
+      FileTab.prototype.__updateTabsList = function() {
+        var list, n, tab, _i, _len, _ref2;
+        list = this.container.find('.uploadcare-dialog-file-sources').empty();
+        n = 0;
+        _ref2 = this.settings.tabs;
+        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+          tab = _ref2[_i];
+          if (tab === this.name) {
+            continue;
+          }
+          if (!this.dialogApi.isTabVisible(tab)) {
+            continue;
+          }
+          n += 1;
+          list.append([
+            $('<div/>', {
+              "class": "uploadcare-dialog-file-source",
+              'data-tab': tab,
+              html: t('dialog.tabs.names.' + tab)
+            }), ' '
+          ]);
+        }
+        list.toggle(n > 0);
+        return this.container.find('.uploadcare-dialog-file-source-or').toggle(n > 0);
       };
 
       return FileTab;
@@ -8868,10 +9034,15 @@ this.Pusher = Pusher;
       return new tabCls(tabPanel, tabButton, dialogApi, settings, name);
     });
     return Panel = (function() {
+      var tabClass;
+
+      tabClass = 'uploadcare-dialog-tab';
+
       function Panel(settings, placeholder, files, tab) {
         var sel,
           _this = this;
         this.settings = settings;
+        this.isTabVisible = __bind(this.isTabVisible, this);
         this.hideTab = __bind(this.hideTab, this);
         this.showTab = __bind(this.showTab, this);
         this.switchTab = __bind(this.switchTab, this);
@@ -8898,6 +9069,9 @@ this.Pusher = Pusher;
         });
         this.tabs = {};
         this.__prepareFooter();
+        this.onTabVisibility = $.Callbacks().add(function(tab, show) {
+          return _this.panel.find("." + tabClass + "-" + tab).toggleClass("" + tabClass + "_hidden", !show);
+        });
         if (this.settings.publicKey) {
           this.__prepareTabs(tab);
         } else {
@@ -8914,7 +9088,9 @@ this.Pusher = Pusher;
             addFiles: this.addFiles,
             switchTab: this.switchTab,
             hideTab: this.hideTab,
-            showTab: this.showTab
+            showTab: this.showTab,
+            isTabVisible: this.isTabVisible,
+            onTabVisibility: utils.publicCallbacks(this.onTabVisibility)
           });
         }
         return this.promise;
@@ -8963,7 +9139,7 @@ this.Pusher = Pusher;
           return this.switchTab('preview');
         } else {
           this.hideTab('preview');
-          return this.switchTab(tab || this.settings.tabs[0]);
+          return this.switchTab(tab || this.__firstVisibleTab());
         }
       };
 
@@ -9008,11 +9184,11 @@ this.Pusher = Pusher;
         if (!TabCls) {
           throw new Error("No such tab: " + name);
         }
-        tabPanel = $('<div>').addClass("uploadcare-dialog-tabs-panel").addClass("uploadcare-dialog-tabs-panel-" + name).insertBefore(this.footer);
+        tabPanel = $('<div>').addClass("" + tabClass + "s-panel").addClass("" + tabClass + "s-panel-" + name).insertBefore(this.footer);
         tabButton = $('<div>', {
           role: 'button',
           tabindex: "0"
-        }).addClass("uploadcare-dialog-tab").addClass("uploadcare-dialog-tab-" + name).attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find('.uploadcare-dialog-tabs')).on('click', function() {
+        }).addClass(tabClass).addClass("" + tabClass + "-" + name).attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find("." + tabClass + "s")).on('click', function() {
           if (name === _this.currentTab) {
             return _this.panel.toggleClass('uploadcare-dialog-opened-tabs');
           } else {
@@ -9022,47 +9198,59 @@ this.Pusher = Pusher;
         return this.tabs[name] = new TabCls(tabPanel, tabButton, this.publicPromise(), this.settings, name);
       };
 
-      Panel.prototype.switchTab = function(currentTab) {
+      Panel.prototype.switchTab = function(tab) {
         var className;
-        this.currentTab = currentTab;
+        if (!tab) {
+          return;
+        }
+        this.currentTab = tab;
         this.panel.removeClass('uploadcare-dialog-opened-tabs');
-        className = 'uploadcare-dialog-tab';
-        this.panel.find("." + className).removeClass("" + className + "_current").filter("." + className + "-" + this.currentTab).addClass("" + className + "_current");
-        className = 'uploadcare-dialog-tabs-panel';
-        this.panel.find("." + className).removeClass("" + className + "_current").filter("." + className + "-" + this.currentTab).addClass("" + className + "_current");
-        return this.dfd.notify(this.currentTab);
+        this.panel.find("." + tabClass).removeClass("" + tabClass + "_current").filter("." + tabClass + "-" + tab).addClass("" + tabClass + "_current");
+        className = "" + tabClass + "s-panel";
+        this.panel.find("." + className).removeClass("" + className + "_current").filter("." + className + "-" + tab).addClass("" + className + "_current");
+        return this.dfd.notify(tab);
       };
 
       Panel.prototype.showTab = function(tab) {
-        var className;
-        className = 'uploadcare-dialog-tab';
-        return this.panel.find("." + className + "-" + tab).removeClass("" + className + "_hidden");
+        return this.onTabVisibility.fire(tab, true);
       };
 
       Panel.prototype.hideTab = function(tab) {
-        var className;
+        this.onTabVisibility.fire(tab, false);
         if (this.currentTab === tab) {
-          this.switchTab(this.settings.tabs[0]);
+          return this.switchTab(this.__firstVisibleTab());
         }
-        className = 'uploadcare-dialog-tab';
-        return this.panel.find("." + className + "-" + tab).addClass("" + className + "_hidden");
+      };
+
+      Panel.prototype.isTabVisible = function(tab) {
+        return !this.panel.find("." + tabClass + "-" + tab).is("." + tabClass + "_hidden");
+      };
+
+      Panel.prototype.__firstVisibleTab = function() {
+        var tab, _i, _len, _ref5;
+        _ref5 = this.settings.tabs;
+        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
+          tab = _ref5[_i];
+          if (this.isTabVisible(tab)) {
+            return tab;
+          }
+        }
       };
 
       Panel.prototype.__welcome = function() {
-        var tabName, _i, _len, _ref5, _results;
+        var tabName, _i, _len, _ref5;
         this.addTab('empty-pubkey');
         this.switchTab('empty-pubkey');
         _ref5 = this.settings.tabs;
-        _results = [];
         for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
           tabName = _ref5[_i];
-          _results.push(this.__addFakeTab(tabName));
+          this.__addFakeTab(tabName);
         }
-        return _results;
+        return null;
       };
 
       Panel.prototype.__addFakeTab = function(name) {
-        return $('<div>').addClass("uploadcare-dialog-tab uploadcare-dialog-tab-" + name).addClass('uploadcare-dialog-disabled-tab').attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find('.uploadcare-dialog-tabs'));
+        return $('<div>').addClass("" + tabClass + " " + tabClass + "-" + name).addClass('uploadcare-dialog-disabled-tab').attr('title', t("dialog.tabs.names." + name)).appendTo(this.panel.find("." + tabClass + "s"));
       };
 
       return Panel;
@@ -9499,7 +9687,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.1.3';
+  uploadcare.version = '2.1.4';
 
   expose = uploadcare.expose;
 
@@ -9567,4 +9755,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.1.3/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.1.4/uploadcare/'));
