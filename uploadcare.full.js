@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.1.4)
- * Date: 2015-05-18 19:36:18 +0300
- * Rev: c4d4ecb607
+ * Uploadcare (2.1.5)
+ * Date: 2015-05-26 22:07:49 +0300
+ * Rev: bb7fd68562
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -9596,12 +9596,12 @@ this.Pusher = Pusher;
     };
     ns.start = function(s) {
       var live;
-      if (settings.common(s).live) {
-        setInterval(live, 100);
-      }
-      return (live = function() {
+      (live = function() {
         return initialize($('@uploadcare-uploader'));
       })();
+      if (settings.common(s).live) {
+        return setInterval(live, 100);
+      }
     };
     return $(function() {
       if (!window["UPLOADCARE_MANUAL_START"]) {
@@ -9687,7 +9687,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.1.4';
+  uploadcare.version = '2.1.5';
 
   expose = uploadcare.expose;
 
@@ -9755,4 +9755,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.1.4/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.1.5/uploadcare/'));
