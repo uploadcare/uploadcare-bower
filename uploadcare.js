@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.1.6)
- * Date: 2015-05-28 17:53:45 +0300
- * Rev: 21f1c9bc05
+ * Uploadcare (2.2.0)
+ * Date: 2015-06-03 19:36:58 +0300
+ * Rev: 2392a1b198
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -41,77 +41,6 @@
   };
 
 }).call(this);
-// from https://github.com/kossnocorp/role
-
-!function($){
-  function rewriteSelector(context, name, argPos){
-    var original = context[name];
-
-    if (!original) return;
-
-    context[name] = function(){
-      arguments[argPos] = arguments[argPos].replace(/@([\w\u00c0-\uFFFF\-]+)/g, '[role~="$1"]');
-      return original.apply(context, arguments);
-    };
-
-    $.extend(context[name], original);
-  }
-
-  rewriteSelector($, 'find', 0);
-  rewriteSelector($, 'multiFilter', 0);
-  rewriteSelector($.find, 'matchesSelector', 1);
-  rewriteSelector($.find, 'matches', 0);
-
-  function parse(roleString, without){
-    var role, result = [], roles = $.trim(roleString).split(/\s+/);
-
-    for(var i=0; i<roles.length; i++) {
-      role = roles[i];
-      if (!~$.inArray(role, result) && (!without || !~$.inArray(role, without)))
-        result.push(role);
-    }
-
-    return result;
-  };
-
-  $.extend($.fn, {
-    roles: function(){ return parse(this.attr('role')); },
-
-    hasRole: function(roleName){
-      var roles = parse(roleName);
-      for(var i=0;i<roles.length;i++)
-        if (!this.is('@'+roles[i])) return false;
-
-      return true;
-    },
-
-    addRole: function(roleName){
-      if (this.hasRole(roleName)) return this;
-
-      return this.each(function(_, element){
-        var $el = $(element);
-        $el.attr('role', parse($el.attr('role') + ' ' + roleName).join(' '));
-      });
-    },
-
-    removeRole: function(roleName){
-      if (!this.hasRole(roleName)) return this;
-
-      return this.each(function(_, element){
-        var $el = $(element);
-        $el.attr('role', parse($el.attr('role'), parse(roleName)).join(' '));
-      });
-    },
-
-    toggleRole: function(roleName){
-      var roles = parse(roleName);
-      for(var i=0;i<roles.length;i++)
-        this[this.hasRole(roles[i]) ? 'removeRole' : 'addRole'].call(this, roles[i]);
-      return this;
-    }
-  });
-}(jQuery)
-;
 // from https://github.com/jaubourg/ajaxHooks/blob/master/src/xdr.js
 
 if ( window.XDomainRequest ) {
@@ -216,7 +145,7 @@ if ( window.XDomainRequest ) {
   };
 
 
-  var movableName = 'uploadcareMoveble';
+  var movableName = 'uploadcareMovable';
   var sortableName = 'uploadcareSortable';
   var extend = {};
   extend[movableName] = function(o) {
@@ -354,7 +283,7 @@ if ( window.XDomainRequest ) {
 
     oMovable.start = function(info) {
       o.start(info);
-      finder = new nearestFinder(parent.find(oMovable.items));
+      finder = new nearestFinder(parent.find(oMovable.items).not(info.fake));
       initialNext = info.dragged.next();
     };
 
@@ -1826,8 +1755,8 @@ this.Pusher = Pusher;
         }
         this.onAdd = $.Callbacks();
         this.onRemove = $.Callbacks();
-        this.onReplaced = $.Callbacks();
-        this.onSorted = $.Callbacks();
+        this.onSort = $.Callbacks();
+        this.onReplace = $.Callbacks();
         this.__items = [];
         for (_i = 0, _len = items.length; _i < _len; _i++) {
           item = items[_i];
@@ -1836,52 +1765,57 @@ this.Pusher = Pusher;
       }
 
       Collection.prototype.add = function(item) {
-        this.__items.push(item);
-        return this.onAdd.fire(item);
+        return this.__add(item, this.__items.length);
+      };
+
+      Collection.prototype.__add = function(item, i) {
+        this.__items.splice(i, 0, item);
+        return this.onAdd.fire(item, i);
       };
 
       Collection.prototype.remove = function(item) {
-        if (utils.remove(this.__items, item)) {
-          return this.onRemove.fire(item);
+        var i;
+        i = $.inArray(item, this.__items);
+        if (i !== -1) {
+          return this.__remove(item, i);
         }
       };
 
+      Collection.prototype.__remove = function(item, i) {
+        this.__items.splice(i, 1);
+        return this.onRemove.fire(item, i);
+      };
+
       Collection.prototype.clear = function() {
-        var item, _i, _len, _ref, _results;
-        _ref = this.get();
+        var i, item, items, _i, _len, _results;
+        items = this.get();
+        this.__items.length = 0;
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          item = _ref[_i];
-          _results.push(this.remove(item));
+        for (i = _i = 0, _len = items.length; _i < _len; i = ++_i) {
+          item = items[i];
+          _results.push(this.onRemove.fire(item, i));
         }
         return _results;
       };
 
       Collection.prototype.replace = function(oldItem, newItem) {
-        var i, item, _i, _len, _ref, _results;
-        if (!(oldItem === newItem)) {
-          _ref = this.__items;
-          _results = [];
-          for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-            item = _ref[i];
-            if (item === oldItem) {
-              _results.push(this.__replace(oldItem, newItem, i));
-            } else {
-              _results.push(void 0);
-            }
+        var i;
+        if (oldItem !== newItem) {
+          i = $.inArray(oldItem, this.__items);
+          if (i !== -1) {
+            return this.__replace(oldItem, newItem, i);
           }
-          return _results;
         }
       };
 
       Collection.prototype.__replace = function(oldItem, newItem, i) {
         this.__items[i] = newItem;
-        return this.onReplaced.fire(oldItem, newItem, i);
+        return this.onReplace.fire(oldItem, newItem, i);
       };
 
       Collection.prototype.sort = function(comparator) {
         this.__items.sort(comparator);
-        return this.onSorted.fire();
+        return this.onSort.fire();
       };
 
       Collection.prototype.get = function(index) {
@@ -2029,11 +1963,13 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   var $, namespace,
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+    __slice = [].slice;
 
   namespace = uploadcare.namespace, $ = uploadcare.jQuery;
 
   namespace('uploadcare.utils', function(ns) {
+    var pipeTuples;
     ns.unique = function(arr) {
       var item, result, _i, _len;
       result = [];
@@ -2077,16 +2013,6 @@ this.Pusher = Pusher;
     };
     ns.wrapToPromise = function(value) {
       return $.Deferred().resolve(value).promise();
-    };
-    ns.remove = function(array, item) {
-      var index;
-      index = $.inArray(item, array);
-      if (index !== -1) {
-        array.splice(index, 1);
-        return true;
-      } else {
-        return false;
-      }
     };
     ns.then = function(pr, doneFilter, failFilter, progressFilter) {
       var compose, df;
@@ -2203,6 +2129,31 @@ this.Pusher = Pusher;
       } else {
         return objSize.slice();
       }
+    };
+    ns.applyCropSelectionToFile = function(file, crop, size, coords) {
+      var downscale, h, modifiers, prefered, upscale, w, wholeImage,
+        _this = this;
+      w = coords.width, h = coords.height;
+      prefered = crop.preferedSize;
+      modifiers = '';
+      wholeImage = w === size[0] && h === size[1];
+      if (!wholeImage) {
+        modifiers += "-/crop/" + w + "x" + h + "/" + coords.left + "," + coords.top + "/";
+      }
+      downscale = crop.downscale && (w > prefered[0] || h > prefered[1]);
+      upscale = crop.upscale && (w < prefered[0] || h < prefered[1]);
+      if (downscale || upscale) {
+        coords.sw = prefered[0], coords.sh = prefered[1];
+        modifiers += "-/resize/" + (prefered.join('x')) + "/";
+      } else if (!wholeImage) {
+        modifiers += "-/preview/";
+      }
+      return file.then(function(info) {
+        info.cdnUrlModifiers = modifiers;
+        info.cdnUrl = "" + info.originalUrl + (modifiers || '');
+        info.crop = coords;
+        return info;
+      });
     };
     ns.fileInput = function(container, settings, fn) {
       var accept, input, run;
@@ -2333,7 +2284,7 @@ this.Pusher = Pusher;
         type: /:(.+\/.+);/.exec(dataURL[0])[1]
       }));
     };
-    return ns.taskRunner = function(capacity) {
+    ns.taskRunner = function(capacity) {
       var queue, release, run, running;
       running = 0;
       queue = [];
@@ -2356,6 +2307,26 @@ this.Pusher = Pusher;
           return queue.push(task);
         }
       };
+    };
+    pipeTuples = [["notify", "progress", 2], ["resolve", "done", 0], ["reject", "fail", 1]];
+    return ns.fixedPipe = function() {
+      var fns, promise;
+      promise = arguments[0], fns = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      return $.Deferred(function(newDefer) {
+        return $.each(pipeTuples, function(i, tuple) {
+          var fn;
+          fn = jQuery.isFunction(fns[tuple[2]]) && fns[tuple[2]];
+          return promise[tuple[1]](function() {
+            var returned;
+            returned = fn && fn.apply(this, arguments);
+            if (returned && jQuery.isFunction(returned.promise)) {
+              return returned.promise().progress(newDefer.notify).done(newDefer.resolve).fail(newDefer.reject);
+            } else {
+              return newDefer[tuple[0] + "With"](this === promise ? newDefer.promise() : this, fn ? [returned] : arguments);
+            }
+          });
+        });
+      }).promise();
     };
   });
 
@@ -2738,7 +2709,7 @@ this.Pusher = Pusher;
       flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog']);
       intOptions(settings, ['multipleMax', 'multipleMin']);
       if (settings.crop !== false && !$.isArray(settings.crop)) {
-        if (/^(disabled?|false|null)$/i.test(settings.crop) || settings.multiple) {
+        if (/^(disabled?|false|null)$/i.test(settings.crop)) {
           settings.crop = false;
         } else if ($.isPlainObject(settings.crop)) {
           settings.crop = [settings.crop];
@@ -3154,9 +3125,11 @@ this.Pusher = Pusher;
         showFiles: 'Dateien anzeigen',
         tabs: {
           names: {
+            'empty-pubkey': 'Willkommen',
             preview: 'Vorschau',
             file: 'Lokale Dateien',
-            url: 'Web-Links'
+            url: 'Web-Links',
+            camera: 'Kamera'
           },
           file: {
             drag: 'Ziehen Sie eine Datei hier hinein',
@@ -3172,6 +3145,19 @@ this.Pusher = Pusher;
             line2: 'Geben Sie einfach den Link an.',
             input: 'Bitte geben Sie den Link hier an...',
             button: 'Hochladen'
+          },
+          camera: {
+            capture: 'Machen Sie ein Foto',
+            mirror: 'Spiegel',
+            retry: 'Berechtigungen erneut anfordern',
+            pleaseAllow: {
+              title: 'Bitte erlauben Sie den Zugriff auf Ihre Kamera',
+              text: 'Sie wurden gebeten, dieser Website den Zugriff auf Ihre Kamera zu erlauben. Um mit Ihrer Kamera Fotos machen zu können, müssen Sie diese Erlaubnis erteilen.'
+            },
+            notFound: {
+              title: 'Keine Kamera festgestellt',
+              text: 'Es sieht so aus, als hätten Sie keine Kamera an dieses Gerät angeschlossen.'
+            }
           },
           preview: {
             unknownName: 'nicht bekannt',
@@ -3227,7 +3213,7 @@ this.Pusher = Pusher;
           }
         },
         footer: {
-          text: 'Hochladen, Speichern und Verarbeitung der Dateien durch'
+          text: 'Hochladen, Speichern und Verarbeiten von Dateien durch'
         }
       }
     };
@@ -3546,7 +3532,9 @@ this.Pusher = Pusher;
           names: {
             preview: 'Avant-première',
             file: 'Fichier en local',
-            url: 'Une adresse web'
+            url: 'Une adresse web',
+            'empty-pubkey': 'Bienvenue',
+            camera: 'Appareil photo'
           },
           file: {
             drag: 'Glissez-déposez un fichier ici',
@@ -3562,6 +3550,19 @@ this.Pusher = Pusher;
             line2: 'Saisissez simplement son adresse.',
             input: 'Collez le lien ici...',
             button: 'Envoi'
+          },
+          camera: {
+            capture: 'Prendre une photo',
+            mirror: 'Miroir',
+            retry: 'Envoyer une nouvelle demande de permission',
+            pleaseAllow: {
+              title: 'Autorisez l\'accès à votre appareil photo',
+              text: 'Vous avez été invité à autoriser l\'accès à votre appareil photo. Pour prendre des photos avec votre appareil photo vous devez approuver cette demande.'
+            },
+            notFound: {
+              title: 'Aucun appareil photo détecté',
+              text: 'Il semblerait que vous n\'ayez pas d\'appareil photo connecté à cet appareil.'
+            }
           },
           preview: {
             unknownName: 'inconnu',
@@ -3610,7 +3611,9 @@ this.Pusher = Pusher;
               title: 'Vous avez choisi %files%',
               question: 'Voulez vous ajouter tous ces fichiers ?',
               clear: 'Tout retirer',
-              done: 'Terminer'
+              done: 'Terminer',
+              tooManyFiles: 'Vous avez choisi trop de fichiers. %max% est le maximum.',
+              tooFewFiles: 'Vous avez choisi %fichiers%. %min% est le minimum.'
             }
           }
         },
@@ -3752,6 +3755,150 @@ this.Pusher = Pusher;
 
   uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
     return ns.he = function(n) {
+      if (n === 1) {
+        return 'one';
+      }
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+    return ns.it = {
+      uploading: 'Caricamento in corso... Si prega di attendere.',
+      loadingInfo: 'Caricamento informazioni in corso...',
+      errors: {
+        "default": 'Errore',
+        baddata: 'Valore errato',
+        size: 'Il file è troppo grande',
+        upload: 'Impossibile fare l’upload',
+        user: 'Upload cancellato',
+        info: 'Impossibile caricare le informazioni',
+        image: 'Sono ammesse solo immagini',
+        createGroup: 'Impossibile creare gruppo di file',
+        deleted: 'Il file è stato eliminato'
+      },
+      draghere: 'Trascina un file qui',
+      file: {
+        one: 'file %1',
+        other: 'file %1'
+      },
+      buttons: {
+        cancel: 'Cancella',
+        remove: 'Rimuovi',
+        choose: {
+          files: {
+            one: 'Seleziona un file',
+            other: 'Seleziona file'
+          },
+          images: {
+            one: 'Seleziona un’immagine',
+            other: 'Seleziona immagini'
+          }
+        }
+      },
+      dialog: {
+        done: 'Fatto',
+        showFiles: 'Mostra file',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Benvenuto',
+            preview: 'Anteprima',
+            file: 'File locali',
+            url: 'Link arbitrari',
+            camera: 'Fotocamera'
+          },
+          file: {
+            drag: 'Trascina un file qui',
+            nodrop: 'Carica file dal tuo computer',
+            cloudsTip: 'Salvataggi nel cloud<br>e servizi sociali',
+            or: 'o',
+            button: 'Seleziona un file locale',
+            also: 'Puoi anche scegliere da'
+          },
+          url: {
+            title: 'File dal web',
+            line1: 'Preleva un file dal web.',
+            line2: 'È sufficiente fornire il link.',
+            input: 'Incolla il tuo link qui...',
+            button: 'Carica'
+          },
+          camera: {
+            capture: 'Scatta una foto',
+            mirror: 'Specchio',
+            retry: 'Richiedi di nuovo le autorizzazioni',
+            pleaseAllow: {
+              title: 'Consenti l’accesso alla tua fotocamera',
+              text: 'Ti è stato richiesto di consentire l’accesso alla fotocamera da questo sito. Per scattare le foto con la tua fotocamera devi accettare questa richiesta.'
+            },
+            notFound: {
+              title: 'Nessuna fotocamera rilevata',
+              text: 'Non risulta che tu non abbia una fotocamera collegata a questo dispositivo.'
+            }
+          },
+          preview: {
+            unknownName: 'sconosciuto',
+            change: 'Cancella',
+            back: 'Indietro',
+            done: 'Aggiungi',
+            unknown: {
+              title: 'Caricamento in corso... Attendi l’anteprima.',
+              done: 'Salta l’anteprima e accetta'
+            },
+            regular: {
+              title: 'Vuoi aggiungere questo file?',
+              line1: 'Stai per aggiungere il file sopra.',
+              line2: 'Conferma.'
+            },
+            image: {
+              title: 'Vuoi aggiungere questa immagine?',
+              change: 'Cancella'
+            },
+            crop: {
+              title: 'Ritaglia e aggiungi questa immagine',
+              done: 'Fatto',
+              free: 'gratis'
+            },
+            error: {
+              "default": {
+                title: 'Ops!',
+                text: 'Si è verificato un problema durante l’upload.',
+                back: 'Si prega di riprovare'
+              },
+              image: {
+                title: 'Sono accettati solo file immagine.',
+                text: 'Riprova con un altro file.',
+                back: 'Scegli immagine'
+              },
+              size: {
+                title: 'Il file selezionato supera il limite.',
+                text: 'Riprova con un altro file.'
+              },
+              loadImage: {
+                title: 'Errore',
+                text: 'Impossibile caricare l’immagine'
+              }
+            },
+            multiple: {
+              title: 'Hai selezionato %files%',
+              question: 'Vuoi aggiungere tutti questi file?',
+              tooManyFiles: 'Hai selezionato troppi file. %max% è il massimo.',
+              tooFewFiles: 'Hai selezionato %files%. È richiesto almeno %min%.',
+              clear: 'Rimuovi tutto',
+              done: 'Fatto'
+            }
+          }
+        },
+        footer: {
+          text: 'Caricamento, memorizzazione ed elaborazione file eseguiti da'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+    return ns.it = function(n) {
       if (n === 1) {
         return 'one';
       }
@@ -4371,8 +4518,6 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
   uploadcare.namespace('uploadcare.locale.translations', function(ns) {
     return ns.ru = {
       uploading: 'Идет загрузка',
@@ -4392,8 +4537,7 @@ this.Pusher = Pusher;
       file: {
         one: '%1 файл',
         few: '%1 файла',
-        many: '%1 файлов',
-        other: '%1 файла'
+        many: '%1 файлов'
       },
       buttons: {
         cancel: 'Отмена',
@@ -4415,6 +4559,7 @@ this.Pusher = Pusher;
         tabs: {
           names: {
             preview: 'Предпросмотр',
+            'empty-pubkey': 'Приветствие',
             file: 'Локальные файлы',
             vk: 'ВКонтакте',
             url: 'Произвольная ссылка',
@@ -4510,17 +4655,13 @@ this.Pusher = Pusher;
 
   uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
     return ns.ru = function(n) {
-      var _ref, _ref1, _ref2, _ref3;
-      if ((n % 10 === 1) && (n % 100 !== 11)) {
+      if (((n / 10 % 10 | 0) === 1) || (n % 10 === 0) || (n % 10 > 4)) {
+        return 'many';
+      } else if (n % 10 === 1) {
         return 'one';
-      }
-      if ((_ref = n % 10, __indexOf.call([2, 3, 4], _ref) >= 0) && (_ref1 = n % 100, __indexOf.call([12, 13, 14], _ref1) < 0)) {
+      } else {
         return 'few';
       }
-      if ((n % 10 === 0) || (_ref2 = n % 10, __indexOf.call([5, 6, 7, 8, 9], _ref2) >= 0) || (_ref3 = n % 100, __indexOf.call([11, 12, 13, 14], _ref3) >= 0)) {
-        return 'many';
-      }
-      return 'other';
     };
   });
 
@@ -4564,16 +4705,19 @@ this.Pusher = Pusher;
         showFiles: 'Dosyaları Göster',
         tabs: {
           names: {
+            'empty-pubkey': 'Hoş geldiniz',
             preview: 'Önizleme',
             file: 'Bilgisayar',
-            url: 'Dış Bağlantılar'
+            url: 'Dış Bağlantılar',
+            camera: 'Kamera'
           },
           file: {
             drag: 'Braya bir dosya bakın',
             nodrop: 'Bilgisayarınızdan dosya yükleyin',
             or: 'or',
             button: 'Bilgisayardan bir dosya seç',
-            also: 'Diğer yükleme seçenekleri'
+            also: 'Diğer yükleme seçenekleri',
+            cloudsTip: 'Bulut depolamalar<br>ve sosyal hizmetler'
           },
           url: {
             title: 'Webden dosyalar',
@@ -4581,6 +4725,19 @@ this.Pusher = Pusher;
             line2: 'Dosya bağlantısını sağlayın.',
             input: 'Bağlantınızı buraya yapıştırın...',
             button: 'Yükle'
+          },
+          camera: {
+            capture: 'Fotoğraf çek',
+            mirror: 'Ayna',
+            retry: 'Tekrar izin iste',
+            pleaseAllow: {
+              title: 'Lütfen kameranıza erişilmesine izin verin',
+              text: 'Bu siteden kamera erişimine izin vermeniz talep ediliyor. Kameranızla fotoğraf çekmek için bu isteği onaylamanız gerekmektedir.'
+            },
+            notFound: {
+              title: 'Kamera algılanamadı',
+              text: 'Bu cihaza kamera bağlantısının olmadığı görünüyor.'
+            }
           },
           preview: {
             unknownName: 'bilinmeyen',
@@ -4978,7 +5135,7 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons.png");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active.png");background-size:50px}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-image:url(data:image/gif;base64,R0lGODlhCAAIAPABAAAAAKqqqiH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgABACwAAAAACAAIAAACDYQRGadrzVRMB9FZ5SwAIfkECQoAAQAsAAAAAAgACAAAAg8MDqGYaudeW9ChyOyltQAAIfkECQoAAQAsAAAAAAgACAAAAg9MgGCXm+rQYtC0WGl9oQAAIfkECQoAAQAsAAAAAAgACAAAAg+MgWCRernaYmjCWLF7qAAAIfkECQoAAQAsAAAAAAgACAAAAg2MAwmna81UTAfRWeUsACH5BAkKAAEALAAAAAAIAAgAAAIPRB6gmGrnXlvQocjspbUAACH5BAkKAAEALAAAAAAIAAgAAAIPBIJhl5vq0GLQtFhpfaAAACH5BAUKAAEALAAAAAAIAAgAAAIPhINhkHq52mJowlixe6gAADs=)}.uploadcare-dialog-file-sources:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png")}.uploadcare-dpm-file-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-dpm-file-error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-dpm-file-preview{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-default.png")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-image.png")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons@2x.png")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active@2x.png")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;-webkit-box-shadow:0 1px 2px rgba(0,0,0,0.35);-moz-box-shadow:0 1px 2px rgba(0,0,0,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0.05,0.7,0.25,1);transition:transform .25s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-moz-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-moz-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-moz-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal;padding-left:75px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}.uploadcare-dialog-panel :focus{outline:2px dotted #0094c0}.uploadcare-dialog-panel :active,.uploadcare-dialog-panel .uploadcare-mouse-focused:focus{outline:none}.uploadcare-dialog-tabs{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:75px;height:616px;margin-left:-75px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-dialog-tab{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none!important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-multiple .uploadcare-dialog-tabs-panel{height:550px}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:#ddd;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer a{color:#c2c2c2;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f8f8f8;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:-moz-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3786eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:-moz-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#3279d6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:-moz-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3177d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:-moz-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{-webkit-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);-moz-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{-webkit-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);-moz-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;-webkit-box-shadow:inset 0 -2px #1f66c1;-moz-box-shadow:inset 0 -2px #1f66c1;box-shadow:inset 0 -2px #1f66c1;background:#458dee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:-moz-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{-webkit-box-shadow:inset 0 -2px #1652a0;-moz-box-shadow:inset 0 -2px #1652a0;box-shadow:inset 0 -2px #1652a0;background:#3279d6;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:-moz-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{-webkit-box-shadow:inset 0 2px #2561b9;-moz-box-shadow:inset 0 2px #2561b9;box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:-moz-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{height:422px}.uploadcare-dialog-tabs-panel-preview.uploadcare-dialog-tabs-panel_current ~ .uploadcare-panel-footer{display:none}.uploadcare-panel-footer{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-panel-footer .uploadcare-dialog-button-success{float:right}.uploadcare-panel-footer .uploadcare-dialog-button{float:left}.uploadcare-panel-footer .uploadcare-dialog-button-success,.uploadcare-panel-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-panel-footer .uploadcare-error{color:red}.uploadcare-panel-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;border:none;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;transition:transform .8s cubic-bezier(0.23,1,0.32,1);-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{transform:scale(-1,1);-webkit-transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-dpm-file-list{height:484px;overflow:auto;margin:0 -25px -22px 0}.uploadcare-dpm-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px;font-size:13px;line-height:1.2}.uploadcare-dpm-file-item>*{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-dpm-file-item:last-child{margin-bottom:0}.uploadcare-dpm-file-item:hover{background:#ececec}.uploadcare-dpm-file-item:hover .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-dpm-uploaded .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-error .uploadcare-dpm-file-error{display:table-cell}.uploadcare-dpm-error .uploadcare-dpm-file-size,.uploadcare-dpm-error .uploadcare-dpm-file-progressbar-wrap{display:none}.uploadcare-dpm-file-preview,.uploadcare-dpm-file-error:before{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-dpm-file-preview-wrap{width:45px;display:table-cell;text-align:center;line-height:0;padding-right:10px}.uploadcare-dpm-file-preview{margin:0}.uploadcare-dpm-file-name{width:100%;word-wrap:break-word}.uploadcare-dpm-file-size{width:3.5em;text-align:left}.uploadcare-dpm-file-progressbar-wrap{width:80px}.uploadcare-dpm-file-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-dpm-file-progressbar-value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-dpm-file-error{width:200px;display:none;color:#f5444b}.uploadcare-dpm-file-remove-wrap{width:20px;text-align:right;line-height:0}.uploadcare-dpm-file-remove{display:none;width:20px;height:20px;cursor:pointer}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-panel-footer__summary{display:none}.uploadcare-dialog-multiple .uploadcare-panel-footer__summary{display:block}.uploadcare-panel-footer-counter{display:none}.uploadcare-hidden{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:760px){.uploadcare-dialog-opened{overflow:visible!important;position:static!important;width:auto!important;height:auto!important;min-width:0!important;background:#efefef!important}body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none!important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;padding:50px 0 0;border-radius:0;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-dpm-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-dpm-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-dpm-file-progressbar-wrap{width:40px}.uploadcare-responsive-panel .uploadcare-dpm-file-remove{display:inline-block}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-panel-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-panel-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-panel-footer-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple.uploadcare-dialog-panel{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;margin:0;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current,.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-panel-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:absolute;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:-50px;margin-top:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-color:white;background-position:top left;background-repeat:repeat;font-size:0;position:absolute}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px!important}.uploadcare-crop-widget .jcrop-hline{height:1px!important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-handle{background-color:#333;border:1px #eee solid;font-size:1px}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none}.uploadcare-crop-widget .jcrop-handle.ord-n{left:50%;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-s{bottom:0;left:50%;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-handle.ord-e{margin-right:-4px;margin-top:-4px;right:0;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-w{left:0;margin-left:-4px;margin-top:-4px;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-4px;margin-top:-4px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-4px;margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-n,.uploadcare-crop-widget .jcrop-dragbar.ord-s{height:7px;width:100%}.uploadcare-crop-widget .jcrop-dragbar.ord-e,.uploadcare-crop-widget .jcrop-dragbar.ord-w{height:100%;width:7px}.uploadcare-crop-widget .jcrop-dragbar.ord-n{margin-top:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-s{bottom:0;margin-bottom:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-e{margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-dragbar.ord-w{margin-left:-4px}.uploadcare-crop-widget .jcrop-light .jcrop-vline,.uploadcare-crop-widget .jcrop-light .jcrop-hline{background:#FFF;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-light .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#000;border-color:#FFF;border-radius:3px}.uploadcare-crop-widget .jcrop-dark .jcrop-vline,.uploadcare-crop-widget .jcrop-dark .jcrop-hline{background:#000;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-dark .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#FFF;border-color:#000;border-radius:3px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle:before{content:\'\';display:block;width:26px;height:26px;margin:-9px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0)}.uploadcare-crop-widget>img{filter:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'saturate\' values=\'.5\'/></filter></svg>#grayscale");-webkit-filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:11px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2}.uploadcare-widget :focus{outline:2px dotted #0094c0}.uploadcare-widget :active,.uploadcare-widget .uploadcare-mouse-focused:focus{outline:none}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block!important}.uploadcare-widget-status{display:none!important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none!important;margin-right:1ex;white-space:nowrap}.uploadcare-widget-file-name{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:-moz-initial;border-color:initial}.uploadcare-link:hover{color:#176e8f}.uploadcare-widget-button{display:none!important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default;white-space:nowrap}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:none;position:absolute;white-space:nowrap;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};
+  this.JST["uploadcare/templates/styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons.png");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active.png");background-size:50px}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-image:url(data:image/gif;base64,R0lGODlhCAAIAPABAAAAAKqqqiH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgABACwAAAAACAAIAAACDYQRGadrzVRMB9FZ5SwAIfkECQoAAQAsAAAAAAgACAAAAg8MDqGYaudeW9ChyOyltQAAIfkECQoAAQAsAAAAAAgACAAAAg9MgGCXm+rQYtC0WGl9oQAAIfkECQoAAQAsAAAAAAgACAAAAg+MgWCRernaYmjCWLF7qAAAIfkECQoAAQAsAAAAAAgACAAAAg2MAwmna81UTAfRWeUsACH5BAkKAAEALAAAAAAIAAgAAAIPRB6gmGrnXlvQocjspbUAACH5BAkKAAEALAAAAAAIAAgAAAIPBIJhl5vq0GLQtFhpfaAAACH5BAUKAAEALAAAAAAIAAgAAAIPhINhkHq52mJowlixe6gAADs=)}.uploadcare-dialog-file-sources:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png")}.uploadcare-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-file-item__error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-file-icon{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-zoomable-icon:after{background-image:url("',  settings.scriptBase ,'/images/zoom@2x.png")}.uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-default.png")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-image.png")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons@2x.png")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active@2x.png")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;-webkit-box-shadow:0 1px 2px rgba(0,0,0,0.35);-moz-box-shadow:0 1px 2px rgba(0,0,0,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .25s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .25s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0.05,0.7,0.25,1);transition:transform .25s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-moz-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-moz-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-moz-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal;padding-left:75px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}.uploadcare-dialog-panel :focus{outline:2px dotted #0094c0}.uploadcare-dialog-panel :active,.uploadcare-dialog-panel .uploadcare-mouse-focused:focus{outline:none}.uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-left:0}.uploadcare-dialog-tabs{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:75px;height:616px;margin-left:-75px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-panel-hide-tabs .uploadcare-dialog-tabs{display:none}.uploadcare-dialog-tab{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none!important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-multiple .uploadcare-dialog-tabs-panel{height:550px}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:#ddd;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer a{color:#c2c2c2;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f8f8f8;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:-moz-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3786eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:-moz-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#3279d6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:-moz-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3177d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:-moz-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{-webkit-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);-moz-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{-webkit-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);-moz-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;-webkit-box-shadow:inset 0 -2px #1f66c1;-moz-box-shadow:inset 0 -2px #1f66c1;box-shadow:inset 0 -2px #1f66c1;background:#458dee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:-moz-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{-webkit-box-shadow:inset 0 -2px #1652a0;-moz-box-shadow:inset 0 -2px #1652a0;box-shadow:inset 0 -2px #1652a0;background:#3279d6;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:-moz-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{-webkit-box-shadow:inset 0 2px #2561b9;-moz-box-shadow:inset 0 2px #2561b9;box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:-moz-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{height:422px}.uploadcare-dialog-tabs-panel-preview.uploadcare-dialog-tabs-panel_current ~ .uploadcare-panel-footer{display:none}.uploadcare-panel-footer{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-panel-footer .uploadcare-dialog-button-success{float:right}.uploadcare-panel-footer .uploadcare-dialog-button{float:left}.uploadcare-panel-footer .uploadcare-dialog-button-success,.uploadcare-panel-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-panel-footer .uploadcare-error{color:red}.uploadcare-panel-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;border:none;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;transition:transform .8s cubic-bezier(0.23,1,0.32,1);-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{transform:scale(-1,1);-webkit-transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-file-list{height:550px;overflow:auto;position:relative;margin:0 -25px -22px 0}.uploadcare-dialog-multiple .uploadcare-file-list{height:484px}.uploadcare-file-list_table .uploadcare-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px}.uploadcare-file-list_table .uploadcare-file-item>*{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-file-list_table .uploadcare-file-item:last-child{margin-bottom:0}.uploadcare-file-list_table .uploadcare-file-item:hover{background:#ececec}.uploadcare-file-list_table .uploadcare-file-item__preview{width:55px;padding-right:10px}.uploadcare-file-list_table .uploadcare-file-item__preview>img{height:55px}.uploadcare-file-list_table .uploadcare-file-item__size{width:3.5em}.uploadcare-file-list_table .uploadcare-file-item__progressbar{width:80px}.uploadcare-file-list_table .uploadcare-zoomable-icon:after{width:55px}.uploadcare-file-list_tiles .uploadcare-file-item{text-align:left;position:relative;display:inline-block;vertical-align:top;width:170px;min-height:170px;padding:0 20px 10px 0}.uploadcare-file-list_tiles .uploadcare-file-item>*{padding-bottom:10px}.uploadcare-file-list_tiles .uploadcare-file-item__name{padding-top:10px}.uploadcare-file-list_tiles .uploadcare-file-item__remove{position:absolute;top:0;right:10px}.uploadcare-file-list_tiles .uploadcare-file-item__preview{white-space:nowrap;width:170px;height:170px;padding-bottom:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview img{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-file-list_tiles .uploadcare-file-item_uploading .uploadcare-file-item__preview,.uploadcare-file-list_tiles .uploadcare-file-item_error .uploadcare-file-item__preview{display:none}.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__size,.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__name{display:none}.uploadcare-file-item__error:before,.uploadcare-file-icon{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-file-item{font-size:13px;line-height:1.2}.uploadcare-file-item:hover .uploadcare-file-item__remove{visibility:visible}.uploadcare-file-item:hover .uploadcare-zoomable-icon:after{display:block}.uploadcare-file-item_uploading .uploadcare-file-item__error{display:none}.uploadcare-file-item_uploaded .uploadcare-file-item__progressbar,.uploadcare-file-item_uploaded .uploadcare-file-item__error{display:none}.uploadcare-file-item_error .uploadcare-file-item__size,.uploadcare-file-item_error .uploadcare-file-item__progressbar{display:none}.uploadcare-file-item__preview{text-align:center;line-height:0}.uploadcare-file-item__preview>img{display:inline-block;width:auto;height:auto;max-width:100%;max-height:100%}.uploadcare-file-item__name{width:100%;word-wrap:break-word}.uploadcare-file-item__error{width:200px;color:#f5444b}.uploadcare-file-item__remove{visibility:hidden;width:20px;text-align:right;line-height:0}.uploadcare-remove{width:20px;height:20px;cursor:pointer}.uploadcare-zoomable-icon{position:relative;cursor:pointer}.uploadcare-zoomable-icon:after{content:\'\';position:absolute;top:0;left:0;display:none;width:100%;height:100%;background-size:45px 45px;background-repeat:no-repeat;background-position:center}.uploadcare-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-progressbar__value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-file-icon{margin:0}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-panel-footer__summary{display:none}.uploadcare-dialog-multiple .uploadcare-panel-footer__summary{display:block}.uploadcare-panel-footer-counter{display:none}.uploadcare-hidden{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:760px){.uploadcare-dialog-opened{overflow:visible!important;position:static!important;width:auto!important;height:auto!important;min-width:0!important;background:#efefef!important}body.uploadcare-dialog-opened>:not(:last-child),body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none!important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;padding:50px 0 0;border-radius:0;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-top:0}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item__progressbar{width:40px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item{width:140px;min-height:140px;padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__preview{width:140px;height:140px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__remove{right:10px}.uploadcare-responsive-panel .uploadcare-file-item__remove{visibility:visible}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab.uploadcare-dialog-tab-camera{display:none}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-panel-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-panel-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-panel-footer-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple.uploadcare-dialog-panel{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;margin:0;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current,.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-panel-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:absolute;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:-50px;margin-top:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline{background-color:white;background-position:top left;background-repeat:repeat;font-size:0;position:absolute}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px!important}.uploadcare-crop-widget .jcrop-hline{height:1px!important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-handle{background-color:#333;border:1px #eee solid;font-size:1px}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none}.uploadcare-crop-widget .jcrop-handle.ord-n{left:50%;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-s{bottom:0;left:50%;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-handle.ord-e{margin-right:-4px;margin-top:-4px;right:0;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-w{left:0;margin-left:-4px;margin-top:-4px;top:50%}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-4px;margin-top:-4px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-4px;margin-top:-4px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-4px;margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-4px;margin-left:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-n,.uploadcare-crop-widget .jcrop-dragbar.ord-s{height:7px;width:100%}.uploadcare-crop-widget .jcrop-dragbar.ord-e,.uploadcare-crop-widget .jcrop-dragbar.ord-w{height:100%;width:7px}.uploadcare-crop-widget .jcrop-dragbar.ord-n{margin-top:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-s{bottom:0;margin-bottom:-4px}.uploadcare-crop-widget .jcrop-dragbar.ord-e{margin-right:-4px;right:0}.uploadcare-crop-widget .jcrop-dragbar.ord-w{margin-left:-4px}.uploadcare-crop-widget .jcrop-light .jcrop-vline,.uploadcare-crop-widget .jcrop-light .jcrop-hline{background:#FFF;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-light .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#000;border-color:#FFF;border-radius:3px}.uploadcare-crop-widget .jcrop-dark .jcrop-vline,.uploadcare-crop-widget .jcrop-dark .jcrop-hline{background:#000;filter:Alpha(opacity=70)!important;opacity:.7!important}.uploadcare-crop-widget .jcrop-dark .jcrop-handle{-moz-border-radius:3px;-webkit-border-radius:3px;background-color:#FFF;border-color:#000;border-radius:3px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle:before{content:\'\';display:block;width:26px;height:26px;margin:-9px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0)}.uploadcare-crop-widget>img{filter:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'saturate\' values=\'.5\'/></filter></svg>#grayscale");-webkit-filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:11px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2}.uploadcare-widget :focus{outline:2px dotted #0094c0}.uploadcare-widget :active,.uploadcare-widget .uploadcare-mouse-focused:focus{outline:none}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block!important}.uploadcare-widget-status{display:none!important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none!important;margin-right:1ex;white-space:nowrap}.uploadcare-widget-file-name{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:-moz-initial;border-color:initial}.uploadcare-link:hover{color:#176e8f}.uploadcare-widget-button{display:none!important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default;white-space:nowrap}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:none;position:absolute;white-space:nowrap;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -5002,11 +5159,11 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dpm-file-item">\n  <div class="uploadcare-dpm-file-preview-wrap">\n    <div class="uploadcare-dpm-file-preview"></div>\n  </div>\n  <div class="uploadcare-dpm-file-name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dpm-file-progressbar-wrap">\n    <div class="uploadcare-dpm-file-progressbar">\n      <div class="uploadcare-dpm-file-progressbar-value"></div>\n    </div>\n  </div>\n  <div class="uploadcare-dpm-file-size"></div>\n  <div class="uploadcare-dpm-file-error"></div>\n  <div class="uploadcare-dpm-file-remove-wrap">\n    <div class="uploadcare-dpm-file-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-file-item uploadcare-file-item_uploading">\n  <div class="uploadcare-file-item__preview">\n    <div class="uploadcare-file-icon"></div>\n  </div>\n  <div class="uploadcare-file-item__name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-file-item__progressbar">\n    <div class="uploadcare-progressbar">\n      <div class="uploadcare-progressbar__value"></div>\n    </div>\n  </div>\n  <div class="uploadcare-file-item__size"></div>\n  <div class="uploadcare-file-item__error"></div>\n  <div class="uploadcare-file-item__remove">\n    <div class="uploadcare-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
-  this.JST["uploadcare/templates/tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile uploadcare-dpm-mobile-title"></div>\n\n  <div class="uploadcare-dpm-file-list"></div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-panel-footer-text uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};
+  this.JST["uploadcare/templates/tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile uploadcare-dpm-mobile-title"></div>\n\n  <div class="uploadcare-file-list"></div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-panel-footer-text uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
   this.JST || (this.JST = {});
@@ -6725,28 +6882,8 @@ this.Pusher = Pusher;
         };
       };
 
-      CropWidget.prototype.getSelectionWithModifiers = function() {
-        var coords, downscale, h, modifiers, prefered, upscale, w, wholeImage;
-        coords = this.getSelection();
-        w = coords.width, h = coords.height;
-        prefered = this.crop.preferedSize;
-        modifiers = '';
-        wholeImage = w === this.originalSize[0] && h === this.originalSize[1];
-        if (!wholeImage) {
-          modifiers += "-/crop/" + w + "x" + h + "/" + coords.left + "," + coords.top + "/";
-        }
-        downscale = this.crop.downscale && (w > prefered[0] || h > prefered[1]);
-        upscale = this.crop.upscale && (w < prefered[0] || h < prefered[1]);
-        if (downscale || upscale) {
-          coords.sw = prefered[0], coords.sh = prefered[1];
-          modifiers += "-/resize/" + (prefered.join('x')) + "/";
-        } else if (!wholeImage) {
-          modifiers += "-/preview/";
-        }
-        return {
-          crop: coords,
-          modifiers: modifiers
-        };
+      CropWidget.prototype.applySelectionToFile = function(file) {
+        return utils.applyCropSelectionToFile(file, this.crop, this.originalSize, this.getSelection());
       };
 
       return CropWidget;
@@ -6757,7 +6894,8 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   var $, namespace, s, utils,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __slice = [].slice;
 
   namespace = uploadcare.namespace, s = uploadcare.settings, $ = uploadcare.jQuery, utils = uploadcare.utils;
 
@@ -6776,12 +6914,14 @@ this.Pusher = Pusher;
         this.__completeUpload = __bind(this.__completeUpload, this);
         this.fileId = null;
         this.fileName = null;
+        this.sanitizedName = null;
         this.fileSize = null;
         this.isStored = null;
         this.cdnUrlModifiers = null;
         this.isImage = null;
         this.imageInfo = null;
         this.sourceInfo = null;
+        this.s3Bucket = null;
         this.onInfoReady = $.Callbacks('once memory');
         this.__setupValidation();
         this.__initApi();
@@ -6807,12 +6947,17 @@ this.Pusher = Pusher;
 
       BaseFile.prototype.__handleFileData = function(data) {
         this.fileName = data.original_filename;
+        this.sanitizedName = data.filename;
         this.fileSize = data.size;
         this.isImage = data.is_image;
         this.imageInfo = data.image_info;
         this.isStored = data.is_stored;
+        this.s3Bucket = data.s3_bucket;
         if (data.default_effects) {
           this.cdnUrlModifiers = "-/" + data.default_effects;
+        }
+        if (this.s3Bucket && this.cdnUrlModifiers) {
+          this.__rejectApi('baddata');
         }
         if (!this.onInfoReady.fired()) {
           this.onInfoReady.fire(this.__fileInfo());
@@ -6843,15 +6988,21 @@ this.Pusher = Pusher;
       };
 
       BaseFile.prototype.__fileInfo = function() {
+        var urlBase;
+        if (this.s3Bucket) {
+          urlBase = "https://" + this.s3Bucket + ".s3.amazonaws.com/" + this.fileId + "/" + this.sanitizedName;
+        } else {
+          urlBase = "" + this.settings.cdnBase + "/" + this.fileId + "/";
+        }
         return {
           uuid: this.fileId,
           name: this.fileName,
           size: this.fileSize,
           isStored: this.isStored,
-          isImage: this.isImage,
+          isImage: !this.s3Bucket && this.isImage,
           originalImageInfo: this.imageInfo,
-          originalUrl: this.fileId ? "" + this.settings.cdnBase + "/" + this.fileId + "/" : null,
-          cdnUrl: this.fileId ? "" + this.settings.cdnBase + "/" + this.fileId + "/" + (this.cdnUrlModifiers || '') : null,
+          originalUrl: this.fileId ? urlBase : null,
+          cdnUrl: this.fileId ? "" + urlBase + (this.cdnUrlModifiers || '') : null,
           cdnUrlModifiers: this.cdnUrlModifiers,
           sourceInfo: this.sourceInfo
         };
@@ -6891,12 +7042,10 @@ this.Pusher = Pusher;
       };
 
       BaseFile.prototype.__extendApi = function(api) {
-        var __then,
-          _this = this;
+        var _this = this;
         api.cancel = this.__cancel;
-        __then = api.then;
         api.pipe = api.then = function() {
-          return _this.__extendApi(__then.apply(api, arguments));
+          return _this.__extendApi(utils.fixedPipe.apply(utils, [api].concat(__slice.call(arguments))));
         };
         return api;
       };
@@ -7082,9 +7231,6 @@ this.Pusher = Pusher;
           crossDomain: true,
           type: 'POST',
           url: "" + this.settings.urlBase + "/base/?jsonerrors=1",
-          xhrFields: {
-            withCredentials: true
-          },
           headers: {
             'X-PINGOTHER': 'pingpong'
           },
@@ -8113,13 +8259,12 @@ this.Pusher = Pusher;
       };
 
       Template.prototype.setStatus = function(status) {
-        var form, prefix;
+        var prefix;
         prefix = 'uploadcare-widget-status-';
         this.content.removeClass(prefix + this.content.attr('data-status'));
         this.content.attr('data-status', status);
         this.content.addClass(prefix + status);
-        form = this.element.closest('@uploadcare-upload-form');
-        return form.trigger("" + status + ".uploadcare");
+        return this.element.trigger("" + status + ".uploadcare");
       };
 
       Template.prototype.reset = function() {
@@ -8698,16 +8843,11 @@ this.Pusher = Pusher;
           done.removeClass('uploadcare-disabled-el');
           _this.widget = new CropWidget(img, imgSize, _this.settings.crop[0]);
           _this.widget.setSelectionFromModifiers(info.cdnUrlModifiers);
-          return done.click(function() {
-            var newFile, opts;
-            opts = _this.widget.getSelectionWithModifiers();
-            newFile = _this.file.then(function(info) {
-              info.cdnUrlModifiers = opts.modifiers;
-              info.cdnUrl = "" + info.originalUrl + (opts.modifiers || '');
-              info.crop = opts.crop;
-              return info;
-            });
-            return _this.dialogApi.fileColl.replace(_this.file, newFile);
+          return done.on('click', function() {
+            var newFile;
+            newFile = _this.widget.applySelectionToFile(_this.file);
+            _this.dialogApi.fileColl.replace(_this.file, newFile);
+            return true;
           });
         };
         if (this.settings.crop) {
@@ -8775,13 +8915,10 @@ this.Pusher = Pusher;
 
   namespace('uploadcare.widget.tabs', function(ns) {
     return ns.PreviewTabMultiple = (function(_super) {
-      var CLASS_PREFIX;
-
       __extends(PreviewTabMultiple, _super);
 
-      CLASS_PREFIX = 'uploadcare-dpm-';
-
       function PreviewTabMultiple() {
+        this.__fileReplaced = __bind(this.__fileReplaced, this);
         this.__fileRemoved = __bind(this.__fileRemoved, this);
         this.__fileAdded = __bind(this.__fileAdded, this);
         this.__fileFailed = __bind(this.__fileFailed, this);
@@ -8792,7 +8929,7 @@ this.Pusher = Pusher;
         PreviewTabMultiple.__super__.constructor.apply(this, arguments);
         this.container.append(tpl('tab-preview-multiple'));
         this.__fileTpl = $(tpl('tab-preview-multiple-file'));
-        this.fileListEl = this.__find('file-list');
+        this.fileListEl = this.container.find('.uploadcare-file-list');
         this.titleEl = this.__find('title');
         this.mobileTitleEl = this.__find('mobile-title');
         this.footerTextEl = this.__find('footer-text');
@@ -8810,9 +8947,11 @@ this.Pusher = Pusher;
         this.__updateContainerView();
         this.dialogApi.fileColl.onAdd.add(this.__fileAdded, this.__updateContainerView);
         this.dialogApi.fileColl.onRemove.add(this.__fileRemoved, this.__updateContainerView);
+        this.dialogApi.fileColl.onReplace.add(this.__fileReplaced, this.__updateContainerView);
         this.dialogApi.fileColl.onAnyDone.add(this.__fileDone);
         this.dialogApi.fileColl.onAnyFail.add(this.__fileFailed);
         this.dialogApi.fileColl.onAnyProgress.add(this.__fileProgress);
+        this.fileListEl.addClass(this.settings.imagesOnly ? 'uploadcare-file-list_tiles' : 'uploadcare-file-list_table');
         this.__setupSorting();
       }
 
@@ -8820,14 +8959,14 @@ this.Pusher = Pusher;
         var _this = this;
         return this.fileListEl.uploadcareSortable({
           touch: false,
-          axis: 'y',
+          axis: this.settings.imagesOnly ? 'xy' : 'y',
           start: function(info) {
             return info.dragged.css('visibility', 'hidden');
           },
           finish: function(info) {
             var elements, index;
             info.dragged.css('visibility', 'visible');
-            elements = _this.__find('file-item');
+            elements = _this.container.find('.uploadcare-file-item');
             index = function(file) {
               return elements.index(_this.__fileToEl(file));
             };
@@ -8842,7 +8981,7 @@ this.Pusher = Pusher;
         if (context == null) {
           context = this.container;
         }
-        return $('.' + CLASS_PREFIX + s, context);
+        return $('.uploadcare-dpm-' + s, context);
       };
 
       PreviewTabMultiple.prototype.__updateContainerView = function() {
@@ -8859,55 +8998,67 @@ this.Pusher = Pusher;
       };
 
       PreviewTabMultiple.prototype.__updateFileInfo = function(fileEl, info) {
-        this.__find('file-name', fileEl).text(info.name || t('dialog.tabs.preview.unknownName'));
-        return this.__find('file-size', fileEl).text(utils.readableFileSize(info.size, '–'));
+        fileEl.find('.uploadcare-file-item__name').text(info.name || t('dialog.tabs.preview.unknownName'));
+        return fileEl.find('.uploadcare-file-item__size').text(utils.readableFileSize(info.size, '–'));
       };
 
       PreviewTabMultiple.prototype.__fileProgress = function(file, progressInfo) {
         var fileEl;
         fileEl = this.__fileToEl(file);
-        this.__find('file-progressbar-value', fileEl).css('width', Math.round(progressInfo.progress * 100) + '%');
+        fileEl.find('.uploadcare-progressbar__value').css('width', Math.round(progressInfo.progress * 100) + '%');
         return this.__updateFileInfo(fileEl, progressInfo.incompleteFileInfo);
       };
 
       PreviewTabMultiple.prototype.__fileDone = function(file, info) {
-        var fileEl;
-        fileEl = this.__fileToEl(file);
-        fileEl.addClass(CLASS_PREFIX + 'uploaded');
-        this.__find('file-progressbar-value', fileEl).css('width', '100%');
+        var cdnURL, fileEl,
+          _this = this;
+        fileEl = this.__fileToEl(file).removeClass('uploadcare-file-item_uploading').addClass('uploadcare-file-item_uploaded');
+        fileEl.find('.uploadcare-progressbar__value').css('width', '100%');
         this.__updateFileInfo(fileEl, info);
         if (info.isImage) {
-          return this.__find('file-preview-wrap', fileEl).html($('<img>').attr('src', "" + info.originalUrl + "-/scale_crop/90x90/center/").css({
-            width: 'auto',
-            height: 45
-          }));
+          cdnURL = ("" + info.cdnUrl + "-/quality/lightest/") + (this.settings.imagesOnly ? "-/preview/340x340/" : "-/scale_crop/110x110/center/");
+          return fileEl.find('.uploadcare-file-item__preview').addClass('uploadcare-zoomable-icon').html($('<img>').attr('src', cdnURL)).on('click', function() {
+            return uploadcare.openPreviewDialog(file, _this.settings).done(function(newFile) {
+              return _this.dialogApi.fileColl.replace(file, newFile);
+            });
+          });
         }
       };
 
       PreviewTabMultiple.prototype.__fileFailed = function(file, error, info) {
-        var fileEl;
-        fileEl = this.__fileToEl(file);
-        fileEl.addClass(CLASS_PREFIX + 'error');
-        return this.__find('file-error', fileEl).text(t("errors." + error));
+        return this.__fileToEl(file).removeClass('uploadcare-file-item_uploading').addClass('uploadcare-file-item_error').find('.uploadcare-file-item__error').text(t("errors." + error));
       };
 
       PreviewTabMultiple.prototype.__fileAdded = function(file) {
-        return $(file).data('dmp-el', this.__createFileEl(file));
+        var fileEl;
+        fileEl = this.__createFileEl(file);
+        return fileEl.appendTo(this.fileListEl);
       };
 
       PreviewTabMultiple.prototype.__fileRemoved = function(file) {
-        return this.__fileToEl(file).remove();
+        this.__fileToEl(file).remove();
+        return $(file).removeData();
+      };
+
+      PreviewTabMultiple.prototype.__fileReplaced = function(oldFile, newFile) {
+        var fileEl;
+        fileEl = this.__createFileEl(newFile);
+        fileEl.insertAfter(this.__fileToEl(oldFile));
+        return this.__fileRemoved(oldFile);
       };
 
       PreviewTabMultiple.prototype.__fileToEl = function(file) {
-        return $(file).data('dmp-el');
+        return $(file).data('dpm-el') || $();
       };
 
       PreviewTabMultiple.prototype.__createFileEl = function(file) {
-        var _this = this;
-        return this.__fileTpl.clone().appendTo(this.fileListEl).on('click', '.' + CLASS_PREFIX + 'file-remove', function() {
+        var fileEl,
+          _this = this;
+        fileEl = this.__fileTpl.clone().on('click', '.uploadcare-remove', function() {
           return _this.dialogApi.fileColl.remove(file);
         });
+        $(file).data('dpm-el', fileEl);
+        return fileEl;
       };
 
       return PreviewTabMultiple;
@@ -8940,7 +9091,7 @@ this.Pusher = Pusher;
       if (ns.isDialogOpened()) {
         if (e.which === 27) {
           e.stopImmediatePropagation();
-          return ns.closeDialog();
+          return typeof currentDialogPr !== "undefined" && currentDialogPr !== null ? currentDialogPr.reject() : void 0;
         }
       }
     });
@@ -8950,13 +9101,22 @@ this.Pusher = Pusher;
       return currentDialogPr !== null;
     };
     ns.closeDialog = function() {
-      return currentDialogPr != null ? currentDialogPr.reject() : void 0;
+      var _results;
+      _results = [];
+      while (currentDialogPr) {
+        _results.push(currentDialogPr.reject());
+      }
+      return _results;
     };
     ns.openDialog = function(files, tab, settings) {
-      var cancelLock, dialog;
+      var cancelLock, dialog, dialogPr;
       ns.closeDialog();
       dialog = $(tpl('dialog')).appendTo('body');
-      dialog.on('click', '.uploadcare-dialog-close', ns.closeDialog);
+      dialogPr = ns.openPanel(dialog.find('.uploadcare-dialog-placeholder'), files, tab, settings);
+      dialog.addClass('uploadcare-active');
+      cancelLock = lockScroll($(window), dialog.css('position') === 'absolute');
+      $('html, body').addClass(openedClass);
+      dialog.on('click', '.uploadcare-dialog-close', dialogPr.reject);
       dialog.on('dblclick', function(e) {
         var showStoppers;
         if (!$.contains(document.documentElement, e.target)) {
@@ -8966,18 +9126,34 @@ this.Pusher = Pusher;
         if ($(e.target).is(showStoppers) || $(e.target).parents(showStoppers).length) {
           return;
         }
-        return ns.closeDialog();
+        return dialogPr.reject();
       });
-      currentDialogPr = ns.openPanel(dialog.find('.uploadcare-dialog-placeholder'), files, tab, settings);
-      dialog.addClass('uploadcare-active');
-      cancelLock = lockScroll($(window), dialog.css('position') === 'absolute');
-      $('html, body').addClass(openedClass);
-      return currentDialogPr.always(function() {
+      return currentDialogPr = dialogPr.always(function() {
         $('html, body').removeClass(openedClass);
         currentDialogPr = null;
         dialog.remove();
         return cancelLock();
       });
+    };
+    ns.openPreviewDialog = function(file, settings) {
+      var dialog, oldDialogPr,
+        _this = this;
+      oldDialogPr = currentDialogPr;
+      currentDialogPr = null;
+      settings = $.extend({}, settings, {
+        multiple: false,
+        tabs: ''
+      });
+      dialog = uploadcare.openDialog(file, 'preview', settings).always(function() {
+        currentDialogPr = oldDialogPr;
+        return $('html, body').addClass(openedClass);
+      });
+      dialog.onTabVisibility(function(tab, shown) {
+        if (tab === 'preview' && !shown) {
+          return dialog.reject();
+        }
+      });
+      return dialog;
     };
     ns.openPanel = function(placeholder, files, tab, settings) {
       var filter, panel;
@@ -9034,7 +9210,7 @@ this.Pusher = Pusher;
       tabClass = 'uploadcare-dialog-tab';
 
       function Panel(settings, placeholder, files, tab) {
-        var sel,
+        var file, sel, _i, _len,
           _this = this;
         this.settings = settings;
         this.isTabVisible = __bind(this.isTabVisible, this);
@@ -9056,12 +9232,17 @@ this.Pusher = Pusher;
         if (this.settings.multiple) {
           this.panel.addClass('uploadcare-dialog-multiple');
         }
-        this.files = new utils.CollectionOfPromises(files);
+        this.files = new utils.CollectionOfPromises();
         this.files.onRemove.add(function() {
           if (_this.files.length() === 0) {
             return _this.hideTab('preview');
           }
         });
+        this.__autoCrop(this.files);
+        for (_i = 0, _len = files.length; _i < _len; _i++) {
+          file = files[_i];
+          this.files.add(file);
+        }
         this.tabs = {};
         this.__prepareFooter();
         this.onTabVisibility = $.Callbacks().add(function(tab, show) {
@@ -9113,6 +9294,36 @@ this.Pusher = Pusher;
         }
       };
 
+      Panel.prototype.__autoCrop = function(files) {
+        var crop, _i, _len, _ref5,
+          _this = this;
+        if (!this.settings.crop || !this.settings.multiple) {
+          return;
+        }
+        _ref5 = this.settings.crop;
+        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
+          crop = _ref5[_i];
+          if (!crop.preferedSize) {
+            return;
+          }
+        }
+        return files.onAnyDone.add(function(file, fileInfo) {
+          var info, newFile, size;
+          if (!fileInfo.isImage || fileInfo.cdnUrlModifiers) {
+            return;
+          }
+          info = fileInfo.originalImageInfo;
+          size = uploadcare.utils.fitSize(_this.settings.crop[0].preferedSize, [info.width, info.height], true);
+          newFile = utils.applyCropSelectionToFile(file, _this.settings.crop[0], [info.width, info.height], {
+            width: size[0],
+            height: size[1],
+            left: Math.round((info.width - size[0]) / 2),
+            top: Math.round((info.height - size[1]) / 2)
+          });
+          return files.replace(file, newFile);
+        });
+      };
+
       Panel.prototype.__resolve = function() {
         return this.dfd.resolve(this.files.get());
       };
@@ -9131,10 +9342,13 @@ this.Pusher = Pusher;
         }
         if (this.files.length()) {
           this.showTab('preview');
-          return this.switchTab('preview');
+          this.switchTab('preview');
         } else {
           this.hideTab('preview');
-          return this.switchTab(tab || this.__firstVisibleTab());
+          this.switchTab(tab || this.__firstVisibleTab());
+        }
+        if (this.settings.tabs.length === 0) {
+          return this.panel.addClass('uploadcare-panel-hide-tabs');
         }
       };
 
@@ -9271,6 +9485,7 @@ this.Pusher = Pusher;
         this.__reset = __bind(this.__reset, this);
         this.validators = this.settings.validators = [];
         this.currentObject = null;
+        this.__onDialogOpen = $.Callbacks();
         this.__onUploadComplete = $.Callbacks();
         this.__onChange = $.Callbacks().add(function(object) {
           return object != null ? object.promise().done(function(info) {
@@ -9394,13 +9609,16 @@ this.Pusher = Pusher;
       };
 
       BaseWidget.prototype.openDialog = function(tab) {
-        var _this = this;
+        var dialogApi,
+          _this = this;
         if (this.settings.systemDialog) {
           return utils.fileSelectDialog(this.template.content, this.settings, function(input) {
             return _this.__handleDirectSelection('object', input.files);
           });
         } else {
-          return uploadcare.openDialog(this.currentObject, tab, this.settings).done(this.__setObject);
+          dialogApi = uploadcare.openDialog(this.currentObject, tab, this.settings);
+          this.__onDialogOpen.fire(dialogApi);
+          return dialogApi.done(this.__setObject);
         }
       };
 
@@ -9409,6 +9627,7 @@ this.Pusher = Pusher;
           this.__api = utils.bindAll(this, ['openDialog', 'reloadInfo', 'value', 'validators']);
           this.__api.onChange = utils.publicCallbacks(this.__onChange);
           this.__api.onUploadComplete = utils.publicCallbacks(this.__onUploadComplete);
+          this.__api.onDialogOpen = utils.publicCallbacks(this.__onDialogOpen);
           this.__api.inputElement = this.element.get(0);
         }
         return this.__api;
@@ -9531,13 +9750,14 @@ this.Pusher = Pusher;
   utils = uploadcare.utils, namespace = uploadcare.namespace, settings = uploadcare.settings, $ = uploadcare.jQuery;
 
   namespace('uploadcare', function(ns) {
-    var cleanup, dataAttr, initialize, initializeWidget;
+    var cleanup, dataAttr, initialize, initializeWidget, selector;
     dataAttr = 'uploadcareWidget';
+    selector = '[role~="uploadcare-uploader"]';
     ns.initialize = function(container) {
       if (container == null) {
-        container = 'body';
+        container = ':root';
       }
-      return initialize($(container).find('@uploadcare-uploader'));
+      return initialize($(container).find(selector));
     };
     initialize = function(targets) {
       var target, widget, _i, _len, _results;
@@ -9592,7 +9812,7 @@ this.Pusher = Pusher;
     ns.start = function(s) {
       var live;
       (live = function() {
-        return initialize($('@uploadcare-uploader'));
+        return initialize($(selector));
       })();
       if (settings.common(s).live) {
         return setInterval(live, 100);
@@ -9607,7 +9827,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, canSubmit, cancelEvents, submitPreventionState, submittedForm;
+  var $, canSubmit, cancelEvents, submitPreventionState, submittedForm, uploadForm;
 
   $ = uploadcare.jQuery;
 
@@ -9622,7 +9842,11 @@ this.Pusher = Pusher;
     return form.find(':submit').attr('disabled', prevent);
   };
 
-  $(document).on('submit', '@uploadcare-upload-form', function() {
+  uploadForm = '[role~="uploadcare-upload-form"]';
+
+  submittedForm = uploadForm + '[data-uploadcare-submitted]';
+
+  $(document).on('submit', uploadForm, function() {
     var form;
     form = $(this);
     if (canSubmit(form)) {
@@ -9632,8 +9856,6 @@ this.Pusher = Pusher;
       return false;
     }
   });
-
-  submittedForm = '@uploadcare-upload-form[data-uploadcare-submitted]';
 
   $(document).on('loaded.uploadcare', submittedForm, function() {
     return $(this).submit();
@@ -9682,7 +9904,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.1.6';
+  uploadcare.version = '2.2.0';
 
   expose = uploadcare.expose;
 
@@ -9746,4 +9968,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.1.6/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.2.0/uploadcare/'));
