@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.2.0)
- * Date: 2015-06-03 19:36:58 +0300
- * Rev: 2392a1b198
+ * Uploadcare (2.3.0)
+ * Date: 2015-06-05 18:45:01 +0300
+ * Rev: 47f46927e4
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -1746,6 +1746,7 @@ this.Pusher = Pusher;
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
 
   namespace = uploadcare.namespace, $ = uploadcare.jQuery;
@@ -1868,14 +1869,65 @@ this.Pusher = Pusher;
       __extends(CollectionOfPromises, _super);
 
       function CollectionOfPromises() {
-        this.onAnyDone = $.Callbacks();
-        this.onAnyFail = $.Callbacks();
-        this.onAnyProgress = $.Callbacks();
-        this.onAnyProgress.add(function(item, firstArgument) {
+        this.onAnyProgress = __bind(this.onAnyProgress, this);
+        this.onAnyFail = __bind(this.onAnyFail, this);
+        this.onAnyDone = __bind(this.onAnyDone, this);
+        this.anyDoneList = $.Callbacks();
+        this.anyFailList = $.Callbacks();
+        this.anyProgressList = $.Callbacks();
+        this.anyProgressList.add(function(item, firstArgument) {
           return $(item).data('lastProgress', firstArgument);
         });
         CollectionOfPromises.__super__.constructor.apply(this, arguments);
       }
+
+      CollectionOfPromises.prototype.onAnyDone = function(cb) {
+        var file, _i, _len, _ref1, _results;
+        this.anyDoneList.add(cb);
+        _ref1 = this.__items;
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          file = _ref1[_i];
+          if (file.state() === 'resolved') {
+            _results.push(file.done(function() {
+              return cb.apply(null, [file].concat(__slice.call(arguments)));
+            }));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      CollectionOfPromises.prototype.onAnyFail = function(cb) {
+        var file, _i, _len, _ref1, _results;
+        this.anyFailList.add(cb);
+        _ref1 = this.__items;
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          file = _ref1[_i];
+          if (file.state() === 'rejected') {
+            _results.push(file.fail(function() {
+              return cb.apply(null, [file].concat(__slice.call(arguments)));
+            }));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      };
+
+      CollectionOfPromises.prototype.onAnyProgress = function(cb) {
+        var file, _i, _len, _ref1, _results;
+        this.anyProgressList.add(cb);
+        _ref1 = this.__items;
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          file = _ref1[_i];
+          _results.push(cb(file, $(file).data('lastProgress')));
+        }
+        return _results;
+      };
 
       CollectionOfPromises.prototype.lastProgresses = function() {
         var item, _i, _len, _ref1, _results;
@@ -1889,11 +1941,20 @@ this.Pusher = Pusher;
       };
 
       CollectionOfPromises.prototype.add = function(item) {
-        if (!(item && item.done && item.fail && item.then)) {
+        if (!(item && item.then)) {
           return;
         }
         CollectionOfPromises.__super__.add.apply(this, arguments);
         return this.__watchItem(item);
+      };
+
+      CollectionOfPromises.prototype.__replace = function(oldItem, newItem, i) {
+        if (!(newItem && newItem.then)) {
+          return this.remove(oldItem);
+        } else {
+          CollectionOfPromises.__super__.__replace.apply(this, arguments);
+          return this.__watchItem(newItem);
+        }
       };
 
       CollectionOfPromises.prototype.__watchItem = function(item) {
@@ -1901,24 +1962,12 @@ this.Pusher = Pusher;
           _this = this;
         handler = function(callbacks) {
           return function() {
-            var args;
-            args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
             if (__indexOf.call(_this.__items, item) >= 0) {
-              args.unshift(item);
-              return callbacks.fire.apply(callbacks, args);
+              return callbacks.fire.apply(callbacks, [item].concat(__slice.call(arguments)));
             }
           };
         };
-        return item.then(handler(this.onAnyDone), handler(this.onAnyFail), handler(this.onAnyProgress));
-      };
-
-      CollectionOfPromises.prototype.__replace = function(oldItem, newItem, i) {
-        if (!(newItem && newItem.done && newItem.fail && newItem.then)) {
-          return this.remove(oldItem);
-        } else {
-          CollectionOfPromises.__super__.__replace.apply(this, arguments);
-          return this.__watchItem(newItem);
-        }
+        return item.then(handler(this.anyDoneList), handler(this.anyFailList), handler(this.anyProgressList));
       };
 
       return CollectionOfPromises;
@@ -7741,7 +7790,7 @@ this.Pusher = Pusher;
           return _this.__apiDf.notify(_this.__progressInfo());
         };
         notify();
-        this.__fileColl.onAnyProgress.add(notify);
+        this.__fileColl.onAnyProgress(notify);
         this.__allFilesDf.done(function() {
           _this.__progressState = 'uploaded';
           return notify();
@@ -8748,7 +8797,7 @@ this.Pusher = Pusher;
           }
           return circleDf.notify(progress);
         };
-        this.dialogApi.fileColl.onAnyProgress.add(update);
+        this.dialogApi.fileColl.onAnyProgress(update);
         this.dialogApi.fileColl.onAdd.add(update);
         this.dialogApi.fileColl.onRemove.add(update);
         update();
@@ -8940,22 +8989,15 @@ this.Pusher = Pusher;
         this.footerTextEl = this.__find('footer-text');
         this.doneBtnEl = this.container.find('.uploadcare-dialog-preview-done');
         $.each(this.dialogApi.fileColl.get(), function(i, file) {
-          _this.__fileAdded(file);
-          return file.then(function(info) {
-            return _this.__fileDone(file, info);
-          }, function(info) {
-            return _this.__fileFailed(file, info);
-          }, function(info) {
-            return _this.__fileProgress(file, info);
-          });
+          return _this.__fileAdded(file);
         });
         this.__updateContainerView();
         this.dialogApi.fileColl.onAdd.add(this.__fileAdded, this.__updateContainerView);
         this.dialogApi.fileColl.onRemove.add(this.__fileRemoved, this.__updateContainerView);
         this.dialogApi.fileColl.onReplace.add(this.__fileReplaced, this.__updateContainerView);
-        this.dialogApi.fileColl.onAnyDone.add(this.__fileDone);
-        this.dialogApi.fileColl.onAnyFail.add(this.__fileFailed);
-        this.dialogApi.fileColl.onAnyProgress.add(this.__fileProgress);
+        this.dialogApi.fileColl.onAnyProgress(this.__fileProgress);
+        this.dialogApi.fileColl.onAnyDone(this.__fileDone);
+        this.dialogApi.fileColl.onAnyFail(this.__fileFailed);
         this.fileListEl.addClass(this.settings.imagesOnly ? 'uploadcare-file-list_tiles' : 'uploadcare-file-list_table');
         this.__setupSorting();
       }
@@ -9215,7 +9257,7 @@ this.Pusher = Pusher;
       tabClass = 'uploadcare-dialog-tab';
 
       function Panel(settings, placeholder, files, tab) {
-        var file, sel, _i, _len,
+        var sel,
           _this = this;
         this.settings = settings;
         this.isTabVisible = __bind(this.isTabVisible, this);
@@ -9237,17 +9279,13 @@ this.Pusher = Pusher;
         if (this.settings.multiple) {
           this.panel.addClass('uploadcare-dialog-multiple');
         }
-        this.files = new utils.CollectionOfPromises();
+        this.files = new utils.CollectionOfPromises(files);
         this.files.onRemove.add(function() {
           if (_this.files.length() === 0) {
             return _this.hideTab('preview');
           }
         });
         this.__autoCrop(this.files);
-        for (_i = 0, _len = files.length; _i < _len; _i++) {
-          file = files[_i];
-          this.files.add(file);
-        }
         this.tabs = {};
         this.__prepareFooter();
         this.onTabVisibility = $.Callbacks().add(function(tab, show) {
@@ -9312,7 +9350,7 @@ this.Pusher = Pusher;
             return;
           }
         }
-        return files.onAnyDone.add(function(file, fileInfo) {
+        return files.onAnyDone(function(file, fileInfo) {
           var info, newFile, size;
           if (!fileInfo.isImage || fileInfo.cdnUrlModifiers) {
             return;
@@ -9909,7 +9947,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.2.0';
+  uploadcare.version = '2.3.0';
 
   expose = uploadcare.expose;
 
@@ -9977,4 +10015,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.2.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.3.0/uploadcare/'));
