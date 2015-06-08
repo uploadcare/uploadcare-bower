@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.3.0)
- * Date: 2015-06-05 18:45:01 +0300
- * Rev: 47f46927e4
+ * Uploadcare (2.3.1)
+ * Date: 2015-06-08 11:50:32 +0300
+ * Rev: 6a2067af93
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.1 | (c) 2005, 2014 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -8520,6 +8520,7 @@ this.Pusher = Pusher;
         this.name = name;
         this.__capture = __bind(this.__capture, this);
         this.__mirror = __bind(this.__mirror, this);
+        this.__revoke = __bind(this.__revoke, this);
         this.__requestCamera = __bind(this.__requestCamera, this);
         if (!this.__checkCompatibility()) {
           this.dialogApi.hideTab(this.name);
@@ -8537,17 +8538,17 @@ this.Pusher = Pusher;
           return this.play();
         });
         this.dialogApi.progress(function(name) {
-          if (name === _this.name && !_this.__loaded) {
-            return _this.__requestCamera();
+          if (name === _this.name) {
+            if (!_this.__loaded) {
+              return _this.__requestCamera();
+            }
+          } else {
+            if (_this.__loaded && document.location.protocol === 'https:') {
+              return _this.__revoke();
+            }
           }
         });
-        this.dialogApi.always(function() {
-          var _ref1, _ref2;
-          if ((_ref1 = _this.URL) != null) {
-            _ref1.revokeObjectURL(_this.video.prop('src'));
-          }
-          return (_ref2 = _this.__stream) != null ? typeof _ref2.stop === "function" ? _ref2.stop() : void 0 : void 0;
-        });
+        this.dialogApi.always(this.__revoke);
       }
 
       CameraTab.prototype.__checkCompatibility = function() {
@@ -8592,6 +8593,16 @@ this.Pusher = Pusher;
           }
           return _this.__loaded = false;
         });
+      };
+
+      CameraTab.prototype.__revoke = function() {
+        var _ref1, _ref2;
+        this.__loaded = false;
+        this.container.removeClass('uploadcare-dialog-camera-denied').removeClass('uploadcare-dialog-camera-ready').addClass('uploadcare-dialog-camera-requested');
+        if ((_ref1 = this.URL) != null) {
+          _ref1.revokeObjectURL(this.video.prop('src'));
+        }
+        return (_ref2 = this.__stream) != null ? typeof _ref2.stop === "function" ? _ref2.stop() : void 0 : void 0;
       };
 
       CameraTab.prototype.__mirror = function() {
@@ -9947,7 +9958,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.3.0';
+  uploadcare.version = '2.3.1';
 
   expose = uploadcare.expose;
 
@@ -10015,4 +10026,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.3.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.3.1/uploadcare/'));
