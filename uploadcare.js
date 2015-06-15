@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.3.1)
- * Date: 2015-06-08 11:50:32 +0300
- * Rev: 6a2067af93
+ * Uploadcare (2.3.2)
+ * Date: 2015-06-15 19:18:59 +0300
+ * Rev: e4399ead6c
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -2364,11 +2364,11 @@ this.Pusher = Pusher;
       return $.Deferred(function(newDefer) {
         return $.each(pipeTuples, function(i, tuple) {
           var fn;
-          fn = jQuery.isFunction(fns[tuple[2]]) && fns[tuple[2]];
+          fn = $.isFunction(fns[tuple[2]]) && fns[tuple[2]];
           return promise[tuple[1]](function() {
             var returned;
             returned = fn && fn.apply(this, arguments);
-            if (returned && jQuery.isFunction(returned.promise)) {
+            if (returned && $.isFunction(returned.promise)) {
               return returned.promise().progress(newDefer.notify).done(newDefer.resolve).fail(newDefer.reject);
             } else {
               return newDefer[tuple[0] + "With"](this === promise ? newDefer.promise() : this, fn ? [returned] : arguments);
@@ -9953,7 +9953,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.3.1';
+  uploadcare.version = '2.3.2';
 
   expose = uploadcare.expose;
 
@@ -10017,4 +10017,4 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.3.1/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.3.2/uploadcare/'));
