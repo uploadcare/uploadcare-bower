@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.3.2)
- * Date: 2015-06-15 19:18:59 +0300
- * Rev: e4399ead6c
+ * Uploadcare (2.3.3)
+ * Date: 2015-06-23 20:43:09 +0300
+ * Rev: 7327ae7963
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.3 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -3014,6 +3014,254 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+    return ns.az = {
+      uploading: 'Yüklənilir... Lütfən, gözləyin.',
+      loadingInfo: 'İnfo yüklənilir...',
+      errors: {
+        "default": 'Xəta',
+        baddata: 'Yanlış dəyər',
+        size: 'Fayl çox böyükdür',
+        upload: 'Yüklənilə bilmədi',
+        user: 'Yükləmə ləğv edildi',
+        info: 'İnfo yüklənə bilmədi',
+        image: 'Yalnız təsvirlərə icazə verilir',
+        createGroup: 'Fayl qrupu yaradıla bilmir',
+        deleted: 'Fayl silindi'
+      },
+      draghere: 'Faylı bura atın',
+      file: {
+        one: '%1 fayl',
+        other: '%1 fayl'
+      },
+      buttons: {
+        cancel: 'Ləğv edin',
+        remove: 'Silin',
+        choose: {
+          files: {
+            one: 'Fayl seçin',
+            other: 'Fayllar seçin'
+          },
+          images: {
+            one: 'Təsvir seçin',
+            other: 'Təsvirlər seçin'
+          }
+        }
+      },
+      dialog: {
+        done: 'Hazırdır',
+        showFiles: 'Faylları göstərin',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Xoş gəlmisiniz',
+            preview: 'Önbaxış',
+            file: 'Lokal Fayllar',
+            url: 'İxtiyari linklər',
+            camera: 'Kamera',
+            gdrive: 'Google Disk'
+          },
+          file: {
+            drag: 'Faylı bura atın',
+            nodrop: 'Kompüterinizdən faylları yükləyin',
+            cloudsTip: 'Bulud yaddaşlar <br>və sosial xidmətlər',
+            or: 'or',
+            button: 'Lokal fayl seçin',
+            also: 'Həmçinin, buradan seçə bilərsiniz'
+          },
+          url: {
+            title: 'Vebdən fayllar',
+            line1: 'Vebdən istənilən faylı götürün.',
+            line2: 'Sadəcə, link verin.',
+            input: 'Linkinizi bura yerləşdirin...',
+            button: 'Yükləyin'
+          },
+          camera: {
+            capture: 'Şəkil çəkin',
+            mirror: 'Güzgü',
+            retry: 'Yenidən icazə sorğusu göndərin.',
+            pleaseAllow: {
+              title: 'Lütfən, kameranıza giriş hüququ verin',
+              text: 'Bu saytdan kameranıza daxil olmaq icazəsi verildi. ' + 'Kameranız ilə şəkil çəkmək üçün bu sorğunu təsdiq etməlisiniz.'
+            },
+            notFound: {
+              title: 'Kamera aşkar edilmədi',
+              text: 'Görünür, bu cihaza kamera qoşulmayıb.'
+            }
+          },
+          preview: {
+            unknownName: 'naməlum',
+            change: 'Ləğv edin',
+            back: 'Geri',
+            done: 'Əlavə edin',
+            unknown: {
+              title: 'Yüklənilir... Lütfən, önbaxış üçün gözləyin.',
+              done: 'Önbaxışı ötürün və qəbul edin'
+            },
+            regular: {
+              title: 'Bu fayl əlavə edilsin?',
+              line1: 'Yuxarıdakı faylı əlavə etmək üzrəsiniz.',
+              line2: 'Lütfən, təsdiq edin.'
+            },
+            image: {
+              title: 'Bu təsvir əlavə edilsin?',
+              change: 'Ləğv edin'
+            },
+            crop: {
+              title: 'Bu təsviri kəsin və əlavə edin',
+              done: 'Hazırdır',
+              free: 'pulsuz'
+            },
+            error: {
+              "default": {
+                title: 'Ups!',
+                text: 'Yükləmə zamanı nəsə xəta baş verdi.',
+                back: 'Lütfən, y enidən cəhd edin.'
+              },
+              image: {
+                title: 'Yaınız təsvir faylları qəbul olunur.',
+                text: 'Lütfən, başqa fayl ilə cəhd edin.',
+                back: 'Təsvir seçin'
+              },
+              size: {
+                title: 'Seçdiyiniz fayl limiti keçir.',
+                text: 'Lütfən, başqa fayl ilə cəhd edin.'
+              },
+              loadImage: {
+                title: 'Xəta',
+                text: 'Təsvir yüklənilə bilmir'
+              }
+            },
+            multiple: {
+              title: '%files% fayl seçdiniz.',
+              question: 'Bütün bu faylları əlavə etmək istəyirsiniz?',
+              tooManyFiles: 'Həddindən çox fayl seçdiniz. %max% maksimumdur.',
+              tooFewFiles: '%files% fayl seçdiniz. Ən azı %min% tələb olunur.',
+              clear: 'Hamısını silin',
+              done: 'Hazırdır'
+            }
+          }
+        },
+        footer: {
+          text: 'Faylları yükləyən, yadda saxlayan və icra edən'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+    return ns.az = function(n) {
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+    return ns.ca = {
+      uploading: 'Carregant... Si us plau esperi.',
+      loadingInfo: 'Carregant informació...',
+      errors: {
+        "default": 'Error',
+        baddata: 'Valor incorrecte',
+        size: 'Massa gran',
+        upload: 'No s\'ha pogut carregar',
+        user: 'Carrega cancel·lada',
+        info: 'No s\'ha pogut carregar la informació',
+        image: 'Només es permeten imatges'
+      },
+      draghere: 'Arrossega els fitxers fins aquí',
+      file: {
+        one: '%1 fitxer',
+        other: '%1 fitxers'
+      },
+      buttons: {
+        cancel: 'Cancel·lar',
+        remove: 'Eliminar'
+      },
+      dialog: {
+        tabs: {
+          names: {
+            preview: 'Avanci',
+            file: 'Ordinador',
+            url: 'Una adreça qualsevol'
+          },
+          file: {
+            drag: 'Arrossega un fitxer aquí',
+            nodrop: 'Carrega fotos des del teu ordinador',
+            or: 'o',
+            button: 'Escull un fitxer des del teu ordinador',
+            also: 'També pots seleccionar-lo de'
+          },
+          url: {
+            title: 'Fitxers de la web',
+            line1: 'Selecciona qualsevol fitxer de la web.',
+            line2: 'Només proporcioni el link.',
+            input: 'Copiï el link aquí...',
+            button: 'Pujar'
+          },
+          preview: {
+            unknownName: 'desconegut',
+            change: 'Cancel·lar',
+            back: 'Endarrere',
+            done: 'Pujar',
+            unknown: {
+              title: 'Carregant. Si us plau esperi per la visualització prèvia.',
+              done: 'Saltar visualització prèvia i acceptar'
+            },
+            regular: {
+              title: 'Vols pujar aquest fitxer?',
+              line1: 'Estàs a punt de pujar el fitxer superior.',
+              line2: 'Confirmi si us plau.'
+            },
+            image: {
+              title: 'Vols pujar aquesta imatge?',
+              change: 'Cancel·lar'
+            },
+            crop: {
+              title: 'Tallar i pujar aquesta imatge',
+              done: 'Fet'
+            },
+            error: {
+              "default": {
+                title: 'La pujada ha fallat',
+                line1: 'S\'ha produït un error durant la pujada.',
+                line2: 'Si us plau, provi-ho de nou.'
+              },
+              image: {
+                title: 'Només imatges',
+                line1: 'Només s\'accepten fitxers d\'imatges.',
+                line2: 'Si us plau, provi-ho de nou amb un altre fitxer.'
+              },
+              size: {
+                title: 'Límit de mida',
+                line1: 'El fitxer que has seleccionat sobrepassa el límit dels 100MB.',
+                line2: 'Si us plau provi-ho de nou amb un altre fitxer.'
+              },
+              loadImage: {
+                title: 'Error',
+                text: 'No s\'ha pogut carregar la imatge'
+              }
+            }
+          }
+        },
+        footer: {
+          text: 'Els fitxers han estat carregats, gestionats i processats per'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+    return ns.ca = function(n) {
+      if (n === 1) {
+        return 'one';
+      }
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
     return ns.da = {
       uploading: 'Uploader... Vent venligst.',
       loadingInfo: 'Henter information...',
@@ -4767,9 +5015,9 @@ this.Pusher = Pusher;
             camera: 'Kamera'
           },
           file: {
-            drag: 'Braya bir dosya bakın',
+            drag: 'Buraya bir dosya bırakın',
             nodrop: 'Bilgisayarınızdan dosya yükleyin',
-            or: 'or',
+            or: 'ya da',
             button: 'Bilgisayardan bir dosya seç',
             also: 'Diğer yükleme seçenekleri',
             cloudsTip: 'Bulut depolamalar<br>ve sosyal hizmetler'
@@ -4901,16 +5149,16 @@ this.Pusher = Pusher;
           names: {
             'empty-pubkey': '歡迎',
             preview: '預覽',
-            file: '從電腦中選取檔案',
+            file: '從本機上傳',
             url: '任意圖片連結',
             camera: '相機'
           },
           file: {
             drag: '拖放檔案到這裡',
-            nodrop: '從你的電腦中上傳',
+            nodrop: '從你的本機中上傳',
             cloudsTip: '雲端硬碟<br>與社群網站',
             or: '或者',
-            button: '從電腦中選取檔案',
+            button: '從本機中選取檔案',
             also: '你也可以選自'
           },
           url: {
@@ -9959,7 +10207,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.3.2';
+  uploadcare.version = '2.3.3';
 
   expose = uploadcare.expose;
 
@@ -10027,4 +10275,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.3.2/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.3.3/uploadcare/'));
