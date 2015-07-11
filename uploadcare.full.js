@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.3.4)
- * Date: 2015-06-29 17:11:50 +0300
- * Rev: b87d1195f0
+ * Uploadcare (2.3.5)
+ * Date: 2015-07-11 12:19:47 +0300
+ * Rev: 41ef214a36
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v1.11.3 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2520,7 +2520,7 @@ this.Pusher = Pusher;
       return df.promise();
     };
     ns.readJpegChunks = function(file) {
-      var df, pos, readNext, readToView;
+      var df, pos, readNext, readNextChunk, readToView;
       readToView = function(file, cb) {
         var reader;
         reader = new FileReader();
@@ -2533,6 +2533,18 @@ this.Pusher = Pusher;
         return reader.readAsArrayBuffer(file);
       };
       readNext = function() {
+        return readToView(file.slice(pos, pos + 128), function(view) {
+          var i, _i, _ref1;
+          for (i = _i = 0, _ref1 = view.byteLength; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+            if (view.getUint8(i) === 0xff) {
+              pos += i;
+              break;
+            }
+          }
+          return readNextChunk();
+        });
+      };
+      readNextChunk = function() {
         var startPos;
         startPos = pos;
         return readToView(file.slice(pos, pos += 4), function(view) {
@@ -9657,7 +9669,7 @@ this.Pusher = Pusher;
         }
         return files.onAnyDone(function(file, fileInfo) {
           var info, newFile, size;
-          if (!fileInfo.isImage || fileInfo.cdnUrlModifiers) {
+          if (!fileInfo.isImage || fileInfo.cdnUrlModifiers || fileInfo.crop) {
             return;
           }
           info = fileInfo.originalImageInfo;
@@ -10252,7 +10264,7 @@ this.Pusher = Pusher;
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.3.4';
+  uploadcare.version = '2.3.5';
 
   expose = uploadcare.expose;
 
@@ -10320,4 +10332,4 @@ this.Pusher = Pusher;
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.3.4/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.3.5/uploadcare/'));
