@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.4.0)
- * Date: 2015-07-23 17:40:07 +0300
- * Rev: 92095cfc4d
+ * Uploadcare (2.4.1)
+ * Date: 2015-08-08 20:19:32 +0300
+ * Rev: 36649d876c
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2106,7 +2106,7 @@ this.Pusher = Pusher;
       return target;
     };
     ns.upperCase = function(s) {
-      return s.replace(/-/g, '_').toUpperCase();
+      return s.replace(/([A-Z])/g, '_$1').toUpperCase();
     };
     ns.publicCallbacks = function(callbacks) {
       var result;
@@ -2637,39 +2637,38 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   var $, expose, namespace, utils,
-    __hasProp = {}.hasOwnProperty,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   expose = uploadcare.expose, namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery;
 
   namespace('uploadcare.settings', function(ns) {
-    var arrayOptions, defaults, flagOptions, intOptions, key, normalize, parseCrop, parseShrink, presets, publicDefaults, str2arr, urlOptions, value;
+    var arrayOptions, defaults, flagOptions, intOptions, normalize, parseCrop, parseShrink, presets, str2arr, urlOptions;
     defaults = {
       'live': true,
-      'manual-start': false,
+      'manualStart': false,
       'locale': null,
-      'locale-pluralize': null,
-      'locale-translations': null,
-      'system-dialog': false,
+      'localePluralize': null,
+      'localeTranslations': null,
+      'systemDialog': false,
       'crop': false,
-      'preview-step': false,
-      'images-only': false,
+      'previewStep': false,
+      'imagesOnly': false,
       'clearable': false,
       'multiple': false,
-      'multiple-max': 0,
-      'multiple-min': 1,
-      'image-shrink': false,
-      'path-value': true,
+      'multipleMax': 0,
+      'multipleMin': 1,
+      'imageShrink': false,
+      'pathValue': true,
       'tabs': 'file camera url facebook gdrive dropbox instagram evernote flickr skydrive',
-      'preferred-types': '',
-      'input-accept-types': '',
-      'do-not-store': false,
-      'public-key': null,
-      'pusher-key': '79ae88bd931ea68464d9',
-      'cdn-base': 'http://www.ucarecdn.com',
-      'url-base': 'https://upload.uploadcare.com',
-      'social-base': 'https://social.uploadcare.com',
-      'script-base': typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : ''
+      'preferredTypes': '',
+      'inputAcceptTypes': '',
+      'doNotStore': false,
+      'publicKey': null,
+      'pusherKey': '79ae88bd931ea68464d9',
+      'cdnBase': 'http://www.ucarecdn.com',
+      'urlBase': 'https://upload.uploadcare.com',
+      'socialBase': 'https://social.uploadcare.com',
+      'scriptBase': typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : ''
     };
     presets = {
       'tabs': {
@@ -2797,29 +2796,26 @@ this.Pusher = Pusher;
       }
       return settings;
     };
-    publicDefaults = {
+    expose('defaults', $.extend({
       allTabs: presets.tabs.all
-    };
-    for (key in defaults) {
-      if (!__hasProp.call(defaults, key)) continue;
-      value = defaults[key];
-      publicDefaults[$.camelCase(key)] = value;
-    }
-    expose('defaults', publicDefaults);
-    ns.globals = utils.once(function() {
-      var fallback, values;
+    }, defaults));
+    ns.globals = function() {
+      var key, value, values;
       values = {};
       for (key in defaults) {
-        if (!__hasProp.call(defaults, key)) continue;
-        fallback = defaults[key];
         value = window["UPLOADCARE_" + (utils.upperCase(key))];
-        values[$.camelCase(key)] = value !== void 0 ? value : fallback;
+        if (value !== void 0) {
+          values[key] = value;
+        }
       }
-      return normalize(values);
-    });
-    ns.common = utils.once(function(settings) {
+      return values;
+    };
+    ns.common = utils.once(function(settings, ignoreGlobals) {
       var result;
-      result = normalize($.extend({}, ns.globals(), settings || {}));
+      if (!ignoreGlobals) {
+        defaults = $.extend(defaults, ns.globals());
+      }
+      result = normalize($.extend(defaults, settings || {}));
       if (!result.publicKey) {
         utils.commonWarning('publicKey');
       }
@@ -2858,7 +2854,7 @@ this.Pusher = Pusher;
 
     })();
     uploadcare.tabsCss = new ns.CssCollector;
-    return defaults['_empty-key-text'] = "<div class=\"uploadcare-dialog-message-center\">\n<div class=\"uploadcare-dialog-big-title\">Hello!</div>\n<div class=\"uploadcare-dialog-large-text\">\n  <div>Your <a class=\"uploadcare-link\" href=\"https://uploadcare.com/dashboard/\">public key</a> is not set.</div>\n  <div>Add this to the &lt;head&gt; tag to start uploading files:</div>\n  <div class=\"uploadcare-pre\">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n&lt;/script&gt;</div>\n</div>\n</div>";
+    return defaults['_emptyKeyText'] = "<div class=\"uploadcare-dialog-message-center\">\n<div class=\"uploadcare-dialog-big-title\">Hello!</div>\n<div class=\"uploadcare-dialog-large-text\">\n  <div>Your <a class=\"uploadcare-link\" href=\"https://uploadcare.com/dashboard/\">public key</a> is not set.</div>\n  <div>Add this to the &lt;head&gt; tag to start uploading files:</div>\n  <div class=\"uploadcare-pre\">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n&lt;/script&gt;</div>\n</div>\n</div>";
   });
 
 }).call(this);
@@ -10105,15 +10101,16 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }
       });
     };
-    ns.start = function(s) {
-      var live;
-      (live = function() {
-        return initialize($(selector));
-      })();
-      if (settings.common(s).live) {
-        return setInterval(live, 100);
+    ns.start = utils.once(function(s, isolated) {
+      s = settings.common(s, isolated);
+      if (isolated) {
+        return;
       }
-    };
+      if (s.live) {
+        setInterval(ns.initialize, 100);
+      }
+      return ns.initialize();
+    });
     return $(function() {
       if (!window["UPLOADCARE_MANUAL_START"]) {
         return ns.start();
@@ -10200,7 +10197,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.4.0';
+  uploadcare.version = '2.4.1';
 
   expose = uploadcare.expose;
 
@@ -10268,4 +10265,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.4.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.4.1/uploadcare/'));
