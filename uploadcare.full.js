@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.4.1)
- * Date: 2015-08-08 20:19:32 +0300
- * Rev: 36649d876c
+ * Uploadcare (2.4.2)
+ * Date: 2015-08-17 20:20:53 +0300
+ * Rev: f393a8da74
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -3496,7 +3496,7 @@ this.Pusher = Pusher;
             cloudsTip: 'Cloud Speicher<br>und soziale Dienste',
             or: 'oder',
             button: 'Wählen Sie eine lokale Datei',
-            also: 'Sie köhnen es auch wählen von'
+            also: 'Sie können sie auch wählen von'
           },
           url: {
             title: 'Dateien vom Web',
@@ -3647,7 +3647,7 @@ this.Pusher = Pusher;
           file: {
             drag: 'Drop a file here',
             nodrop: 'Upload files from your computer',
-            cloudsTip: 'Cloud storages<br>and social services',
+            cloudsTip: 'Cloud storages<br>and social networks',
             or: 'or',
             button: 'Choose a local file',
             also: 'You can also choose it from'
@@ -4976,7 +4976,7 @@ this.Pusher = Pusher;
           file: {
             drag: 'Перетащите файл сюда',
             nodrop: 'Загрузка файлов с вашего компьютера',
-            cloudsTip: 'Облачные хранилища<br>и социальные сервисы',
+            cloudsTip: 'Облачные хранилища<br>и социальные сети',
             or: 'или',
             button: 'Выберите локальный файл',
             also: 'Вы также можете загрузить файлы, используя:'
@@ -10197,7 +10197,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.4.1';
+  uploadcare.version = '2.4.2';
 
   expose = uploadcare.expose;
 
@@ -10265,4 +10265,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.4.1/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.4.2/uploadcare/'));
