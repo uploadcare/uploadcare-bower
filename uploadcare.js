@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.4.2)
- * Date: 2015-08-17 20:20:53 +0300
- * Rev: f393a8da74
+ * Uploadcare (2.4.3)
+ * Date: 2015-08-19 21:52:47 +0300
+ * Rev: f4c01ede46
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -1665,73 +1665,53 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
+  var $,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  $ = uploadcare.jQuery;
+
   uploadcare.namespace('uploadcare.utils.pusher', function(ns) {
-    var hasOwners, pusherInstance, pusherWrapped, pushers, releasePusher, updateConnection;
+    var ManagedPusher, pushers, _ref;
     pushers = {};
-    ns.getPusher = function(key, owner) {
-      if (!(key in pushers)) {
-        pushers[key] = {
-          instance: null,
-          owners: {}
-        };
+    uploadcare.Pusher.prototype.constructor = uploadcare.Pusher;
+    ManagedPusher = (function(_super) {
+      __extends(ManagedPusher, _super);
+
+      function ManagedPusher() {
+        _ref = ManagedPusher.__super__.constructor.apply(this, arguments);
+        return _ref;
       }
-      if (!pushers[key].owners[owner]) {
-        pushers[key].owners[owner] = true;
-      }
-      updateConnection(key);
-      return pusherWrapped(key, owner);
-    };
-    releasePusher = function(key, owner) {
-      if (!pushers[key].owners[owner]) {
-        return;
-      }
-      pushers[key].owners[owner] = false;
-      return updateConnection(key);
-    };
-    hasOwners = function(key) {
-      var owner;
-      return ((function() {
-        var _results;
-        _results = [];
-        for (owner in pushers[key].owners) {
-          if (pushers[key].owners[owner]) {
-            _results.push(owner);
-          }
+
+      ManagedPusher.prototype.subscribe = function(name) {
+        if (this.disconnectTimeout) {
+          clearTimeout(this.disconnectTimeout);
+          this.disconnectTimeout = null;
         }
-        return _results;
-      })()).length > 0;
-    };
-    updateConnection = function(key) {
-      var instance;
-      instance = pusherInstance(key);
-      if (hasOwners(key)) {
-        return instance.connect();
-      } else {
-        return setTimeout(function() {
-          if (!hasOwners(key)) {
-            return instance.disconnect();
-          }
-        }, 5000);
-      }
-    };
-    pusherInstance = function(key) {
-      var _ref;
-      if (((_ref = pushers[key]) != null ? _ref.instance : void 0) != null) {
-        return pushers[key].instance;
-      }
-      return pushers[key].instance = new uploadcare.Pusher(key);
-    };
-    return pusherWrapped = function(key, owner) {
-      var Wrapped;
-      Wrapped = function() {
-        this.owner = owner;
-        this.release = function() {
-          return releasePusher(key, owner);
-        };
-        return this;
+        this.connect();
+        return ManagedPusher.__super__.subscribe.apply(this, arguments);
       };
-      Wrapped.prototype = pusherInstance(key);
-      return new Wrapped();
+
+      ManagedPusher.prototype.unsubscribe = function(name) {
+        var _this = this;
+        ManagedPusher.__super__.unsubscribe.apply(this, arguments);
+        if ($.isEmptyObject(this.channels.channels)) {
+          return this.disconnectTimeout = setTimeout(function() {
+            _this.disconnectTimeout = null;
+            return _this.disconnect();
+          }, 5000);
+        }
+      };
+
+      return ManagedPusher;
+
+    })(uploadcare.Pusher);
+    return ns.getPusher = function(key) {
+      if (pushers[key] == null) {
+        pushers[key] = new ManagedPusher(key);
+      }
+      pushers[key].connect();
+      return pushers[key];
     };
   });
 
@@ -7790,11 +7770,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           _this = this;
         df = $.Deferred();
         pusherWatcher = new PusherWatcher(this.settings.pusherKey);
-        pollWatcher = new PollWatcher("" + this.settings.urlBase + "/status/");
-        this.__listenWatcher(df, $([pusherWatcher, pollWatcher]));
-        $(pusherWatcher).one(this.allEvents, function() {
-          return pollWatcher.stopWatching();
-        });
+        pollWatcher = new PollWatcher("" + this.settings.urlBase + "/from_url/status/");
         data = {
           pub_key: this.settings.publicKey,
           source_url: this.__url,
@@ -7802,14 +7778,19 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           store: this.settings.doNotStore ? '' : 'auto'
         };
         utils.jsonp("" + this.settings.urlBase + "/from_url/", data).fail(df.reject).done(function(data) {
+          _this.__listenWatcher(df, $([pusherWatcher, pollWatcher]));
+          df.always(function() {
+            $([pusherWatcher, pollWatcher]).off(_this.allEvents);
+            pusherWatcher.stopWatching();
+            return pollWatcher.stopWatching();
+          });
+          $(pusherWatcher).one(_this.allEvents, function() {
+            return pollWatcher.stopWatching();
+          });
           pusherWatcher.watch(data.token);
           return pollWatcher.watch(data.token);
         });
-        return df.always(function() {
-          $([pusherWatcher, pollWatcher]).off(_this.allEvents);
-          pusherWatcher.stopWatching();
-          return pollWatcher.stopWatching();
-        });
+        return df;
       };
 
       UrlFile.prototype.__listenWatcher = function(df, watcher) {
@@ -7830,20 +7811,21 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     })(ns.BaseFile);
     PusherWatcher = (function() {
       function PusherWatcher(pusherKey) {
-        this.pusher = pusher.getPusher(pusherKey, 'url-upload');
+        this.pusher = pusher.getPusher(pusherKey);
       }
 
       PusherWatcher.prototype.watch = function(token) {
         var channel,
           _this = this;
-        channel = this.pusher.subscribe("task-status-" + token);
+        this.token = token;
+        channel = this.pusher.subscribe("task-status-" + this.token);
         return channel.bind_all(function(ev, data) {
           return $(_this).trigger(ev, data);
         });
       };
 
       PusherWatcher.prototype.stopWatching = function() {
-        return this.pusher.release();
+        return this.pusher.unsubscribe("task-status-" + this.token);
       };
 
       return PusherWatcher;
@@ -10192,7 +10174,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.4.2';
+  uploadcare.version = '2.4.3';
 
   expose = uploadcare.expose;
 
@@ -10256,4 +10238,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.4.2/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.4.3/uploadcare/'));
