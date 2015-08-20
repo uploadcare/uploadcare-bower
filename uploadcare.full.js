@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.4.3)
- * Date: 2015-08-19 21:52:47 +0300
- * Rev: f4c01ede46
+ * Uploadcare (2.4.4)
+ * Date: 2015-08-20 17:19:24 +0300
+ * Rev: 23e4e9e142
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -12,20 +12,15 @@ void 0===c?d&&"get"in d&&null!==(e=d.get(a,b))?e:(e=n.find.attr(a,b),null==e?voi
   window.uploadcare || (window.uploadcare = {});
 
   uploadcare.namespace = function(path, fn) {
-    var first, part, parts, rest, target, _i, _len;
-    parts = path.split('.');
-    first = parts[0];
-    rest = parts.slice(1);
-    if (first === 'uploadcare') {
-      target = uploadcare;
-    } else {
-      window[first] || (window[first] = {});
-      target = window[first];
-    }
-    for (_i = 0, _len = rest.length; _i < _len; _i++) {
-      part = rest[_i];
-      target[part] || (target[part] = {});
-      target = target[part];
+    var part, target, _i, _len, _ref;
+    target = uploadcare;
+    if (path) {
+      _ref = path.split('.');
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        part = _ref[_i];
+        target[part] || (target[part] = {});
+        target = target[part];
+      }
     }
     return fn(target);
   };
@@ -1638,7 +1633,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.utils.abilities', function(ns) {
+  uploadcare.namespace('utils.abilities', function(ns) {
     var ios, ver;
     ns.fileAPI = !!(window.File && window.FileList && window.FileReader);
     ns.sendFileAPI = !!(window.FormData && ns.fileAPI);
@@ -1676,7 +1671,7 @@ this.Pusher = Pusher;
 
   $ = uploadcare.jQuery;
 
-  uploadcare.namespace('uploadcare.utils.pusher', function(ns) {
+  uploadcare.namespace('utils.pusher', function(ns) {
     var ManagedPusher, pushers, _ref;
     pushers = {};
     uploadcare.Pusher.prototype.constructor = uploadcare.Pusher;
@@ -1722,16 +1717,16 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace,
+  var $,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery;
+  $ = uploadcare.jQuery;
 
-  namespace('uploadcare.utils', function(utils) {
+  uploadcare.namespace('utils', function(utils) {
     var _ref;
     utils.Collection = (function() {
       function Collection(items) {
@@ -1957,11 +1952,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var namespace;
-
-  namespace = uploadcare.namespace;
-
-  namespace('uploadcare.utils', function(ns) {
+  uploadcare.namespace('utils', function(ns) {
     var common, messages;
     ns.log = function(msg) {
       if (window.console && console.log) {
@@ -1996,13 +1987,13 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace,
+  var $,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __slice = [].slice;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery;
+  $ = uploadcare.jQuery;
 
-  namespace('uploadcare.utils', function(ns) {
+  uploadcare.namespace('utils', function(ns) {
     var pipeTuples;
     ns.unique = function(arr) {
       var item, result, _i, _len;
@@ -2366,11 +2357,11 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace, utils;
+  var $, utils;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
-  namespace('uploadcare.utils.imageProcessor', function(ns) {
+  uploadcare.namespace('utils.imageProcessor', function(ns) {
     var Blob, DataView, FileReader, URL, taskRunner, _ref;
     DataView = window.DataView;
     FileReader = ((_ref = window.FileReader) != null ? _ref.prototype.readAsArrayBuffer : void 0) && window.FileReader;
@@ -2616,12 +2607,12 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, expose, namespace, utils,
+  var $, expose, utils,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  expose = uploadcare.expose, namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery;
+  expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery;
 
-  namespace('uploadcare.settings', function(ns) {
+  uploadcare.namespace('settings', function(ns) {
     var arrayOptions, defaults, flagOptions, intOptions, normalize, parseCrop, parseShrink, presets, str2arr, urlOptions;
     defaults = {
       'live': true,
@@ -2839,7 +2830,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.ar = {
       uploading: 'الرجاء الإنتظار.... يتم الرفع',
       loadingInfo: '...تحميل المعلومات',
@@ -2975,7 +2966,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.ar = function(n) {
       var mod;
       if (n === 0) {
@@ -3000,7 +2991,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.az = {
       uploading: 'Yüklənilir... Lütfən, gözləyin.',
       loadingInfo: 'İnfo yüklənilir...',
@@ -3134,7 +3125,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.az = function(n) {
       return 'other';
     };
@@ -3142,7 +3133,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.ca = {
       uploading: 'Carregant... Si us plau esperi.',
       loadingInfo: 'Carregant informació...',
@@ -3185,17 +3176,7 @@ this.Pusher = Pusher;
             preview: 'Avanci',
             file: 'Ordinador',
             url: 'Enllaços arbitraris',
-            camera: 'Càmera',
-            facebook: 'Facebook',
-            dropbox: 'Dropbox',
-            gdrive: 'Google Drive',
-            instagram: 'Instagram',
-            vk: 'VK',
-            evernote: 'Evernote',
-            box: 'Box',
-            skydrive: 'OneDrive',
-            flickr: 'Flickr',
-            huddle: 'Huddle'
+            camera: 'Càmera'
           },
           file: {
             drag: 'Arrossega un fitxer aquí',
@@ -3279,14 +3260,13 @@ this.Pusher = Pusher;
           }
         },
         footer: {
-          text: 'Els fitxers han estat carregats, gestionats i processats per',
-          link: 'Uploadcare.com'
+          text: 'Els fitxers han estat carregats, gestionats i processats per'
         }
       }
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.ca = function(n) {
       if (n === 1) {
         return 'one';
@@ -3297,7 +3277,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.da = {
       uploading: 'Uploader... Vent venligst.',
       loadingInfo: 'Henter information...',
@@ -3414,7 +3394,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.da = function(n) {
       if (n === 1) {
         return 'one';
@@ -3425,7 +3405,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.de = {
       uploading: 'Hochladen... Bitte warten.',
       loadingInfo: 'Laden der Informationen...',
@@ -3558,7 +3538,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.de = function(n) {
       if (n === 1) {
         return 'one';
@@ -3569,7 +3549,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.en = {
       uploading: 'Uploading... Please wait.',
       loadingInfo: 'Loading info...',
@@ -3713,7 +3693,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.en = function(n) {
       if (n === 1) {
         return 'one';
@@ -3724,7 +3704,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.es = {
       uploading: 'Subiendo... Por favor espere.',
       loadingInfo: 'Cargando Información...',
@@ -3767,17 +3747,7 @@ this.Pusher = Pusher;
             preview: 'Avance',
             file: 'Computadora',
             url: 'Una dirección arbitraria',
-            camera: 'Cámara',
-            facebook: 'Facebook',
-            dropbox: 'Dropbox',
-            gdrive: 'Google Drive',
-            instagram: 'Instagram',
-            vk: 'VK',
-            evernote: 'Evernote',
-            box: 'Box',
-            skydrive: 'OneDrive',
-            flickr: 'Flickr',
-            huddle: 'Huddle'
+            camera: 'Cámara'
           },
           file: {
             drag: 'Arrastra una archivo aquí',
@@ -3861,14 +3831,13 @@ this.Pusher = Pusher;
           }
         },
         footer: {
-          text: 'Los archivos ha sido subidos, gestionados y procesados por',
-          link: 'Uploadcare.com'
+          text: 'Los archivos ha sido subidos, gestionados y procesados por'
         }
       }
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.es = function(n) {
       if (n === 1) {
         return 'one';
@@ -3879,7 +3848,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.fr = {
       uploading: 'Envoi en cours... Merci de patientier.',
       loadingInfo: 'Chargement des informations...',
@@ -4012,7 +3981,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.fr = function(n) {
       if (n === 1) {
         return 'one';
@@ -4023,7 +3992,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.he = {
       uploading: 'טוען... אנא המתן.',
       loadingInfo: 'טוען מידע...',
@@ -4141,7 +4110,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.he = function(n) {
       if (n === 1) {
         return 'one';
@@ -4152,7 +4121,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.it = {
       uploading: 'Caricamento in corso... Si prega di attendere.',
       loadingInfo: 'Caricamento informazioni in corso...',
@@ -4285,7 +4254,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.it = function(n) {
       if (n === 1) {
         return 'one';
@@ -4296,7 +4265,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.ja = {
       uploading: 'アップロードしています… 完了までお待ち下さい。',
       loadingInfo: '読み込み中…',
@@ -4413,7 +4382,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.ja = function(n) {
       return 'other';
     };
@@ -4421,7 +4390,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.lv = {
       uploading: 'Augšupielādē... Lūdzu, gaidiet.',
       errors: {
@@ -4466,7 +4435,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.lv = function(n) {
       if (n === 0) {
         return 'zero';
@@ -4480,7 +4449,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.nb = {
       uploading: 'Laster opp... Vennligst vent.',
       loadingInfo: 'Laster inn info...',
@@ -4598,7 +4567,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.nb = function(n) {
       if (n === 1) {
         return 'one';
@@ -4609,7 +4578,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.nl = {
       uploading: 'Uploaden... Even geduld.',
       loadingInfo: 'Laden informatie...',
@@ -4725,7 +4694,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.nl = function(n) {
       if (n === 1) {
         return 'one';
@@ -4738,7 +4707,7 @@ this.Pusher = Pusher;
 (function() {
   var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.pl = {
       uploading: 'Przesyłanie... Proszę czekać.',
       errors: {
@@ -4762,7 +4731,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.pl = function(n) {
       var _ref, _ref1, _ref2, _ref3;
       if (n === 1) {
@@ -4780,7 +4749,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.pt = {
       uploading: 'Fazendo upload... Aguarde.',
       loadingInfo: 'Carregando informações...',
@@ -4895,7 +4864,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.pt = function(n) {
       if (n === 1) {
         return 'one';
@@ -4906,7 +4875,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.ru = {
       uploading: 'Идет загрузка',
       loadingInfo: 'Загрузка информации...',
@@ -5041,7 +5010,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.ru = function(n) {
       if (((n / 10 % 10 | 0) === 1) || (n % 10 === 0) || (n % 10 > 4)) {
         return 'many';
@@ -5055,7 +5024,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.tr = {
       uploading: 'Yükleniyor... Lütfen bekleyin.',
       loadingInfo: 'Bilgiler yükleniyor...',
@@ -5186,7 +5155,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.tr = function(n) {
       return 'other';
     };
@@ -5194,7 +5163,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.zhTW = {
       uploading: '上傳中...請等待',
       loadingInfo: '正在讀取資訊...',
@@ -5326,7 +5295,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.zhTW = function(n) {
       return 'other';
     };
@@ -5334,7 +5303,7 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  uploadcare.namespace('uploadcare.locale.translations', function(ns) {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.zh = {
       uploading: '上传中...请等待',
       loadingInfo: '正在读取信息...',
@@ -5436,7 +5405,7 @@ this.Pusher = Pusher;
     };
   });
 
-  uploadcare.namespace('uploadcare.locale.pluralize', function(ns) {
+  uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.zh = function() {
       return 'other';
     };
@@ -5444,11 +5413,11 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace, s, utils;
+  var $, s, utils;
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, s = uploadcare.settings, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, s = uploadcare.settings, $ = uploadcare.jQuery;
 
-  namespace('uploadcare.locale', function(ns) {
+  uploadcare.namespace('locale', function(ns) {
     var build, defaultLang, defaults, translate, _build;
     defaultLang = 'en';
     defaults = {
@@ -5510,11 +5479,11 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, locale, namespace, utils;
+  var $, locale, utils;
 
-  namespace = uploadcare.namespace, locale = uploadcare.locale, utils = uploadcare.utils, $ = uploadcare.jQuery;
+  locale = uploadcare.locale, utils = uploadcare.utils, $ = uploadcare.jQuery;
 
-  namespace('uploadcare.templates', function(ns) {
+  uploadcare.namespace('templates', function(ns) {
     ns.JST = {};
     return ns.tpl = function(key, ctx) {
       var fn;
@@ -7067,11 +7036,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   // }}}
 }(uploadcare.jQuery));
 (function() {
-  var $, namespace, tpl, utils, _ref;
+  var $, tpl, utils, _ref;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl), utils = uploadcare.utils;
+  $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl), utils = uploadcare.utils;
 
-  namespace('uploadcare.crop', function(ns) {
+  uploadcare.namespace('crop', function(ns) {
     return ns.CropWidget = (function() {
       var cropModifierRegExp;
 
@@ -7171,7 +7140,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
   namespace = uploadcare.namespace, s = uploadcare.settings, $ = uploadcare.jQuery, utils = uploadcare.utils;
 
-  namespace('uploadcare.files', function(ns) {
+  namespace('files', function(ns) {
     return ns.BaseFile = (function() {
       function BaseFile(settings) {
         this.settings = settings;
@@ -7379,7 +7348,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     })();
   });
 
-  namespace('uploadcare.utils', function(utils) {
+  namespace('utils', function(utils) {
     utils.isFile = function(obj) {
       return obj && obj.done && obj.fail && obj.cancel;
     };
@@ -7393,14 +7362,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, utils,
+  var $, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
-  namespace('uploadcare.files', function(ns) {
+  uploadcare.namespace('files', function(ns) {
     return ns.ObjectFile = (function(_super) {
       __extends(ObjectFile, _super);
 
@@ -7656,14 +7625,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, utils,
+  var $, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
-  namespace('uploadcare.files', function(ns) {
+  uploadcare.namespace('files', function(ns) {
     return ns.InputFile = (function(_super) {
       __extends(InputFile, _super);
 
@@ -7721,16 +7690,16 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, pusher, utils,
+  var $, pusher, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
   pusher = uploadcare.utils.pusher;
 
-  namespace('uploadcare.files', function(ns) {
+  uploadcare.namespace('files', function(ns) {
     var PollWatcher, PusherWatcher;
     ns.UrlFile = (function(_super) {
       __extends(UrlFile, _super);
@@ -7845,14 +7814,15 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         var bind,
           _this = this;
         this.token = token;
-        bind = function() {
-          return _this.__updateStatus().done(function() {
-            if (_this.interval) {
-              return _this.interval = setTimeout(bind, 250);
-            }
-          });
-        };
-        return this.interval = utils.defer(bind);
+        return (bind = function() {
+          return _this.interval = setTimeout(function() {
+            return _this.__updateStatus().done(function() {
+              if (_this.interval) {
+                return bind();
+              }
+            });
+          }, 333);
+        })();
       };
 
       PollWatcher.prototype.stopWatching = function() {
@@ -7867,7 +7837,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         return utils.jsonp(this.poolUrl, {
           token: this.token
         }).fail(function(error) {
-          _this.stopWatching();
           return $(_this).trigger('error');
         }).done(function(data) {
           return $(_this).trigger(data.status, data);
@@ -7881,13 +7850,13 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, utils,
+  var $, utils,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
-  namespace('uploadcare.files', function(ns) {
+  uploadcare.namespace('files', function(ns) {
     ns.UploadedFile = (function(_super) {
       __extends(UploadedFile, _super);
 
@@ -7935,7 +7904,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
   namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.locale, t = _ref.t), s = uploadcare.settings;
 
-  namespace('uploadcare.files', function(ns) {
+  namespace('files', function(ns) {
     ns.FileGroup = (function() {
       function FileGroup(files, settings) {
         var _this = this;
@@ -8121,7 +8090,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     })(ns.FileGroup);
   });
 
-  namespace('uploadcare', function(ns) {
+  namespace('', function(ns) {
     ns.FileGroup = function(filesAndGroups, settings) {
       var file, files, item, _i, _j, _len, _len1, _ref1;
       if (filesAndGroups == null) {
@@ -8163,7 +8132,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     };
   });
 
-  namespace('uploadcare.utils', function(utils) {
+  namespace('utils', function(utils) {
     utils.isFileGroup = function(obj) {
       return obj && obj.files && obj.promise;
     };
@@ -8214,11 +8183,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, f, namespace, settings, utils;
+  var $, f, settings, utils;
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, f = uploadcare.files, settings = uploadcare.settings;
+  utils = uploadcare.utils, $ = uploadcare.jQuery, f = uploadcare.files, settings = uploadcare.settings;
 
-  namespace('uploadcare', function(ns) {
+  uploadcare.namespace('', function(ns) {
     var converters;
     ns.fileFrom = function(type, data, s) {
       return ns.filesFrom(type, [data], s)[0];
@@ -8244,11 +8213,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, s, utils;
+  var $, s, utils;
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, s = uploadcare.settings, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, s = uploadcare.settings, $ = uploadcare.jQuery;
 
-  namespace('uploadcare.dragdrop', function(ns) {
+  uploadcare.namespace('dragdrop', function(ns) {
     ns.support = utils.abilities.fileDragAndDrop;
     ns.uploadDrop = function(el, callback, settings) {
       settings = s.build(settings);
@@ -8329,14 +8298,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, abilities, files, namespace, tpl, _ref, _ref1,
+  var $, abilities, files, tpl, _ref, _ref1,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, files = uploadcare.files, $ = uploadcare.jQuery, (_ref = uploadcare.utils, abilities = _ref.abilities), (_ref1 = uploadcare.templates, tpl = _ref1.tpl);
+  files = uploadcare.files, $ = uploadcare.jQuery, (_ref = uploadcare.utils, abilities = _ref.abilities), (_ref1 = uploadcare.templates, tpl = _ref1.tpl);
 
-  namespace('uploadcare.ui.progress', function(ns) {
+  uploadcare.namespace('ui.progress', function(ns) {
     ns.Circle = (function() {
       function Circle(element) {
         this.update = __bind(this.update, this);
@@ -8507,11 +8476,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, progress, t, tpl, utils, _ref, _ref1, _ref2;
+  var $, progress, t, tpl, utils, _ref, _ref1, _ref2;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.locale, t = _ref1.t), (_ref2 = uploadcare.templates, tpl = _ref2.tpl);
+  $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.locale, t = _ref1.t), (_ref2 = uploadcare.templates, tpl = _ref2.tpl);
 
-  namespace('uploadcare.widget', function(ns) {
+  uploadcare.namespace('widget', function(ns) {
     return ns.Template = (function() {
       function Template(settings, element) {
         this.settings = settings;
@@ -8585,12 +8554,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, dragdrop, namespace, t, tpl, utils, _ref, _ref1,
+  var $, dragdrop, t, tpl, utils, _ref, _ref1,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t), $ = uploadcare.jQuery, (_ref1 = uploadcare.templates, tpl = _ref1.tpl);
+  utils = uploadcare.utils, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t), $ = uploadcare.jQuery, (_ref1 = uploadcare.templates, tpl = _ref1.tpl);
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.FileTab = (function() {
       function FileTab(container, tabButton, dialogApi, settings, name) {
         var _this = this;
@@ -8671,13 +8640,13 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, t, tpl, _ref;
+  var $, t, tpl, _ref;
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
+  $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
   t = uploadcare.locale.t;
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.UrlTab = (function() {
       var fixUrl, urlRegexp;
 
@@ -8724,12 +8693,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, tpl, utils, _ref,
+  var $, tpl, utils, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
+  utils = uploadcare.utils, $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl);
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.CameraTab = (function() {
       function CameraTab(container, tabButton, dialogApi, settings, name) {
         var _this = this;
@@ -8861,12 +8830,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, files, locale, namespace, t, tabsCss, utils, _ref,
+  var $, files, locale, t, tabsCss, utils, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, locale = uploadcare.locale, utils = uploadcare.utils, tabsCss = uploadcare.tabsCss, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t), files = uploadcare.files;
+  locale = uploadcare.locale, utils = uploadcare.utils, tabsCss = uploadcare.tabsCss, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t), files = uploadcare.files;
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.RemoteTab = (function() {
       function RemoteTab(container, tabButton, dialogApi, settings, name) {
         var _this = this;
@@ -8987,11 +8956,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, Circle, namespace, _ref, _ref1;
+  var $, Circle, _ref, _ref1;
 
-  namespace = uploadcare.namespace, (_ref = uploadcare.ui, (_ref1 = _ref.progress, Circle = _ref1.Circle)), $ = uploadcare.jQuery;
+  (_ref = uploadcare.ui, (_ref1 = _ref.progress, Circle = _ref1.Circle)), $ = uploadcare.jQuery;
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.BasePreviewTab = (function() {
       var PREFIX;
 
@@ -9043,14 +9012,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, CropWidget, namespace, progress, t, tpl, utils, _ref, _ref1, _ref2, _ref3,
+  var $, CropWidget, progress, t, tpl, utils, _ref, _ref1, _ref2, _ref3,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.crop, CropWidget = _ref2.CropWidget), (_ref3 = uploadcare.locale, t = _ref3.t);
+  utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.crop, CropWidget = _ref2.CropWidget), (_ref3 = uploadcare.locale, t = _ref3.t);
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.PreviewTab = (function(_super) {
       __extends(PreviewTab, _super);
 
@@ -9191,14 +9160,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, progress, t, tpl, utils, _ref, _ref1, _ref2,
+  var $, progress, t, tpl, utils, _ref, _ref1, _ref2,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.locale, t = _ref2.t);
+  utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.locale, t = _ref2.t);
 
-  namespace('uploadcare.widget.tabs', function(ns) {
+  uploadcare.namespace('widget.tabs', function(ns) {
     return ns.PreviewTabMultiple = (function(_super) {
       __extends(PreviewTabMultiple, _super);
 
@@ -9346,12 +9315,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, Circle, files, namespace, s, t, tabs, tpl, utils, _ref, _ref1, _ref2, _ref3, _ref4,
+  var $, files, s, t, tabs, tpl, utils, _ref, _ref1, _ref2,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, (_ref = uploadcare.locale, t = _ref.t), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), (_ref2 = uploadcare.ui, (_ref3 = _ref2.progress, Circle = _ref3.Circle)), files = uploadcare.files, (_ref4 = uploadcare.widget, tabs = _ref4.tabs), s = uploadcare.settings, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, (_ref = uploadcare.locale, t = _ref.t), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), files = uploadcare.files, (_ref2 = uploadcare.widget, tabs = _ref2.tabs), s = uploadcare.settings, $ = uploadcare.jQuery;
 
-  namespace('uploadcare', function(ns) {
+  uploadcare.namespace('', function(ns) {
     var Panel, currentDialogPr, lockScroll, openedClass, registeredTabs,
       _this = this;
     lockScroll = function(el, toTop) {
@@ -9569,14 +9538,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       Panel.prototype.__autoCrop = function(files) {
-        var crop, _i, _len, _ref5,
+        var crop, _i, _len, _ref3,
           _this = this;
         if (!this.settings.crop || !this.settings.multiple) {
           return;
         }
-        _ref5 = this.settings.crop;
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          crop = _ref5[_i];
+        _ref3 = this.settings.crop;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          crop = _ref3[_i];
           if (!crop.preferedSize) {
             return;
           }
@@ -9607,11 +9576,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       Panel.prototype.__prepareTabs = function(tab) {
-        var tabName, _i, _len, _ref5;
+        var tabName, _i, _len, _ref3;
         this.addTab('preview');
-        _ref5 = this.settings.tabs;
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          tabName = _ref5[_i];
+        _ref3 = this.settings.tabs;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          tabName = _ref3[_i];
           this.addTab(tabName);
         }
         if (this.files.length()) {
@@ -9710,10 +9679,10 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       Panel.prototype.__firstVisibleTab = function() {
-        var tab, _i, _len, _ref5;
-        _ref5 = this.settings.tabs;
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          tab = _ref5[_i];
+        var tab, _i, _len, _ref3;
+        _ref3 = this.settings.tabs;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          tab = _ref3[_i];
           if (this.isTabVisible(tab)) {
             return tab;
           }
@@ -9721,12 +9690,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       Panel.prototype.__welcome = function() {
-        var tabName, _i, _len, _ref5;
+        var tabName, _i, _len, _ref3;
         this.addTab('empty-pubkey');
         this.switchTab('empty-pubkey');
-        _ref5 = this.settings.tabs;
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          tabName = _ref5[_i];
+        _ref3 = this.settings.tabs;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          tabName = _ref3[_i];
           this.__addFakeTab(tabName);
         }
         return null;
@@ -9743,12 +9712,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, dragdrop, namespace, t, utils, _ref,
+  var $, dragdrop, t, utils, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t);
+  utils = uploadcare.utils, $ = uploadcare.jQuery, dragdrop = uploadcare.dragdrop, (_ref = uploadcare.locale, t = _ref.t);
 
-  namespace('uploadcare.widget', function(ns) {
+  uploadcare.namespace('widget', function(ns) {
     return ns.BaseWidget = (function() {
       function BaseWidget(element, settings) {
         var _this = this;
@@ -9883,17 +9852,21 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       BaseWidget.prototype.openDialog = function(tab) {
-        var dialogApi,
-          _this = this;
+        var _this = this;
         if (this.settings.systemDialog) {
           return utils.fileSelectDialog(this.template.content, this.settings, function(input) {
             return _this.__handleDirectSelection('object', input.files);
           });
         } else {
-          dialogApi = uploadcare.openDialog(this.currentObject, tab, this.settings);
-          this.__onDialogOpen.fire(dialogApi);
-          return dialogApi.done(this.__setObject);
+          return this.__openDialog(this.currentObject, tab);
         }
+      };
+
+      BaseWidget.prototype.__openDialog = function(files, tab) {
+        var dialogApi;
+        dialogApi = uploadcare.openDialog(files, tab, this.settings);
+        this.__onDialogOpen.fire(dialogApi);
+        return dialogApi.done(this.__setObject);
       };
 
       BaseWidget.prototype.api = function() {
@@ -9914,14 +9887,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, files, namespace, utils,
+  var $, files, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, files = uploadcare.files, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, files = uploadcare.files, $ = uploadcare.jQuery;
 
-  namespace('uploadcare.widget', function(ns) {
+  uploadcare.namespace('widget', function(ns) {
     var _ref;
     return ns.Widget = (function(_super) {
       __extends(Widget, _super);
@@ -9942,7 +9915,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.settings.systemDialog || !this.settings.previewStep) {
           return this.__setObject(file);
         } else {
-          return uploadcare.openDialog(file, this.settings).done(this.__setObject);
+          return this.__openDialog(file);
         }
       };
 
@@ -9953,14 +9926,14 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, t, utils, _ref,
+  var $, t, utils, _ref,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, utils = uploadcare.utils, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t);
+  utils = uploadcare.utils, $ = uploadcare.jQuery, (_ref = uploadcare.locale, t = _ref.t);
 
-  namespace('uploadcare.widget', function(ns) {
+  uploadcare.namespace('widget', function(ns) {
     var _ref1;
     return ns.MultipleWidget = (function(_super) {
       __extends(MultipleWidget, _super);
@@ -10008,7 +9981,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.settings.systemDialog) {
           return this.__setObject(uploadcare.FileGroup(files, this.settings));
         } else {
-          return uploadcare.openDialog(files, this.settings).done(this.__setObject);
+          return this.__openDialog(files);
         }
       };
 
@@ -10019,11 +9992,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, namespace, settings, utils;
+  var $, settings, utils;
 
-  utils = uploadcare.utils, namespace = uploadcare.namespace, settings = uploadcare.settings, $ = uploadcare.jQuery;
+  utils = uploadcare.utils, settings = uploadcare.settings, $ = uploadcare.jQuery;
 
-  namespace('uploadcare', function(ns) {
+  uploadcare.namespace('', function(ns) {
     var cleanup, dataAttr, initialize, initializeWidget, selector;
     dataAttr = 'uploadcareWidget';
     selector = '[role~="uploadcare-uploader"]';
@@ -10179,7 +10152,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.4.3';
+  uploadcare.version = '2.4.4';
 
   expose = uploadcare.expose;
 
@@ -10247,4 +10220,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.4.3/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.4.4/uploadcare/'));
