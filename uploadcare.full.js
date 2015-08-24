@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.4.4)
- * Date: 2015-08-20 17:19:24 +0300
- * Rev: 23e4e9e142
+ * Uploadcare (2.5.0)
+ * Date: 2015-08-24 18:29:11 +0300
+ * Rev: 23ebeb747d
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2636,7 +2636,7 @@ this.Pusher = Pusher;
       'doNotStore': false,
       'publicKey': null,
       'pusherKey': '79ae88bd931ea68464d9',
-      'cdnBase': 'http://www.ucarecdn.com',
+      'cdnBase': 'https://ucarecdn.com',
       'urlBase': 'https://upload.uploadcare.com',
       'socialBase': 'https://social.uploadcare.com',
       'scriptBase': typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : ''
@@ -10152,7 +10152,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.4.4';
+  uploadcare.version = '2.5.0';
 
   expose = uploadcare.expose;
 
@@ -10220,4 +10220,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.4.4/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.0/uploadcare/'));
