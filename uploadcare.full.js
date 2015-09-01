@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.5.0)
- * Date: 2015-08-24 18:29:11 +0300
- * Rev: 23ebeb747d
+ * Uploadcare (2.5.1)
+ * Date: 2015-09-01 16:43:49 +0300
+ * Rev: cfe0c58aba
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -8597,14 +8597,20 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         var fileButton,
           _this = this;
         fileButton = this.container.find('.uploadcare-dialog-big-button');
-        return utils.fileInput(fileButton, this.settings, function(input) {
-          if (utils.abilities.sendFileAPI) {
-            _this.dialogApi.addFiles('object', input.files);
-          } else {
+        if (utils.abilities.sendFileAPI) {
+          return fileButton.on('click', function() {
+            utils.fileSelectDialog(_this.container, _this.settings, function(input) {
+              _this.dialogApi.addFiles('object', input.files);
+              return _this.dialogApi.switchTab('preview');
+            });
+            return false;
+          });
+        } else {
+          return utils.fileInput(fileButton, this.settings, function(input) {
             _this.dialogApi.addFiles('input', [input]);
-          }
-          return _this.dialogApi.switchTab('preview');
-        });
+            return _this.dialogApi.switchTab('preview');
+          });
+        }
       };
 
       FileTab.prototype.__updateTabsList = function() {
@@ -10152,7 +10158,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.0';
+  uploadcare.version = '2.5.1';
 
   expose = uploadcare.expose;
 
@@ -10220,4 +10226,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.1/uploadcare/'));
