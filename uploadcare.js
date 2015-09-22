@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.5.2)
- * Date: 2015-09-13 17:11:47 +0300
- * Rev: 412fd49e12
+ * Uploadcare (2.5.3)
+ * Date: 2015-09-22 12:16:00 +0300
+ * Rev: e791e18006
  */
 ;(function(uploadcare, SCRIPT_BASE){(function() {
   window.uploadcare || (window.uploadcare = {});
@@ -2641,6 +2641,11 @@ this.Pusher = Pusher;
       cdnBase: 'https://ucarecdn.com',
       urlBase: 'https://upload.uploadcare.com',
       socialBase: 'https://social.uploadcare.com',
+      multipartMinSize: 25 * 1024 * 1024,
+      multipartPartSize: 5 * 1024 * 1024,
+      multipartMinLastPartSize: 1024 * 1024,
+      multipartConcurrency: 4,
+      multipartMaxAttempts: 3,
       scriptBase: typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : '',
       debugUploads: false
     };
@@ -2746,7 +2751,7 @@ this.Pusher = Pusher;
       arrayOptions(settings, ['tabs', 'preferredTypes']);
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
       flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads']);
-      intOptions(settings, ['multipleMax', 'multipleMin']);
+      intOptions(settings, ['multipleMax', 'multipleMin', 'multipartMinSize', 'multipartPartSize', 'multipartMinLastPartSize', 'multipartConcurrency', 'multipartMaxAttempts']);
       if (settings.crop !== false && !$.isArray(settings.crop)) {
         if (/^(disabled?|false|null)$/i.test(settings.crop)) {
           settings.crop = false;
@@ -5028,6 +5033,150 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('locale.translations', function(ns) {
+    return ns.sv = {
+      uploading: 'Laddar... Var god vänta.',
+      loadingInfo: 'Laddar info...',
+      errors: {
+        "default": 'Error',
+        baddata: 'Felaktigt värde',
+        size: 'Filen är för stor',
+        upload: 'Kan inte ladda upp',
+        user: 'Uppladdning avbruten',
+        info: 'Kan inte ladda informationen',
+        image: 'Endast bilder tillåtna',
+        createGroup: 'Kan inte skapa filgrupp',
+        deleted: 'Fil raderad'
+      },
+      draghere: 'Dra filen hit',
+      file: {
+        one: '%1 fil',
+        other: '%1 filer'
+      },
+      buttons: {
+        cancel: 'Avbryt',
+        remove: 'Ta bort',
+        choose: {
+          files: {
+            one: 'Välj fil',
+            other: 'Välj filer'
+          },
+          images: {
+            one: 'Välj en fil',
+            other: 'Välj filer'
+          }
+        }
+      },
+      dialog: {
+        done: 'Klar',
+        showFiles: 'Visa filer',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Välkommen',
+            preview: 'Förhandsgranskning',
+            file: 'Lokala filer',
+            url: 'Direkta länkar',
+            camera: 'Kamera'
+          },
+          file: {
+            drag: 'Släpp en fil hit',
+            nodrop: 'Ladda upp filer från din dator',
+            cloudsTip: 'Cloud storages<br>och sociala nätverk',
+            or: 'eller',
+            button: 'Välj en lokal fil',
+            also: 'Du kan också välja den från'
+          },
+          url: {
+            title: 'Filer från webben',
+            line1: 'Välj en fil från en web adress.',
+            line2: 'Agge bara länken til filen.',
+            input: 'Klistra in din länk här...',
+            button: 'Ladda upp'
+          },
+          camera: {
+            capture: 'Ta ett foto',
+            mirror: 'Spegel',
+            retry: 'Begär tillstånd igen',
+            pleaseAllow: {
+              title: 'Vänligen ge tillgång till din kamera',
+              text: 'Du har uppmanats att tillåta att denna webbplats får tillgång till din kamera.' + 'För att ta bilder med din kamera måste du godkänna denna begäran.'
+            },
+            notFound: {
+              title: 'Ingen kamera funnen',
+              text: 'Det varkar som att du inte har något kamera ansluten till denna enheten.'
+            }
+          },
+          preview: {
+            unknownName: 'okänd',
+            change: 'Avbryt',
+            back: 'Tillbaka',
+            done: 'Lägg till',
+            unknown: {
+              title: 'Laddar... Vänligen vänta på förhandsgranskning.',
+              done: 'Skippa förhandsgranskning och acceptera'
+            },
+            regular: {
+              title: 'Lägg till denna filen?',
+              line1: 'Du håller på att lägga till filen ovan.',
+              line2: 'Vänligen bekräfta.'
+            },
+            image: {
+              title: 'Lägg till denna bilden?',
+              change: 'Avbryt'
+            },
+            crop: {
+              title: 'Beskär och lägg till denna bild',
+              done: 'Klar',
+              free: 'free'
+            },
+            error: {
+              "default": {
+                title: 'Oops!',
+                text: 'Någonting gick fel under uppladdningen.',
+                back: 'Vänligen försök igen'
+              },
+              image: {
+                title: 'Endast bildfiler accepteras.',
+                text: 'Vänligen försök igen med en annan fil.',
+                back: 'Välj bild'
+              },
+              size: {
+                title: 'Filen du har valt är för stor.',
+                text: 'Vänligen försök igen med en annan fil.'
+              },
+              loadImage: {
+                title: 'Error',
+                text: 'Kan inte ladda bild'
+              }
+            },
+            multiple: {
+              title: 'Du har valt %files%',
+              question: 'Vill du lägga till alla dessa filer?',
+              tooManyFiles: 'Du har valt för många filer. %max% är max.',
+              tooFewFiles: 'Du har valt %files%. Minst %min% krävs.',
+              clear: 'Ta bort alla',
+              done: 'Klar'
+            }
+          }
+        },
+        footer: {
+          text: 'Laddar upp, lagrar och bearbetar filer genom'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('locale.pluralize', function(ns) {
+    return ns.sv = function(n) {
+      if (n === 1) {
+        return 'one';
+      }
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.tr = {
       uploading: 'Yükleniyor... Lütfen bekleyin.',
       loadingInfo: 'Bilgiler yükleniyor...',
@@ -7229,7 +7378,8 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         return utils.jsonp("" + this.settings.urlBase + "/info/", {
           jsonerrors: 1,
           file_id: this.fileId,
-          pub_key: this.settings.publicKey
+          pub_key: this.settings.publicKey,
+          wait_is_ready: +this.onInfoReady.fired()
         }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             utils.log("Can't load file info. Probably removed.", _this.fileId, _this.settings.publicKey, reason);
@@ -7393,16 +7543,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     return ns.ObjectFile = (function(_super) {
       __extends(ObjectFile, _super);
 
-      ObjectFile.prototype.MP_MIN_SIZE = 25 * 1024 * 1024;
-
-      ObjectFile.prototype.MP_PART_SIZE = 5 * 1024 * 1024;
-
-      ObjectFile.prototype.MP_MIN_LAST_PART_SIZE = 1024 * 1024;
-
-      ObjectFile.prototype.MP_CONCURRENCY = 4;
-
-      ObjectFile.prototype.MP_MAX_ATTEMPTS = 3;
-
       function ObjectFile(settings, __file) {
         this.__file = __file;
         this.setFile = __bind(this.setFile, this);
@@ -7433,7 +7573,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.apiDeferred.always(function() {
           return _this.__file = null;
         });
-        if (this.__file.size >= this.MP_MIN_SIZE && utils.abilities.blob) {
+        if (this.__file.size >= this.settings.multipartMinSize && utils.abilities.blob) {
           this.setFile();
           return this.multipartUpload();
         }
@@ -7544,6 +7684,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           filename: this.fileName,
           size: this.fileSize,
           content_type: this.fileType,
+          part_size: this.settings.multipartPartSize,
           UPLOADCARE_STORE: this.settings.doNotStore ? '' : 'auto'
         };
         return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data).fail(function(reason) {
@@ -7581,8 +7722,8 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           if (submittedBytes >= _this.fileSize) {
             return;
           }
-          bytesToSubmit = submittedBytes + _this.MP_PART_SIZE;
-          if (_this.fileSize < bytesToSubmit + _this.MP_MIN_LAST_PART_SIZE) {
+          bytesToSubmit = submittedBytes + _this.settings.multipartPartSize;
+          if (_this.fileSize < bytesToSubmit + _this.settings.multipartMinLastPartSize) {
             bytesToSubmit = _this.fileSize;
           }
           blob = _this.__file.slice(submittedBytes, bytesToSubmit);
@@ -7615,7 +7756,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
               data: blob,
               error: function() {
                 attempts += 1;
-                if (attempts > _this.MP_MAX_ATTEMPTS) {
+                if (attempts > _this.settings.multipartMaxAttempts) {
                   if (_this.settings.debugUploads) {
                     utils.info("Part #" + partNo + " and file upload is failed.", uuid);
                   }
@@ -7637,7 +7778,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
             }));
           })();
         };
-        for (i = _i = 0, _ref = this.MP_CONCURRENCY; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        for (i = _i = 0, _ref = this.settings.multipartConcurrency; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
           submit();
         }
         return df;
@@ -7838,7 +7979,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }).on('success', function(e, data) {
           $(e.target).trigger('progress', data);
           _this.fileId = data.uuid;
-          _this.fileName = data.original_filename;
+          _this.__handleFileData(data);
           return df.resolve();
         }).on('error fail', df.reject);
       };
@@ -10235,7 +10376,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.2';
+  uploadcare.version = '2.5.3';
 
   expose = uploadcare.expose;
 
@@ -10299,4 +10440,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   });
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.2/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.3/uploadcare/'));
