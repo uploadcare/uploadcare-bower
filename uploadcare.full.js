@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.5.5)
- * Date: 2015-09-22 20:34:41 +0300
- * Rev: ed98a81235
+ * Uploadcare (2.5.6)
+ * Date: 2015-11-25 20:57:01 +0300
+ * Rev: 6953a44333
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -1995,6 +1995,53 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
+  var $;
+
+  $ = uploadcare.jQuery;
+
+  uploadcare.namespace('utils', function(ns) {
+    var callbacks,
+      _this = this;
+    callbacks = {};
+    $(window).on("message", function(_arg) {
+      var e, item, message, _i, _len, _ref, _results;
+      e = _arg.originalEvent;
+      try {
+        message = JSON.parse(e.data);
+      } catch (_error) {
+        return;
+      }
+      if (message.type in callbacks) {
+        _ref = callbacks[message.type];
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          item = _ref[_i];
+          if (e.source === item[0]) {
+            _results.push(item[1](message));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      }
+    });
+    ns.registerMessage = function(type, sender, callback) {
+      if (!(type in callbacks)) {
+        callbacks[type] = [];
+      }
+      return callbacks[type].push([sender, callback]);
+    };
+    return ns.unregisterMessage = function(type, sender) {
+      if (type in callbacks) {
+        return callbacks[type] = $.grep(callbacks[type], function(item) {
+          return item[0] !== sender;
+        });
+      }
+    };
+  });
+
+}).call(this);
+(function() {
   var $,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __slice = [].slice;
@@ -2652,6 +2699,7 @@ this.Pusher = Pusher;
       multipartConcurrency: 4,
       multipartMaxAttempts: 3,
       parallelDirectUploads: 10,
+      passWindowOpen: false,
       scriptBase: typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : '',
       debugUploads: false
     };
@@ -3292,6 +3340,165 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('locale.translations', function(ns) {
+    return ns.cs = {
+      uploading: 'Nahrávám... Malý moment.',
+      loadingInfo: 'Nahrávám informace...',
+      errors: {
+        "default": 'Chyba',
+        baddata: 'Neplatná hodnota',
+        size: 'Soubor je příliš velký',
+        upload: 'Nelze nahrát',
+        user: 'Nahrávání zrušeno',
+        info: 'Nelze nahrát informace',
+        image: 'Lze nahrát pouze obrázky',
+        createGroup: 'Nelze vytvořit adresář',
+        deleted: 'Soubor byl smazán'
+      },
+      draghere: 'Přetáhněte soubor sem',
+      file: {
+        one: '%1 soubor',
+        few: '%1 soubory',
+        many: '%1 souborů'
+      },
+      buttons: {
+        cancel: 'Zrušit',
+        remove: 'Odstranit',
+        choose: {
+          files: {
+            one: 'Vyberte soubor',
+            other: 'Vyberte soubory'
+          },
+          images: {
+            one: 'Vyberte obrázek',
+            other: 'Vyberte obrázky'
+          }
+        }
+      },
+      dialog: {
+        done: 'Hotovo',
+        showFiles: 'Zobrazit soubory',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Vítejte',
+            preview: 'Náhled',
+            file: 'Soubor z počítače',
+            url: 'Soubor z internetu',
+            camera: 'Webkamera',
+            facebook: 'Facebook',
+            dropbox: 'Dropbox',
+            gdrive: 'Google Drive',
+            instagram: 'Instagram',
+            vk: 'VK',
+            evernote: 'Evernote',
+            box: 'Box',
+            skydrive: 'OneDrive',
+            flickr: 'Flickr',
+            huddle: 'Huddle'
+          },
+          file: {
+            drag: 'Přetáhněte soubor sem',
+            nodrop: 'Nahrajte soubory z vašeho počítače',
+            cloudsTip: 'Cloudové úložiště<br>a sociální sítě',
+            or: 'nebo',
+            button: 'Vyberte soubor z počítače',
+            also: 'Můžete také nahrát soubor z'
+          },
+          url: {
+            title: 'Soubory z internetu',
+            line1: 'Nahrajte jakýkoliv soubor z internetu.',
+            line2: 'Stačí vložit odkaz.',
+            input: 'Odkaz vložte zde...',
+            button: 'Nahrát'
+          },
+          camera: {
+            capture: 'Pořídit fotografii',
+            mirror: 'Zrcadlo',
+            retry: 'Znovu požádat o povolení',
+            pleaseAllow: {
+              title: 'Prosím povolte přístup k webkameře',
+              text: 'Byl(a) jste požádán(a) o přístup k webkameře. ' + 'Abyste mohl(a) pořídit fotografii, musíte přístup povolit.'
+            },
+            notFound: {
+              title: 'Nebyla nalezena webkamera',
+              text: 'Zdá se, že k tomuto zařízení není připojena žádná webkamera.'
+            }
+          },
+          preview: {
+            unknownName: 'neznámý',
+            change: 'Zrušit',
+            back: 'Zpět',
+            done: 'Přidat',
+            unknown: {
+              title: 'Nahrávám... Prosím vyčkejte na náhled.',
+              done: 'Přeskočit náhled a odeslat'
+            },
+            regular: {
+              title: 'Přidat tento soubor?',
+              line1: 'Tímto přidáte výše vybraný soubor.',
+              line2: 'Prosím potvrďte.'
+            },
+            image: {
+              title: 'Přidat tento obrázek?',
+              change: 'Zrušit'
+            },
+            crop: {
+              title: 'Oříznout a přidat tento obrázek',
+              done: 'Hotovo',
+              free: 'zdarma'
+            },
+            error: {
+              "default": {
+                title: 'Jejda!',
+                text: 'Něco se v průběhu nahrávání nepodařilo.',
+                back: 'Zkuste to prosím znovu.'
+              },
+              image: {
+                title: 'Lze nahrávat pouze obrázky.',
+                text: 'Zkuste to prosím s jiným souborem.',
+                back: 'Vyberte obrázek'
+              },
+              size: {
+                title: 'Soubor přesahuje povolenou velikost.',
+                text: 'Prosím zkuste to s jiným souborem.'
+              },
+              loadImage: {
+                title: 'Chyba',
+                text: 'Nelze nahrát obrázek'
+              }
+            },
+            multiple: {
+              title: 'Bylo vybráno %files% souborů',
+              question: 'Chcete přidat všechny tyto soubory?',
+              tooManyFiles: 'Bylo vybráno moc souborů. Maximum je %max%',
+              tooFewFiles: 'Bylo vybráno %files% souborů. Musíte vybrat minimálně %min%',
+              clear: 'Odstranit vše',
+              done: 'Hotovo'
+            }
+          }
+        },
+        footer: {
+          text: 'Provozováno pomocí',
+          link: 'Uploadcare.com'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('locale.pluralize', function(ns) {
+    return ns.cs = function(n) {
+      if (n === 1) {
+        return 'one';
+      } else if ((2 <= n && n <= 4)) {
+        return 'few';
+      } else {
+        return 'many';
+      }
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.da = {
       uploading: 'Uploader... Vent venligst.',
       loadingInfo: 'Henter information...',
@@ -3721,19 +3928,19 @@ this.Pusher = Pusher;
   uploadcare.namespace('locale.translations', function(ns) {
     return ns.es = {
       uploading: 'Subiendo... Por favor espere.',
-      loadingInfo: 'Cargando Información...',
+      loadingInfo: 'Cargando información...',
       errors: {
         "default": 'Error',
         baddata: 'Valor incorrecto',
-        size: 'Demasiado grande',
-        upload: 'No se ha podido subir',
+        size: 'Archivo demasiado grande',
+        upload: 'No se puede subir',
         user: 'Subida cancelada',
-        info: 'No se pudo cargar la información',
-        image: 'Sólo se permiten imagenes',
-        createGroup: 'No se pudo crear el grupo de archivos',
-        deleted: 'Archivo eliminado'
+        info: 'No se puede cargar la información',
+        image: 'Solo se permiten imágenes',
+        createGroup: 'No se puede crear el grupo de archivos',
+        deleted: 'El archivo fue eliminado'
       },
-      draghere: 'Arrastra los archivos hasta aquí',
+      draghere: 'Arrastra un archivo aquí',
       file: {
         one: '%1 archivo',
         other: '%1 archivos'
@@ -3748,43 +3955,43 @@ this.Pusher = Pusher;
           },
           images: {
             one: 'Escoge una imagen',
-            other: 'Escoge imagenes'
+            other: 'Escoge imágenes'
           }
         }
       },
       dialog: {
         done: 'Hecho',
-        showFiles: 'Muestra archivos',
+        showFiles: 'Mostrar archivos',
         tabs: {
           names: {
             'empty-pubkey': 'Bienvenido',
-            preview: 'Avance',
-            file: 'Computadora',
-            url: 'Una dirección arbitraria',
+            preview: 'Previsualización',
+            file: 'Archivos locales',
+            url: 'Enlaces arbitrarios',
             camera: 'Cámara'
           },
           file: {
             drag: 'Arrastra una archivo aquí',
-            nodrop: 'Sube fotos desde tu computadora',
+            nodrop: 'Sube fotos desde tu ordenador',
             cloudsTip: 'Almacenamiento en la nube<br>y redes sociales',
             or: 'o',
-            button: 'Elige un archivo desde tu computadora',
+            button: 'Elige un archivo de tu ordenador',
             also: 'Tambien puedes seleccionarlo de'
           },
           url: {
-            title: 'Archivos de la web',
-            line1: 'Selecciona cualquier archivo de la web.',
-            line2: 'Sólo danos el link.',
-            input: 'Copia tu link aquí...',
+            title: 'Archivos de la Web',
+            line1: 'Coge cualquier archivo de la web.',
+            line2: 'Solo danos el link.',
+            input: 'Pega tu link aquí...',
             button: 'Subir'
           },
           camera: {
-            capture: 'Realizar una foto',
+            capture: 'Hacer una foto',
             mirror: 'Espejo',
-            retry: 'Pedir permisos de nuevo',
+            retry: 'Solicitar permisos de nuevo',
             pleaseAllow: {
-              title: 'Por favor, permite acceso a tu cámara',
-              text: 'Este sitio ha pedido permiso para acceder a la cámara. ' + 'Para realizar imágenes con tu cámara debes aceptar esta petición.'
+              title: 'Por favor, permite el acceso a tu cámara',
+              text: 'Este sitio ha pedido permiso para acceder a la cámara. ' + 'Para tomar imágenes con tu cámara debes aceptar esta petición.'
             },
             notFound: {
               title: 'No se ha detectado ninguna cámara',
@@ -3794,58 +4001,58 @@ this.Pusher = Pusher;
           preview: {
             unknownName: 'desconocido',
             change: 'Cancelar',
-            back: 'Atras',
-            done: 'Subir',
+            back: 'Atrás',
+            done: 'Añadir',
             unknown: {
               title: 'Subiendo. Por favor espera para una vista previa.',
               done: 'Saltar vista previa y aceptar'
             },
             regular: {
               title: '¿Quieres subir este archivo?',
-              line1: 'Estás por subir el archivo de arriba.',
-              line2: 'Confirma por favor.'
+              line1: 'Estás a punto de subir el archivo de arriba.',
+              line2: 'Confírmalo por favor.'
             },
             image: {
               title: '¿Quieres subir esta imagen?',
               change: 'Cancelar'
             },
             crop: {
-              title: 'Cortar y subir esta imagen',
+              title: 'Cortar y añadir esta imagen',
               done: 'Listo',
               free: 'libre'
             },
             error: {
               "default": {
-                title: 'La subida falló',
-                text: 'Algo salio mal durante la subida.',
-                back: 'Por favor, trata de nuevo.'
+                title: 'Ups!',
+                text: 'Algo salió mal durante la subida.',
+                back: 'Por favor, inténtalo de nuevo.'
               },
               image: {
-                title: 'Sólo se aceptan archivos de imagenes.',
-                text: 'Por favor, trata de nuevo con otro archivo.',
-                back: 'Escoge imagen'
+                title: 'Solo se aceptan archivos de imagen.',
+                text: 'Por favor, inténtalo de nuevo con otro archivo.',
+                back: 'Escoger imagen'
               },
               size: {
-                title: 'El archivo que has seleccinado sobrepasa el límite de los 100MB.',
-                text: 'Por favor trata de nuevo con otro archivo.'
+                title: 'El archivo que has seleccinado excede el límite.',
+                text: 'Por favor, inténtalo de nuevo con otro archivo.'
               },
               loadImage: {
                 title: 'Error',
-                text: 'No se pudo cargar la imangen'
+                text: 'No puede cargar la imagen'
               }
             },
             multiple: {
               title: 'Has escogido %files%',
               question: '¿Quieres añadir todos estos archivos?',
               tooManyFiles: 'Has escogido demasiados archivos. %max% es el máximo.',
-              tooFewFiles: 'Has escogido %files%. Como mínimo hacen falta %min%.',
-              clear: 'Eliminarlos todos',
+              tooFewFiles: 'Has escogido %files%. Hacen falta al menos %min%.',
+              clear: 'Eliminar todo',
               done: 'Hecho'
             }
           }
         },
         footer: {
-          text: 'Los archivos ha sido subidos, gestionados y procesados por'
+          text: 'Subido, almacenado y procesado por'
         }
       }
     };
@@ -4719,27 +4926,136 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
   uploadcare.namespace('locale.translations', function(ns) {
     return ns.pl = {
       uploading: 'Przesyłanie... Proszę czekać.',
+      loadingInfo: 'Loading info...',
       errors: {
-        "default": 'Błąd'
+        "default": 'Błąd',
+        baddata: 'Niepoprawna wartość',
+        size: 'Plik zbyt duży',
+        upload: 'Nie udało się przesłać',
+        user: 'Przesyłanie anulowane',
+        info: 'Nie udało się załadować informacji',
+        image: 'Dozwolone są tylko obrazy',
+        createGroup: 'Nie udało się utworzyć grupy plików',
+        deleted: 'Plik został usunięty'
       },
       draghere: 'Upuść plik tutaj',
+      file: {
+        one: '%1 plik',
+        few: '%1 pliki',
+        many: '%1 plików'
+      },
       buttons: {
         cancel: 'Anuluj',
-        remove: 'Usuń'
+        remove: 'Usuń',
+        choose: {
+          files: {
+            one: 'Wybierz plik',
+            other: 'Wybierz pliki'
+          },
+          images: {
+            one: 'Wybierz obraz',
+            other: 'Wybierz obrazy'
+          }
+        }
       },
       dialog: {
+        done: 'Wykonano',
+        showFiles: 'Pokaż pliki',
         tabs: {
+          names: {
+            'empty-pubkey': 'Witaj',
+            preview: 'Podgląd',
+            file: 'Pliki lokalne',
+            url: 'Plik z Sieci',
+            camera: 'Aparat'
+          },
           file: {
-            title: 'Mój komputer'
+            drag: 'Upuść plik tutaj',
+            nodrop: 'Prześlij pliki z Twojego komputera',
+            cloudsTip: 'Dane w chmurze<br>i sieci społecznościowe',
+            or: 'lub',
+            button: 'Wybierz plik lokalny',
+            also: 'Możesz również wybrać z'
           },
           url: {
-            title: 'Pliki z sieci'
+            title: 'Pliki z Sieci',
+            line1: 'Złap jakikolwiej plik z sieci.',
+            line2: 'Podaj adres.',
+            input: 'Wklej link...',
+            button: 'Prześlij'
+          },
+          camera: {
+            capture: 'Zrób zdjęcie',
+            mirror: 'Lustro',
+            retry: 'Poproś ponownie o dostęp',
+            pleaseAllow: {
+              title: 'Prośba o udostępnienie aparatu',
+              text: 'Zostałeś poproszony przez tę stronę o dostęp do aparatu. ' + 'Aby robić zdjecia, musisz zaakceptować tę prośbę.'
+            },
+            notFound: {
+              title: 'Nie wykryto aparatu.',
+              text: 'Wygląda na to, że nie masz podłączonego aparatu do tego urządzenia.'
+            }
+          },
+          preview: {
+            unknownName: 'nieznany',
+            change: 'Anuluj',
+            back: 'Wstecz',
+            done: 'Dodaj',
+            unknown: {
+              title: 'Przesyłanie... Proszę czekać na podgląd.',
+              done: 'Omiń podgląd i zaakceptuj.'
+            },
+            regular: {
+              title: 'Dodać ten plik?',
+              line1: 'Zamierzasz dodać nowy plik.',
+              line2: 'Potwierdź, proszę.'
+            },
+            image: {
+              title: 'Dodać ten obraz?',
+              change: 'Anuluj'
+            },
+            crop: {
+              title: 'Przytnij i dodaj ten obraz',
+              done: 'Wykonano',
+              free: 'wolny'
+            },
+            error: {
+              "default": {
+                title: 'Oops!',
+                text: 'Coś poszło nie tak podczas przesyłania.',
+                back: 'Spróbuj ponownie'
+              },
+              image: {
+                title: 'Akceptowane są tylko obrazy.',
+                text: 'Spróbuj ponownie z innym plikiem.',
+                back: 'Wybierz obraz'
+              },
+              size: {
+                title: 'Plik, który wybrałeś, przekracza dopuszczalny rozmiar',
+                text: 'Spróbuj ponownie z innym plikiem.'
+              },
+              loadImage: {
+                title: 'Błąd',
+                text: 'Nie udało się załadować obrazu'
+              }
+            },
+            multiple: {
+              title: 'Wybrałeś %files%',
+              question: 'Czy chcesz dodać wszystkie te pliki?',
+              tooManyFiles: 'Wybrałeś zbyt wiele plików. Maksimum to %max%.',
+              tooFewFiles: 'Wybrałeś %files%. Wymagane jest co najmniej %min%.',
+              clear: 'Usuń wszystkie',
+              done: 'Wykonano'
+            }
           }
+        },
+        footer: {
+          text: 'Pliki przesyła, przechowuje i przetwarza',
+          link: 'Uploadcare.com'
         }
       }
     };
@@ -4747,17 +5063,14 @@ this.Pusher = Pusher;
 
   uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.pl = function(n) {
-      var _ref, _ref1, _ref2, _ref3;
+      var _ref;
       if (n === 1) {
         return 'one';
-      }
-      if ((_ref = n % 10, __indexOf.call([2, 3, 4], _ref) >= 0) && (_ref1 = n % 100, __indexOf.call([12, 13, 14], _ref1) < 0)) {
+      } else if (((2 <= (_ref = n % 10) && _ref <= 4)) && ((n / 10 % 10 | 0) !== 1)) {
         return 'few';
-      }
-      if ((n !== 1) && ((_ref2 = n % 10, __indexOf.call([2, 3, 4], _ref2) < 0) || (_ref3 = n % 100, __indexOf.call([12, 13, 14], _ref3) >= 0))) {
+      } else {
         return 'many';
       }
-      return 'other';
     };
   });
 
@@ -5414,7 +5727,7 @@ this.Pusher = Pusher;
             crop: {
               title: '裁切並加入這個圖片',
               done: '完成',
-              free: '剩餘'
+              free: '自由裁切'
             },
             error: {
               "default": {
@@ -7194,9 +7507,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   // }}}
 }(uploadcare.jQuery));
 (function() {
-  var $, tpl, utils, _ref;
+  var $, utils;
 
-  $ = uploadcare.jQuery, (_ref = uploadcare.templates, tpl = _ref.tpl), utils = uploadcare.utils;
+  $ = uploadcare.jQuery, utils = uploadcare.utils;
 
   uploadcare.namespace('crop', function(ns) {
     return ns.CropWidget = (function() {
@@ -7952,6 +8265,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           store: this.settings.doNotStore ? '' : 'auto',
           jsonerrors: 1
         };
+        if (this.sourceInfo) {
+          data.source = this.sourceInfo.source;
+        }
         utils.jsonp("" + this.settings.urlBase + "/from_url/", data).fail(function(reason) {
           if (_this.settings.debugUploads) {
             utils.debug("Can't start upload from URL.", reason, data);
@@ -9107,7 +9423,8 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           lang: this.settings.locale,
           public_key: this.settings.publicKey,
           widget_version: uploadcare.version,
-          images_only: this.settings.imagesOnly
+          images_only: this.settings.imagesOnly,
+          pass_window_open: this.settings.passWindowOpen
         });
       };
 
@@ -9117,7 +9434,8 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       RemoteTab.prototype.__createIframe = function() {
-        var _this = this;
+        var iframe,
+          _this = this;
         if (this.iframe) {
           return;
         }
@@ -9147,50 +9465,74 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
             });
           }
         });
-        return $(window).on("message", function(_arg) {
-          var e, file, info, message, url;
-          e = _arg.originalEvent;
-          if (e.source !== _this.iframe[0].contentWindow) {
-            return;
-          }
-          try {
-            message = JSON.parse(e.data);
-          } catch (_error) {
-            return;
-          }
-          if (message.type === 'file-selected') {
-            url = (function() {
-              var key, type, _i, _len, _ref1;
-              if (message.alternatives) {
-                _ref1 = _this.settings.preferredTypes;
-                for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-                  type = _ref1[_i];
-                  type = utils.globRegexp(type);
-                  for (key in message.alternatives) {
-                    if (type.test(key)) {
-                      return message.alternatives[key];
-                    }
+        iframe = this.iframe[0].contentWindow;
+        utils.registerMessage('file-selected', iframe, function(message) {
+          var file, info, url;
+          url = (function() {
+            var key, type, _i, _len, _ref1;
+            if (message.alternatives) {
+              _ref1 = _this.settings.preferredTypes;
+              for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+                type = _ref1[_i];
+                type = utils.globRegexp(type);
+                for (key in message.alternatives) {
+                  if (type.test(key)) {
+                    return message.alternatives[key];
                   }
                 }
               }
-              return message.url;
-            })();
-            file = new files.UrlFile(_this.settings, url);
-            if (message.filename) {
-              file.setName(message.filename);
             }
-            if (message.is_image != null) {
-              file.setIsImage(message.is_image);
-            }
-            info = {
-              source: _this.name
-            };
-            if (message.info) {
-              $.extend(info, message.info);
-            }
-            file.setSourceInfo(info);
-            return _this.dialogApi.addFiles([file.promise()]);
+            return message.url;
+          })();
+          file = new files.UrlFile(_this.settings, url);
+          if (message.filename) {
+            file.setName(message.filename);
           }
+          if (message.is_image != null) {
+            file.setIsImage(message.is_image);
+          }
+          info = {
+            source: _this.name
+          };
+          if (message.info) {
+            $.extend(info, message.info);
+          }
+          file.setSourceInfo(info);
+          return _this.dialogApi.addFiles([file.promise()]);
+        });
+        utils.registerMessage('open-new-window', iframe, function(message) {
+          var interval, popup, resolve;
+          if (_this.settings.debugUploads) {
+            utils.debug("Open new window message.", _this.name);
+          }
+          popup = window.open(message.url, '_blank');
+          if (!popup) {
+            utils.warn("Can't open new window. Possible blocked.", _this.name);
+            return;
+          }
+          resolve = function() {
+            if (_this.settings.debugUploads) {
+              utils.debug("Window is closed.", _this.name);
+            }
+            return _this.__sendMessage({
+              type: 'navigate',
+              fragment: ''
+            });
+          };
+          if ('closed' in popup) {
+            return interval = setInterval(function() {
+              if (popup.closed) {
+                clearInterval(interval);
+                return resolve();
+              }
+            }, 100);
+          } else {
+            return popup.addEventListener('exit', resolve);
+          }
+        });
+        return this.dialogApi.done(function() {
+          utils.unregisterMessage('file-selected', iframe);
+          return utils.unregisterMessage('open-new-window', iframe);
         });
       };
 
@@ -10399,7 +10741,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.5';
+  uploadcare.version = '2.5.6';
 
   expose = uploadcare.expose;
 
@@ -10467,4 +10809,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.5/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.6/uploadcare/'));
