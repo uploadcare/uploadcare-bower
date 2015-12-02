@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.5.7)
- * Date: 2015-12-01 19:05:13 +0300
- * Rev: 3f55a04929
+ * Uploadcare (2.5.8)
+ * Date: 2015-12-02 20:15:53 +0300
+ * Rev: 79719320c4
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -2373,7 +2373,9 @@ this.Pusher = Pusher;
       return run = function(task) {
         if (!capacity || running < capacity) {
           running += 1;
-          return task(release);
+          return ns.defer(function() {
+            return task(release);
+          });
         } else {
           return queue.push(task);
         }
@@ -2674,6 +2676,7 @@ this.Pusher = Pusher;
       multiple: false,
       multipleMax: 0,
       multipleMin: 1,
+      multipleMaxStrict: false,
       imageShrink: false,
       pathValue: true,
       tabs: 'file camera url facebook gdrive dropbox instagram evernote flickr skydrive',
@@ -2796,7 +2799,7 @@ this.Pusher = Pusher;
     normalize = function(settings) {
       arrayOptions(settings, ['tabs', 'preferredTypes']);
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
-      flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads']);
+      flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads', 'multipleMaxStrict']);
       intOptions(settings, ['multipleMax', 'multipleMin', 'multipartMinSize', 'multipartPartSize', 'multipartMinLastPartSize', 'multipartConcurrency', 'multipartMaxAttempts', 'parallelDirectUploads']);
       if (settings.crop !== false && !$.isArray(settings.crop)) {
         if (/^(disabled?|false|null)$/i.test(settings.crop)) {
@@ -7926,23 +7929,28 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       ObjectFile.prototype.directUpload = function() {
-        var df, formData,
+        var df,
           _this = this;
         df = $.Deferred();
         if (!this.__file) {
+          this.__rejectApi('baddata');
           return df;
         }
         if (this.fileSize > 100 * 1024 * 1024) {
           this.__rejectApi('size');
           return df;
         }
-        formData = new FormData();
-        formData.append('UPLOADCARE_PUB_KEY', this.settings.publicKey);
-        formData.append('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto');
-        formData.append('file', this.__file, this.fileName);
-        formData.append('file_name', this.fileName);
         this.directRunner(function(release) {
+          var formData;
           df.always(release);
+          if (_this.apiDeferred.state() !== 'pending') {
+            return;
+          }
+          formData = new FormData();
+          formData.append('UPLOADCARE_PUB_KEY', _this.settings.publicKey);
+          formData.append('UPLOADCARE_STORE', _this.settings.doNotStore ? '' : 'auto');
+          formData.append('file', _this.__file, _this.fileName);
+          formData.append('file_name', _this.fileName);
           return _this.__autoAbort($.ajax({
             xhr: function() {
               var xhr;
@@ -8260,41 +8268,49 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.sourceInfo) {
           data.source = this.sourceInfo.source;
         }
-        utils.jsonp("" + this.settings.urlBase + "/from_url/", data).fail(function(reason) {
-          if (_this.settings.debugUploads) {
-            utils.debug("Can't start upload from URL.", reason, data);
+        utils.defer(function() {
+          if (_this.apiDeferred.state() !== 'pending') {
+            return;
           }
-          return df.reject();
-        }).done(function(data) {
-          var logger;
-          if (_this.settings.debugUploads) {
-            utils.debug("Start watchers.", data.token);
-            logger = setInterval(function() {
-              return utils.debug("Still watching.", data.token);
-            }, 5000);
-            df.done(function() {
-              return utils.debug("Stop watchers.", data.token);
-            }).always(function() {
-              return clearInterval(logger);
-            });
-          }
-          _this.__listenWatcher(df, $([pusherWatcher, pollWatcher]));
-          df.always(function() {
-            $([pusherWatcher, pollWatcher]).off(_this.allEvents);
-            pusherWatcher.stopWatching();
-            return pollWatcher.stopWatching();
-          });
-          $(pusherWatcher).one(_this.allEvents, function() {
-            if (!pollWatcher.interval) {
+          return utils.jsonp("" + _this.settings.urlBase + "/from_url/", data).fail(function(reason) {
+            if (_this.settings.debugUploads) {
+              utils.debug("Can't start upload from URL.", reason, data);
+            }
+            return df.reject();
+          }).done(function(data) {
+            var logger;
+            if (_this.apiDeferred.state() !== 'pending') {
               return;
             }
             if (_this.settings.debugUploads) {
-              utils.debug("Start using pusher.", data.token);
+              utils.debug("Start watchers.", data.token);
+              logger = setInterval(function() {
+                return utils.debug("Still watching.", data.token);
+              }, 5000);
+              df.done(function() {
+                return utils.debug("Stop watchers.", data.token);
+              }).always(function() {
+                return clearInterval(logger);
+              });
             }
-            return pollWatcher.stopWatching();
+            _this.__listenWatcher(df, $([pusherWatcher, pollWatcher]));
+            df.always(function() {
+              $([pusherWatcher, pollWatcher]).off(_this.allEvents);
+              pusherWatcher.stopWatching();
+              return pollWatcher.stopWatching();
+            });
+            $(pusherWatcher).one(_this.allEvents, function() {
+              if (!pollWatcher.interval) {
+                return;
+              }
+              if (_this.settings.debugUploads) {
+                utils.debug("Start using pusher.", data.token);
+              }
+              return pollWatcher.stopWatching();
+            });
+            pusherWatcher.watch(data.token);
+            return pollWatcher.watch(data.token);
           });
-          pusherWatcher.watch(data.token);
-          return pollWatcher.watch(data.token);
         });
         return df;
       };
@@ -9354,6 +9370,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if ((_ref1 = this.URL) != null) {
           _ref1.revokeObjectURL(this.video.prop('src'));
         }
+        if (this.__stream.getVideoTracks) {
+          $.each(this.__stream.getVideoTracks(), function() {
+            return typeof this.stop === "function" ? this.stop() : void 0;
+          });
+        }
         return (_ref2 = this.__stream) != null ? typeof _ref2.stop === "function" ? _ref2.stop() : void 0 : void 0;
       };
 
@@ -10118,6 +10139,12 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }
         for (_i = 0, _len = files.length; _i < _len; _i++) {
           file = files[_i];
+          if (this.settings.multipleMaxStrict && this.settings.multipleMax !== 0) {
+            if (this.files.length() >= this.settings.multipleMax) {
+              file.cancel();
+              continue;
+            }
+          }
           this.files.add(file);
         }
         if (this.settings.previewStep) {
@@ -10449,13 +10476,13 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
             return _this.__handleDirectSelection('object', input.files);
           });
         } else {
-          return this.__openDialog(this.currentObject, tab);
+          return this.__openDialog(tab);
         }
       };
 
-      BaseWidget.prototype.__openDialog = function(files, tab) {
+      BaseWidget.prototype.__openDialog = function(tab) {
         var dialogApi;
-        dialogApi = uploadcare.openDialog(files, tab, this.settings);
+        dialogApi = uploadcare.openDialog(this.currentObject, tab, this.settings);
         this.__onDialogOpen.fire(dialogApi);
         return dialogApi.done(this.__setObject);
       };
@@ -10506,7 +10533,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.settings.systemDialog || !this.settings.previewStep) {
           return this.__setObject(file);
         } else {
-          return this.__openDialog(file);
+          return this.__openDialog('preview').addFiles([file]);
         }
       };
 
@@ -10575,7 +10602,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.settings.systemDialog) {
           return this.__setObject(uploadcare.FileGroup(files, this.settings));
         } else {
-          return this.__openDialog(files);
+          return this.__openDialog('preview').addFiles(files);
         }
       };
 
@@ -10746,7 +10773,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.7';
+  uploadcare.version = '2.5.8';
 
   expose = uploadcare.expose;
 
@@ -10814,4 +10841,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.7/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.8/uploadcare/'));
