@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.5.8)
- * Date: 2015-12-02 20:15:53 +0300
- * Rev: 79719320c4
+ * Uploadcare (2.5.9)
+ * Date: 2015-12-07 23:58:36 +0300
+ * Rev: de567ec54a
  */
 ;(function(uploadcare, SCRIPT_BASE){/*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
 
@@ -9364,18 +9364,21 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       CameraTab.prototype.__revoke = function() {
-        var _ref1, _ref2;
+        var _base;
         this.__loaded = false;
         this.container.removeClass('uploadcare-dialog-camera-denied').removeClass('uploadcare-dialog-camera-ready').addClass('uploadcare-dialog-camera-requested');
-        if ((_ref1 = this.URL) != null) {
-          _ref1.revokeObjectURL(this.video.prop('src'));
+        if (!this.__stream) {
+          return;
+        }
+        if (this.URL) {
+          this.URL.revokeObjectURL(this.video.prop('src'));
         }
         if (this.__stream.getVideoTracks) {
           $.each(this.__stream.getVideoTracks(), function() {
             return typeof this.stop === "function" ? this.stop() : void 0;
           });
         }
-        return (_ref2 = this.__stream) != null ? typeof _ref2.stop === "function" ? _ref2.stop() : void 0 : void 0;
+        return typeof (_base = this.__stream).stop === "function" ? _base.stop() : void 0;
       };
 
       CameraTab.prototype.__mirror = function() {
@@ -10773,7 +10776,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.8';
+  uploadcare.version = '2.5.9';
 
   expose = uploadcare.expose;
 
@@ -10841,4 +10844,4 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   jQuery.noConflict(true);
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.8/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.5.9/uploadcare/'));
