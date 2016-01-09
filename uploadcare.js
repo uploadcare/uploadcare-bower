@@ -1,10 +1,11 @@
 /*
- * Uploadcare (2.5.9)
- * Date: 2015-12-07 23:58:36 +0300
- * Rev: de567ec54a
+ * Uploadcare (2.6.0)
+ * Date: 2016-01-09 17:48:10 +0300
+ * Rev: f3718f9f2b
  */
-;(function(uploadcare, SCRIPT_BASE){(function() {
-  window.uploadcare || (window.uploadcare = {});
+;(function(uploadcare, SCRIPT_BASE){
+(function() {
+  window.uploadcare = {};
 
   uploadcare.namespace = function(path, fn) {
     var part, target, _i, _len, _ref;
@@ -34,6 +35,28 @@
     }
     return target[last] = value || source[last];
   };
+
+}).call(this);
+(function() {
+  var expose;
+
+  uploadcare.version = '2.6.0';
+
+  uploadcare.jQuery = jQuery;
+
+  expose = uploadcare.expose;
+
+  expose('version');
+
+  expose('jQuery');
+
+  expose('plugin', function(fn) {
+    return fn(uploadcare);
+  });
+
+  expose('whenReady', function(fn) {
+    return fn();
+  });
 
 }).call(this);
 // from https://github.com/jaubourg/ajaxHooks/blob/master/src/xdr.js
@@ -79,1566 +102,11 @@ if ( window.XDomainRequest ) {
 	});
 }
 ;
-// from https://github.com/homm/jquery-ordering
-
-(function($) {
-  function nearestFinder (targets) {
-    this.targets = targets;
-    this.last = null;
-    this.update();
-  }
-  nearestFinder.prototype = {
-    update: function() {
-      var rows = {};
-
-      this.targets.each(function(i) {
-        var offset = $(this).offset();
-        if ( ! (offset.top in rows)) {
-          rows[offset.top] = [];
-        }
-        rows[offset.top].push([offset.left + this.offsetWidth/2, this]);
-      });
-
-      this.rows = rows;
-    },
-
-    find: function(x, y) {
-      var minDistance = Infinity;
-      var rows = this.rows;
-      var nearestRow, top, nearest;
-
-      for (top in rows) {
-        var distance = Math.abs(top - y);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestRow = rows[top];
-        }
-      }
-
-      minDistance = Math.abs(nearestRow[0][0] - x);
-      nearest = nearestRow[0][1];
-      for (var i = 1; i < nearestRow.length; i++) {
-        var distance = Math.abs(nearestRow[i][0] - x);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearest = nearestRow[i][1];
-        }
-      }
-
-      return nearest;
-    },
-
-    findNotLast: function(x, y) {
-      var nearest = this.find(x, y);
-
-      if (this.last && nearest && this.last == nearest) {
-        return null;
-      }
-
-      return this.last = nearest;
-    }
-  };
-
-
-  var movableName = 'uploadcareMovable';
-  var sortableName = 'uploadcareSortable';
-  var extend = {};
-  extend[movableName] = function(o) {
-    o = $.extend({
-      distance: 4,
-      anyButton: false,
-      axis: false,
-      zIndex: 1000,
-      start: $.noop,
-      move: $.noop,
-      finish: $.noop,
-      items: null,
-      keepFake: false,
-      touch: true
-    }, o);
-
-    function fixTouch(e) {
-      if ( ! o.touch) {
-        return;
-      }
-      var touch, s;
-      s = e.originalEvent.touches;
-      if (s && s.length) {
-        touch = s[0];
-      } else {
-        s = e.originalEvent.changedTouches;
-        if (s && s.length) {
-          touch = s[0];
-        } else {
-          return;
-        }
-      }
-      e.pageX = touch.pageX;
-      e.pageY = touch.pageY;
-      e.which = 1;
-    }
-
-    var events = 'mousedown.{} touchstart.{}'.replace(/\{}/g, movableName);
-    this.on(events, o.items, null, function(eDown) {
-      fixTouch(eDown);
-
-      if ( ! o.anyButton && eDown.which != 1) {
-        return;
-      }
-      eDown.preventDefault();
-
-      var dragged = false;
-      var $dragged = $(this);
-      var $fake = false;
-      var originalPos = $dragged.position();  // offset parent
-
-      originalPos.top += $dragged.offsetParent().scrollTop();
-      originalPos.left += $dragged.offsetParent().scrollLeft();
-
-      var events = 'mousemove.{} touchmove.{}'.replace(/\{}/g, movableName);
-      $(document).on(events, function(eMove) {
-        fixTouch(eMove);
-
-        if ( ! dragged && (Math.abs(eMove.pageX - eDown.pageX) > o.distance || Math.abs(eMove.pageY - eDown.pageY) > o.distance)) {
-          dragged = true;
-          $fake = $dragged.clone()
-            .css({
-              position: 'absolute',
-              zIndex: o.zIndex,
-              width: $dragged.width()
-            })
-            .appendTo($dragged.offsetParent());
-          o.start({
-            event: eMove,
-            dragged: $dragged,
-            fake: $fake
-          });
-        }
-
-        if ( ! dragged) {
-          return;
-        }
-        eMove.preventDefault();
-
-        var dx = o.axis == 'y' ? 0 : eMove.pageX - eDown.pageX;
-        var dy = o.axis == 'x' ? 0 : eMove.pageY - eDown.pageY;
-        $fake.css({left: dx + originalPos.left, top: dy + originalPos.top});
-        o.move({
-          event: eMove,
-          dragged: $dragged,
-          fake: $fake,
-          dx: dx,
-          dy: dy
-        });
-      });
-
-      var events = 'mouseup.{} touchend.{} touchcancel.{} touchleave.{}';
-      $(document).on(events.replace(/\{}/g, movableName), function(eUp) {
-        fixTouch(eUp);
-
-        var events = 'mousemove.{} touchmove.{} mouseup.{} touchend.{} touchcancel.{} touchleave.{}';
-        $(document).off(events.replace(/\{}/g, movableName));
-
-        if ( ! dragged) {
-          return;
-        }
-        eUp.preventDefault();
-
-        var dx = eUp.pageX - eDown.pageX;
-        var dy = eUp.pageY - eDown.pageY;
-        dragged = false;
-        o.finish({
-          event: eUp,
-          dragged: $dragged,
-          fake: $fake,
-          dx: dx,
-          dy: dy
-        });
-        if ( ! o.keepFake) {
-          $fake.remove();
-        }
-      });
-    });
-  };
-
-  extend[sortableName] = function(o) {
-    var oMovable = $.extend({
-      items: '>*'
-    }, o);
-    var o = $.extend({
-      checkBounds: function () {return true;},
-      start: $.noop,
-      attach: $.noop,
-      move: $.noop,
-      finish: $.noop
-    }, o);
-    var finder;
-    var initialNext = false;
-    var parent = this;
-
-    oMovable.start = function(info) {
-      o.start(info);
-      finder = new nearestFinder(parent.find(oMovable.items).not(info.fake));
-      initialNext = info.dragged.next();
-    };
-
-    oMovable.move = function(info) {
-      info.nearest = null;
-
-      if (o.checkBounds(info)) {
-        var offset = info.fake.offset();
-        var nearest = finder.findNotLast(
-            offset.left + info.dragged.width() / 2, offset.top);
-        info.nearest = $(nearest);
-
-        if (nearest && nearest != info.dragged[0]) {
-          if (info.dragged.nextAll().filter(nearest).length > 0) {
-            info.dragged.insertAfter(nearest);
-          } else {
-            info.dragged.insertBefore(nearest);
-          }
-          o.attach(info);
-          finder.last = null;
-          finder.update();
-        }
-      } else if (finder.last !== null) {
-        finder.last = null;
-        if (initialNext.length) {
-          info.dragged.insertBefore(initialNext);
-        } else {
-          info.dragged.parent().append(info.dragged);
-        }
-        o.attach(info);
-        finder.update();
-      }
-
-      o.move(info);
-    };
-
-    oMovable.finish = function(info) {
-      var offset = info.fake.offset();
-      info.nearest = null;
-      if (o.checkBounds(info)) {
-        info.nearest = $(finder.find(
-            offset.left + info.dragged.width() / 2, offset.top));
-      }
-      o.finish(info);
-      finder = null;
-    };
-
-    return this[movableName](oMovable);
-  };
-  $.fn.extend(extend);
-})(jQuery);
-(function() {
-  uploadcare.jQuery = jQuery;
-
-}).call(this);
-// changed:
-//   Pusher.dependency_suffix = '.min'; (was '')
-//   window.WEB_SOCKET_SWF_LOCATION = "https://s3.amazonaws.com/uploadcare-static/WebSocketMainInsecure.swf"
-
-/*!
- * Pusher JavaScript Library v1.12.2
- * http://pusherapp.com/
- *
- * Copyright 2011, Pusher
- * Released under the MIT licence.
- */
-
-
-;(function() {
-  var Pusher, _require;
-
-;(function() {
-  if (Function.prototype.scopedTo === undefined) {
-    Function.prototype.scopedTo = function(context, args) {
-      var f = this;
-      return function() {
-        return f.apply(context, Array.prototype.slice.call(args || [])
-                       .concat(Array.prototype.slice.call(arguments)));
-      };
-    };
-  }
-
-  Pusher = function(app_key, options) {
-    this.options = options || {};
-    this.key = app_key;
-    this.channels = new Pusher.Channels();
-    this.global_emitter = new Pusher.EventsDispatcher()
-
-    var self = this;
-
-    this.checkAppKey();
-
-    this.connection = new Pusher.Connection(this.key, this.options);
-
-    // Setup / teardown connection
-    this.connection
-      .bind('connected', function() {
-        self.subscribeAll();
-      })
-      .bind('message', function(params) {
-        var internal = (params.event.indexOf('pusher_internal:') === 0);
-        if (params.channel) {
-          var channel;
-          if (channel = self.channel(params.channel)) {
-            channel.emit(params.event, params.data);
-          }
-        }
-        // Emit globaly [deprecated]
-        if (!internal) self.global_emitter.emit(params.event, params.data);
-      })
-      .bind('disconnected', function() {
-        self.channels.disconnect();
-      })
-      .bind('error', function(err) {
-        Pusher.warn('Error', err);
-      });
-
-    Pusher.instances.push(this);
-
-    if (Pusher.isReady) self.connect();
-  };
-  Pusher.instances = [];
-  Pusher.prototype = {
-    channel: function(name) {
-      return this.channels.find(name);
-    },
-
-    connect: function() {
-      this.connection.connect();
-    },
-
-    disconnect: function() {
-      this.connection.disconnect();
-    },
-
-    bind: function(event_name, callback) {
-      this.global_emitter.bind(event_name, callback);
-      return this;
-    },
-
-    bind_all: function(callback) {
-      this.global_emitter.bind_all(callback);
-      return this;
-    },
-
-    subscribeAll: function() {
-      var channel;
-      for (channelName in this.channels.channels) {
-        if (this.channels.channels.hasOwnProperty(channelName)) {
-          this.subscribe(channelName);
-        }
-      }
-    },
-
-    subscribe: function(channel_name) {
-      var self = this;
-      var channel = this.channels.add(channel_name, this);
-
-      if (this.connection.state === 'connected') {
-        channel.authorize(this.connection.socket_id, this.options, function(err, data) {
-          if (err) {
-            channel.emit('pusher:subscription_error', data);
-          } else {
-            self.send_event('pusher:subscribe', {
-              channel: channel_name,
-              auth: data.auth,
-              channel_data: data.channel_data
-            });
-          }
-        });
-      }
-      return channel;
-    },
-
-    unsubscribe: function(channel_name) {
-      this.channels.remove(channel_name);
-      if (this.connection.state === 'connected') {
-        this.send_event('pusher:unsubscribe', {
-          channel: channel_name
-        });
-      }
-    },
-
-    send_event: function(event_name, data, channel) {
-      return this.connection.send_event(event_name, data, channel);
-    },
-
-    checkAppKey: function() {
-      if(this.key === null || this.key === undefined) {
-        Pusher.warn('Warning', 'You must pass your app key when you instantiate Pusher.');
-      }
-    }
-  };
-
-  Pusher.Util = {
-    extend: function extend(target, extensions) {
-      for (var property in extensions) {
-        if (extensions[property] && extensions[property].constructor &&
-            extensions[property].constructor === Object) {
-          target[property] = extend(target[property] || {}, extensions[property]);
-        } else {
-          target[property] = extensions[property];
-        }
-      }
-      return target;
-    },
-
-    stringify: function stringify() {
-      var m = ["Pusher"]
-      for (var i = 0; i < arguments.length; i++){
-        if (typeof arguments[i] === "string") {
-          m.push(arguments[i])
-        } else {
-          if (window['JSON'] == undefined) {
-            m.push(arguments[i].toString());
-          } else {
-            m.push(JSON.stringify(arguments[i]))
-          }
-        }
-      };
-      return m.join(" : ")
-    },
-
-    arrayIndexOf: function(array, item) { // MSIE doesn't have array.indexOf
-      var nativeIndexOf = Array.prototype.indexOf;
-      if (array == null) return -1;
-      if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item);
-      for (i = 0, l = array.length; i < l; i++) if (array[i] === item) return i;
-      return -1;
-    }
-  };
-
-  // To receive log output provide a Pusher.log function, for example
-  // Pusher.log = function(m){console.log(m)}
-  Pusher.debug = function() {
-    if (!Pusher.log) return
-    Pusher.log(Pusher.Util.stringify.apply(this, arguments))
-  }
-  Pusher.warn = function() {
-    if (window.console && window.console.warn) {
-      window.console.warn(Pusher.Util.stringify.apply(this, arguments));
-    } else {
-      if (!Pusher.log) return
-      Pusher.log(Pusher.Util.stringify.apply(this, arguments));
-    }
-  };
-
-  // Pusher defaults
-  Pusher.VERSION = '1.12.2';
-
-  Pusher.host = 'ws.pusherapp.com';
-  Pusher.ws_port = 80;
-  Pusher.wss_port = 443;
-  Pusher.channel_auth_endpoint = '/pusher/auth';
-  Pusher.cdn_http = 'http://js.pusher.com/'
-  Pusher.cdn_https = 'https://d3dy5gmtp8yhk7.cloudfront.net/'
-  Pusher.dependency_suffix = '.min';
-  Pusher.channel_auth_transport = 'ajax';
-  Pusher.activity_timeout = 120000;
-  Pusher.pong_timeout = 30000;
-
-  Pusher.isReady = false;
-  Pusher.ready = function() {
-    Pusher.isReady = true;
-    for (var i = 0, l = Pusher.instances.length; i < l; i++) {
-      Pusher.instances[i].connect();
-    }
-  };
-
-})();
-
-;(function() {
-/* Abstract event binding
-Example:
-
-    var MyEventEmitter = function(){};
-    MyEventEmitter.prototype = new Pusher.EventsDispatcher;
-
-    var emitter = new MyEventEmitter();
-
-    // Bind to single event
-    emitter.bind('foo_event', function(data){ alert(data)} );
-
-    // Bind to all
-    emitter.bind_all(function(eventName, data){ alert(data) });
-
---------------------------------------------------------*/
-
-  function CallbackRegistry() {
-    this._callbacks = {};
-  };
-
-  CallbackRegistry.prototype.get = function(eventName) {
-    return this._callbacks[this._prefix(eventName)];
-  };
-
-  CallbackRegistry.prototype.add = function(eventName, callback) {
-    var prefixedEventName = this._prefix(eventName);
-    this._callbacks[prefixedEventName] = this._callbacks[prefixedEventName] || [];
-    this._callbacks[prefixedEventName].push(callback);
-  };
-
-  CallbackRegistry.prototype.remove = function(eventName, callback) {
-    if(this.get(eventName)) {
-      var index = Pusher.Util.arrayIndexOf(this.get(eventName), callback);
-      this._callbacks[this._prefix(eventName)].splice(index, 1);
-    }
-  };
-
-  CallbackRegistry.prototype._prefix = function(eventName) {
-    return "_" + eventName;
-  };
-
-
-  function EventsDispatcher(failThrough) {
-    this.callbacks = new CallbackRegistry();
-    this.global_callbacks = [];
-    // Run this function when dispatching an event when no callbacks defined
-    this.failThrough = failThrough;
-  }
-
-  EventsDispatcher.prototype.bind = function(eventName, callback) {
-    this.callbacks.add(eventName, callback);
-    return this;// chainable
-  };
-
-  EventsDispatcher.prototype.unbind = function(eventName, callback) {
-    this.callbacks.remove(eventName, callback);
-    return this;
-  };
-
-  EventsDispatcher.prototype.emit = function(eventName, data) {
-    // Global callbacks
-    for (var i = 0; i < this.global_callbacks.length; i++) {
-      this.global_callbacks[i](eventName, data);
-    }
-
-    // Event callbacks
-    var callbacks = this.callbacks.get(eventName);
-    if (callbacks) {
-      for (var i = 0; i < callbacks.length; i++) {
-        callbacks[i](data);
-      }
-    } else if (this.failThrough) {
-      this.failThrough(eventName, data)
-    }
-
-    return this;
-  };
-
-  EventsDispatcher.prototype.bind_all = function(callback) {
-    this.global_callbacks.push(callback);
-    return this;
-  };
-
-  Pusher.EventsDispatcher = EventsDispatcher;
-})();
-
-;(function() {
-  /*-----------------------------------------------
-    Helpers:
-  -----------------------------------------------*/
-
-  function capitalize(str) {
-    return str.substr(0, 1).toUpperCase() + str.substr(1);
-  }
-
-
-  function safeCall(method, obj, data) {
-    if (obj[method] !== undefined) {
-      obj[method](data);
-    }
-  }
-
-  /*-----------------------------------------------
-    The State Machine
-  -----------------------------------------------*/
-  function Machine(initialState, transitions, stateActions) {
-    Pusher.EventsDispatcher.call(this);
-
-    this.state = undefined;
-    this.errors = [];
-
-    // functions for each state
-    this.stateActions = stateActions;
-
-    // set up the transitions
-    this.transitions = transitions;
-
-    this.transition(initialState);
-  };
-
-  Machine.prototype.transition = function(nextState, data) {
-    var prevState = this.state;
-    var stateCallbacks = this.stateActions;
-
-    if (prevState && (Pusher.Util.arrayIndexOf(this.transitions[prevState], nextState) == -1)) {
-      this.emit('invalid_transition_attempt', {
-        oldState: prevState,
-        newState: nextState
-      });
-
-      throw new Error('Invalid transition [' + prevState + ' to ' + nextState + ']');
-    }
-
-    // exit
-    safeCall(prevState + 'Exit', stateCallbacks, data);
-
-    // tween
-    safeCall(prevState + 'To' + capitalize(nextState), stateCallbacks, data);
-
-    // pre
-    safeCall(nextState + 'Pre', stateCallbacks, data);
-
-    // change state:
-    this.state = nextState;
-
-    // handy to bind to
-    this.emit('state_change', {
-      oldState: prevState,
-      newState: nextState
-    });
-
-    // Post:
-    safeCall(nextState + 'Post', stateCallbacks, data);
-  };
-
-  Machine.prototype.is = function(state) {
-    return this.state === state;
-  };
-
-  Machine.prototype.isNot = function(state) {
-    return this.state !== state;
-  };
-
-  Pusher.Util.extend(Machine.prototype, Pusher.EventsDispatcher.prototype);
-
-  Pusher.Machine = Machine;
-})();
-
-;(function() {
-  /*
-    A little bauble to interface with window.navigator.onLine,
-    window.ononline and window.onoffline.  Easier to mock.
-  */
-
-  var NetInfo = function() {
-    var self = this;
-    Pusher.EventsDispatcher.call(this);
-    // This is okay, as IE doesn't support this stuff anyway.
-    if (window.addEventListener !== undefined) {
-      window.addEventListener("online", function() {
-        self.emit('online', null);
-      }, false);
-      window.addEventListener("offline", function() {
-        self.emit('offline', null);
-      }, false);
-    }
-  };
-
-  // Offline means definitely offline (no connection to router).
-  // Inverse does NOT mean definitely online (only currently supported in Safari
-  // and even there only means the device has a connection to the router).
-  NetInfo.prototype.isOnLine = function() {
-    if (window.navigator.onLine === undefined) {
-      return true;
-    } else {
-      return window.navigator.onLine;
-    }
-  };
-
-  Pusher.Util.extend(NetInfo.prototype, Pusher.EventsDispatcher.prototype);
-
-  Pusher.NetInfo = NetInfo;
-})();
-
-;(function() {
-  var machineTransitions = {
-    'initialized': ['waiting', 'failed'],
-    'waiting': ['connecting', 'permanentlyClosed'],
-    'connecting': ['open', 'permanentlyClosing', 'impermanentlyClosing', 'waiting'],
-    'open': ['connected', 'permanentlyClosing', 'impermanentlyClosing', 'waiting'],
-    'connected': ['permanentlyClosing', 'waiting'],
-    'impermanentlyClosing': ['waiting', 'permanentlyClosing'],
-    'permanentlyClosing': ['permanentlyClosed'],
-    'permanentlyClosed': ['waiting', 'failed'],
-    'failed': ['permanentlyClosed']
-  };
-
-
-  // Amount to add to time between connection attemtpts per failed attempt.
-  var UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT = 2000;
-  var UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT = 2000;
-  var UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT = 2000;
-
-  var MAX_CONNECTION_ATTEMPT_WAIT = 5 * UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT;
-  var MAX_OPEN_ATTEMPT_TIMEOUT = 5 * UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT;
-  var MAX_CONNECTED_ATTEMPT_TIMEOUT = 5 * UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT;
-
-  function resetConnectionParameters(connection) {
-    connection.connectionWait = 0;
-
-    if (Pusher.TransportType === 'flash') {
-      // Flash needs a bit more time
-      connection.openTimeout = 5000;
-    } else {
-      connection.openTimeout = 2000;
-    }
-    connection.connectedTimeout = 2000;
-    connection.connectionSecure = connection.compulsorySecure;
-    connection.connectionAttempts = 0;
-  }
-
-  function Connection(key, options) {
-    var self = this;
-
-    Pusher.EventsDispatcher.call(this);
-
-    this.options = Pusher.Util.extend({encrypted: false}, options);
-
-    this.netInfo = new Pusher.NetInfo();
-
-    this.netInfo.bind('online', function(){
-      if (self._machine.is('waiting')) {
-        self._machine.transition('connecting');
-        updateState('connecting');
-      }
-    });
-
-    this.netInfo.bind('offline', function() {
-      if (self._machine.is('connected')) {
-        // These are for Chrome 15, which ends up
-        // having two sockets hanging around.
-        self.socket.onclose = undefined;
-        self.socket.onmessage = undefined;
-        self.socket.onerror = undefined;
-        self.socket.onopen = undefined;
-
-        self.socket.close();
-        self.socket = undefined;
-        self._machine.transition('waiting');
-      }
-    });
-
-    // define the state machine that runs the connection
-    this._machine = new Pusher.Machine('initialized', machineTransitions, {
-      initializedPre: function() {
-        self.compulsorySecure = self.options.encrypted;
-
-        self.key = key;
-        self.socket = null;
-        self.socket_id = null;
-
-        self.state = 'initialized';
-      },
-
-      waitingPre: function() {
-        if (self.connectionWait > 0) {
-          self.emit('connecting_in', self.connectionWait);
-        }
-
-        if (self.netInfo.isOnLine() && self.connectionAttempts <= 4) {
-          updateState('connecting');
-        } else {
-          updateState('unavailable');
-        }
-
-        // When in the unavailable state we attempt to connect, but don't
-        // broadcast that fact
-        if (self.netInfo.isOnLine()) {
-          self._waitingTimer = setTimeout(function() {
-            self._machine.transition('connecting');
-          }, connectionDelay());
-        }
-      },
-
-      waitingExit: function() {
-        clearTimeout(self._waitingTimer);
-      },
-
-      connectingPre: function() {
-        // Case that a user manages to get to the connecting
-        // state even when offline.
-        if (self.netInfo.isOnLine() === false) {
-          self._machine.transition('waiting');
-          updateState('unavailable');
-
-          return;
-        }
-
-        var url = formatURL(self.key, self.connectionSecure);
-        Pusher.debug('Connecting', url);
-        self.socket = new Pusher.Transport(url);
-        // now that the socket connection attempt has been started,
-        // set up the callbacks fired by the socket for different outcomes
-        self.socket.onopen = ws_onopen;
-        self.socket.onclose = transitionToWaiting;
-        self.socket.onerror = ws_onError;
-
-        // allow time to get ws_onOpen, otherwise close socket and try again
-        self._connectingTimer = setTimeout(TransitionToImpermanentlyClosing, self.openTimeout);
-      },
-
-      connectingExit: function() {
-        clearTimeout(self._connectingTimer);
-        self.socket.onopen = undefined; // unbind to avoid open events that are no longer relevant
-      },
-
-      connectingToWaiting: function() {
-        updateConnectionParameters();
-
-        // FUTURE: update only ssl
-      },
-
-      connectingToImpermanentlyClosing: function() {
-        updateConnectionParameters();
-
-        // FUTURE: update only timeout
-      },
-
-      openPre: function() {
-        self.socket.onmessage = ws_onMessageOpen;
-        self.socket.onerror = ws_onError;
-        self.socket.onclose = transitionToWaiting;
-
-        // allow time to get connected-to-Pusher message, otherwise close socket, try again
-        self._openTimer = setTimeout(TransitionToImpermanentlyClosing, self.connectedTimeout);
-      },
-
-      openExit: function() {
-        clearTimeout(self._openTimer);
-        self.socket.onmessage = undefined; // unbind to avoid messages that are no longer relevant
-      },
-
-      openToWaiting: function() {
-        updateConnectionParameters();
-      },
-
-      openToImpermanentlyClosing: function() {
-        updateConnectionParameters();
-      },
-
-      connectedPre: function(socket_id) {
-        self.socket_id = socket_id;
-
-        self.socket.onmessage = ws_onMessageConnected;
-        self.socket.onerror = ws_onError;
-        self.socket.onclose = transitionToWaiting;
-
-        resetConnectionParameters(self);
-        self.connectedAt = new Date().getTime();
-
-        resetActivityCheck();
-      },
-
-      connectedPost: function() {
-        updateState('connected');
-      },
-
-      connectedExit: function() {
-        stopActivityCheck();
-        updateState('disconnected');
-      },
-
-      impermanentlyClosingPost: function() {
-        if (self.socket) {
-          self.socket.onclose = transitionToWaiting;
-          self.socket.close();
-        }
-      },
-
-      permanentlyClosingPost: function() {
-        if (self.socket) {
-          self.socket.onclose = function() {
-            resetConnectionParameters(self);
-            self._machine.transition('permanentlyClosed');
-          };
-
-          self.socket.close();
-        } else {
-          resetConnectionParameters(self);
-          self._machine.transition('permanentlyClosed');
-        }
-      },
-
-      failedPre: function() {
-        updateState('failed');
-        Pusher.debug('WebSockets are not available in this browser.');
-      },
-
-      permanentlyClosedPost: function() {
-        updateState('disconnected');
-      }
-    });
-
-    /*-----------------------------------------------
-      -----------------------------------------------*/
-
-    function updateConnectionParameters() {
-      if (self.connectionWait < MAX_CONNECTION_ATTEMPT_WAIT) {
-        self.connectionWait += UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT;
-      }
-
-      if (self.openTimeout < MAX_OPEN_ATTEMPT_TIMEOUT) {
-        self.openTimeout += UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT;
-      }
-
-      if (self.connectedTimeout < MAX_CONNECTED_ATTEMPT_TIMEOUT) {
-        self.connectedTimeout += UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT;
-      }
-
-      if (self.compulsorySecure !== true) {
-        self.connectionSecure = !self.connectionSecure;
-      }
-
-      self.connectionAttempts++;
-    }
-
-    function formatURL(key, isSecure) {
-      var port = Pusher.ws_port;
-      var protocol = 'ws://';
-
-      // Always connect with SSL if the current page has
-      // been loaded via HTTPS.
-      //
-      // FUTURE: Always connect using SSL.
-      //
-      if (isSecure || document.location.protocol === 'https:') {
-        port = Pusher.wss_port;
-        protocol = 'wss://';
-      }
-
-      var flash = (Pusher.TransportType === "flash") ? "true" : "false";
-
-      return protocol + Pusher.host + ':' + port + '/app/' + key + '?protocol=5&client=js'
-        + '&version=' + Pusher.VERSION
-        + '&flash=' + flash;
-    }
-
-    // callback for close and retry.  Used on timeouts.
-    function TransitionToImpermanentlyClosing() {
-      self._machine.transition('impermanentlyClosing');
-    }
-
-    function resetActivityCheck() {
-      if (self._activityTimer) { clearTimeout(self._activityTimer); }
-      // Send ping after inactivity
-      self._activityTimer = setTimeout(function() {
-        self.send_event('pusher:ping', {})
-        // Wait for pong response
-        self._activityTimer = setTimeout(function() {
-          self.socket.close();
-        }, (self.options.pong_timeout || Pusher.pong_timeout))
-      }, (self.options.activity_timeout || Pusher.activity_timeout))
-    }
-
-    function stopActivityCheck() {
-      if (self._activityTimer) { clearTimeout(self._activityTimer); }
-    }
-
-    // Returns the delay before the next connection attempt should be made
-    //
-    // This function guards against attempting to connect more frequently than
-    // once every second
-    //
-    function connectionDelay() {
-      var delay = self.connectionWait;
-      if (delay === 0) {
-        if (self.connectedAt) {
-          var t = 1000;
-          var connectedFor = new Date().getTime() - self.connectedAt;
-          if (connectedFor < t) {
-            delay = t - connectedFor;
-          }
-        }
-      }
-      return delay;
-    }
-
-    /*-----------------------------------------------
-      WebSocket Callbacks
-      -----------------------------------------------*/
-
-    // no-op, as we only care when we get pusher:connection_established
-    function ws_onopen() {
-      self._machine.transition('open');
-    };
-
-    function handleCloseCode(code, message) {
-      // first inform the end-developer of this error
-      self.emit('error', {type: 'PusherError', data: {code: code, message: message}});
-
-      if (code === 4000) {
-        // SSL only app
-        self.compulsorySecure = true;
-        self.connectionSecure = true;
-        self.options.encrypted = true;
-
-        TransitionToImpermanentlyClosing();
-      } else if (code < 4100) {
-        // Permentently close connection
-        self._machine.transition('permanentlyClosing')
-      } else if (code < 4200) {
-        // Backoff before reconnecting
-        self.connectionWait = 1000;
-        self._machine.transition('waiting')
-      } else if (code < 4300) {
-        // Reconnect immediately
-        TransitionToImpermanentlyClosing();
-      } else {
-        // Unknown error
-        self._machine.transition('permanentlyClosing')
-      }
-    }
-
-    function ws_onMessageOpen(event) {
-      var params = parseWebSocketEvent(event);
-      if (params !== undefined) {
-        if (params.event === 'pusher:connection_established') {
-          self._machine.transition('connected', params.data.socket_id);
-        } else if (params.event === 'pusher:error') {
-          handleCloseCode(params.data.code, params.data.message)
-        }
-      }
-    }
-
-    function ws_onMessageConnected(event) {
-      resetActivityCheck();
-
-      var params = parseWebSocketEvent(event);
-      if (params !== undefined) {
-        Pusher.debug('Event recd', params);
-
-        switch (params.event) {
-          case 'pusher:error':
-            self.emit('error', {type: 'PusherError', data: params.data});
-            break;
-          case 'pusher:ping':
-            self.send_event('pusher:pong', {})
-            break;
-        }
-
-        self.emit('message', params);
-      }
-    }
-
-
-    /**
-     * Parses an event from the WebSocket to get
-     * the JSON payload that we require
-     *
-     * @param {MessageEvent} event  The event from the WebSocket.onmessage handler.
-    **/
-    function parseWebSocketEvent(event) {
-      try {
-        var params = JSON.parse(event.data);
-
-        if (typeof params.data === 'string') {
-          try {
-            params.data = JSON.parse(params.data);
-          } catch (e) {
-            if (!(e instanceof SyntaxError)) {
-              throw e;
-            }
-          }
-        }
-
-        return params;
-      } catch (e) {
-        self.emit('error', {type: 'MessageParseError', error: e, data: event.data});
-      }
-    }
-
-    function transitionToWaiting() {
-      self._machine.transition('waiting');
-    }
-
-    function ws_onError(error) {
-      // just emit error to user - socket will already be closed by browser
-      self.emit('error', { type: 'WebSocketError', error: error });
-    }
-
-    // Updates the public state information exposed by connection
-    //
-    // This is distinct from the internal state information used by _machine
-    // to manage the connection
-    //
-    function updateState(newState, data) {
-      var prevState = self.state;
-      self.state = newState;
-
-      // Only emit when the state changes
-      if (prevState !== newState) {
-        Pusher.debug('State changed', prevState + ' -> ' + newState);
-        self.emit('state_change', {previous: prevState, current: newState});
-        self.emit(newState, data);
-      }
-    }
-  };
-
-  Connection.prototype.connect = function() {
-    // no WebSockets
-    if (!this._machine.is('failed') && !Pusher.Transport) {
-      this._machine.transition('failed');
-    }
-    // initial open of connection
-    else if(this._machine.is('initialized')) {
-      resetConnectionParameters(this);
-      this._machine.transition('waiting');
-    }
-    // user skipping connection wait
-    else if (this._machine.is('waiting') && this.netInfo.isOnLine() === true) {
-      this._machine.transition('connecting');
-    }
-    // user re-opening connection after closing it
-    else if(this._machine.is("permanentlyClosed")) {
-      resetConnectionParameters(this);
-      this._machine.transition('waiting');
-    }
-  };
-
-  Connection.prototype.send = function(data) {
-    if (this._machine.is('connected')) {
-      // Workaround for MobileSafari bug (see https://gist.github.com/2052006)
-      var self = this;
-      setTimeout(function() {
-        self.socket.send(data);
-      }, 0);
-      return true;
-    } else {
-      return false;
-    }
-  };
-
-  Connection.prototype.send_event = function(event_name, data, channel) {
-    var payload = {
-      event: event_name,
-      data: data
-    };
-    if (channel) payload['channel'] = channel;
-
-    Pusher.debug('Event sent', payload);
-    return this.send(JSON.stringify(payload));
-  }
-
-  Connection.prototype.disconnect = function() {
-    if (this._machine.is('permanentlyClosed')) return;
-
-    if (this._machine.is('waiting') || this._machine.is('failed')) {
-      this._machine.transition('permanentlyClosed');
-    } else {
-      this._machine.transition('permanentlyClosing');
-    }
-  };
-
-  Pusher.Util.extend(Connection.prototype, Pusher.EventsDispatcher.prototype);
-  Pusher.Connection = Connection;
-})();
-
-;(function() {
-  Pusher.Channels = function() {
-    this.channels = {};
-  };
-
-  Pusher.Channels.prototype = {
-    add: function(channel_name, pusher) {
-      var existing_channel = this.find(channel_name);
-      if (!existing_channel) {
-        var channel = Pusher.Channel.factory(channel_name, pusher);
-        this.channels[channel_name] = channel;
-        return channel;
-      } else {
-        return existing_channel;
-      }
-    },
-
-    find: function(channel_name) {
-      return this.channels[channel_name];
-    },
-
-    remove: function(channel_name) {
-      delete this.channels[channel_name];
-    },
-
-    disconnect: function () {
-      for(var channel_name in this.channels){
-        this.channels[channel_name].disconnect()
-      }
-    }
-  };
-
-  Pusher.Channel = function(channel_name, pusher) {
-    var self = this;
-    Pusher.EventsDispatcher.call(this, function(event_name, event_data) {
-      Pusher.debug('No callbacks on ' + channel_name + ' for ' + event_name);
-    });
-
-    this.pusher = pusher;
-    this.name = channel_name;
-    this.subscribed = false;
-
-    this.bind('pusher_internal:subscription_succeeded', function(data) {
-      self.onSubscriptionSucceeded(data);
-    });
-  };
-
-  Pusher.Channel.prototype = {
-    // inheritable constructor
-    init: function() {},
-    disconnect: function() {
-      this.subscribed = false;
-      this.emit("pusher_internal:disconnected");
-    },
-
-    onSubscriptionSucceeded: function(data) {
-      this.subscribed = true;
-      this.emit('pusher:subscription_succeeded');
-    },
-
-    authorize: function(socketId, options, callback){
-      return callback(false, {}); // normal channels don't require auth
-    },
-
-    trigger: function(event, data) {
-      return this.pusher.send_event(event, data, this.name);
-    }
-  };
-
-  Pusher.Util.extend(Pusher.Channel.prototype, Pusher.EventsDispatcher.prototype);
-
-  Pusher.Channel.PrivateChannel = {
-    authorize: function(socketId, options, callback){
-      var self = this;
-      var authorizer = new Pusher.Channel.Authorizer(this, Pusher.channel_auth_transport, options);
-      return authorizer.authorize(socketId, function(err, authData) {
-        if(!err) {
-          self.emit('pusher_internal:authorized', authData);
-        }
-
-        callback(err, authData);
-      });
-    }
-  };
-
-  Pusher.Channel.PresenceChannel = {
-    init: function(){
-      this.members = new Members(this); // leeches off channel events
-    },
-
-    onSubscriptionSucceeded: function(data) {
-      this.subscribed = true;
-      // We override this because we want the Members obj to be responsible for
-      // emitting the pusher:subscription_succeeded.  It will do this after it has done its work.
-    }
-  };
-
-  var Members = function(channel) {
-    var self = this;
-
-    var reset = function() {
-      this._members_map = {};
-      this.count = 0;
-      this.me = null;
-    };
-    reset.call(this);
-
-    channel.bind('pusher_internal:authorized', function(authorizedData) {
-      var channelData = JSON.parse(authorizedData.channel_data);
-      channel.bind("pusher_internal:subscription_succeeded", function(subscriptionData) {
-        self._members_map = subscriptionData.presence.hash;
-        self.count = subscriptionData.presence.count;
-        self.me = self.get(channelData.user_id);
-        channel.emit('pusher:subscription_succeeded', self);
-      });
-    });
-
-    channel.bind('pusher_internal:member_added', function(data) {
-      if(self.get(data.user_id) === null) { // only incr if user_id does not already exist
-        self.count++;
-      }
-
-      self._members_map[data.user_id] = data.user_info;
-      channel.emit('pusher:member_added', self.get(data.user_id));
-    });
-
-    channel.bind('pusher_internal:member_removed', function(data) {
-      var member = self.get(data.user_id);
-      if(member) {
-        delete self._members_map[data.user_id];
-        self.count--;
-        channel.emit('pusher:member_removed', member);
-      }
-    });
-
-    channel.bind('pusher_internal:disconnected', function() {
-      reset.call(self);
-    });
-  };
-
-  Members.prototype = {
-    each: function(callback) {
-      for(var i in this._members_map) {
-        callback(this.get(i));
-      }
-    },
-
-    get: function(user_id) {
-      if (this._members_map.hasOwnProperty(user_id)) { // have heard of this user user_id
-        return {
-          id: user_id,
-          info: this._members_map[user_id]
-        }
-      } else { // have never heard of this user
-        return null;
-      }
-    }
-  };
-
-  Pusher.Channel.factory = function(channel_name, pusher){
-    var channel = new Pusher.Channel(channel_name, pusher);
-    if (channel_name.indexOf('private-') === 0) {
-      Pusher.Util.extend(channel, Pusher.Channel.PrivateChannel);
-    } else if (channel_name.indexOf('presence-') === 0) {
-      Pusher.Util.extend(channel, Pusher.Channel.PrivateChannel);
-      Pusher.Util.extend(channel, Pusher.Channel.PresenceChannel);
-    };
-    channel.init();
-    return channel;
-  };
-})();
-
-;(function() {
-  Pusher.Channel.Authorizer = function(channel, type, options) {
-    this.channel = channel;
-    this.type = type;
-
-    this.authOptions = (options || {}).auth || {};
-  };
-
-  Pusher.Channel.Authorizer.prototype = {
-    composeQuery: function(socketId) {
-      var query = '&socket_id=' + encodeURIComponent(socketId)
-        + '&channel_name=' + encodeURIComponent(this.channel.name);
-
-      for(var i in this.authOptions.params) {
-        query += "&" + encodeURIComponent(i) + "=" + encodeURIComponent(this.authOptions.params[i]);
-      }
-
-      return query;
-    },
-
-    authorize: function(socketId, callback) {
-      return Pusher.authorizers[this.type].call(this, socketId, callback);
-    }
-  };
-
-
-  Pusher.auth_callbacks = {};
-  Pusher.authorizers = {
-    ajax: function(socketId, callback){
-      var self = this, xhr;
-
-      if (Pusher.XHR) {
-        xhr = new Pusher.XHR();
-      } else {
-        xhr = (window.XMLHttpRequest ? new window.XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP"));
-      }
-
-      xhr.open("POST", Pusher.channel_auth_endpoint, true);
-
-      // add request headers
-      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-      for(var headerName in this.authOptions.headers) {
-        xhr.setRequestHeader(headerName, this.authOptions.headers[headerName]);
-      }
-
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4) {
-          if (xhr.status == 200) {
-            var data, parsed = false;
-
-            try {
-              data = JSON.parse(xhr.responseText);
-              parsed = true;
-            } catch (e) {
-              callback(true, 'JSON returned from webapp was invalid, yet status code was 200. Data was: ' + xhr.responseText);
-            }
-
-            if (parsed) { // prevents double execution.
-              callback(false, data);
-            }
-          } else {
-            Pusher.warn("Couldn't get auth info from your webapp", xhr.status);
-            callback(true, xhr.status);
-          }
-        }
-      };
-
-      xhr.send(this.composeQuery(socketId));
-      return xhr;
-    },
-
-    jsonp: function(socketId, callback){
-      if(this.authOptions.headers !== undefined) {
-        Pusher.warn("Warn", "To send headers with the auth request, you must use AJAX, rather than JSONP.");
-      }
-
-      var script = document.createElement("script");
-      // Hacked wrapper.
-      Pusher.auth_callbacks[this.channel.name] = function(data) {
-        callback(false, data);
-      };
-
-      var callback_name = "Pusher.auth_callbacks['" + this.channel.name + "']";
-      script.src = Pusher.channel_auth_endpoint
-        + '?callback='
-        + encodeURIComponent(callback_name)
-        + this.composeQuery(socketId);
-
-      var head = document.getElementsByTagName("head")[0] || document.documentElement;
-      head.insertBefore( script, head.firstChild );
-    }
-  };
-})();
-
-// _require(dependencies, callback) takes an array of dependency urls and a
-// callback to call when all the dependecies have finished loading
-var _require = (function() {
-  function handleScriptLoaded(elem, callback) {
-    if (document.addEventListener) {
-      elem.addEventListener('load', callback, false);
-    } else {
-      elem.attachEvent('onreadystatechange', function () {
-        if (elem.readyState == 'loaded' || elem.readyState == 'complete') {
-          callback();
-        }
-      });
-    }
-  }
-
-  function addScript(src, callback) {
-    var head = document.getElementsByTagName('head')[0];
-    var script = document.createElement('script');
-    script.setAttribute('src', src);
-    script.setAttribute("type","text/javascript");
-    script.setAttribute('async', true);
-
-    handleScriptLoaded(script, function() {
-      callback();
-    });
-
-    head.appendChild(script);
-  }
-
-  return function(deps, callback) {
-    var deps_loaded = 0;
-    for (var i = 0; i < deps.length; i++) {
-      addScript(deps[i], function() {
-        if (deps.length == ++deps_loaded) {
-          // This setTimeout is a workaround for an Opera issue
-          setTimeout(callback, 0);
-        }
-      });
-    }
-  }
-})();
-
-;(function() {
-  // Support Firefox versions which prefix WebSocket
-  if (!window['WebSocket'] && window['MozWebSocket']) {
-    window['WebSocket'] = window['MozWebSocket']
-  }
-
-  if (window['WebSocket']) {
-    Pusher.Transport = window['WebSocket'];
-    Pusher.TransportType = 'native';
-  }
-
-  var cdn = (document.location.protocol == 'http:') ? Pusher.cdn_http : Pusher.cdn_https;
-  var root = cdn + Pusher.VERSION;
-  var deps = [];
-
-  if (!window['JSON']) {
-    deps.push(root + '/json2' + Pusher.dependency_suffix + '.js');
-  }
-  if (!window['WebSocket']) {
-    // We manually initialize web-socket-js to iron out cross browser issues
-    window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION = true;
-    deps.push(root + '/flashfallback' + Pusher.dependency_suffix + '.js');
-  }
-
-  var initialize = function() {
-    if (window['WebSocket']) {
-      // Initialize function in the case that we have native WebSocket support
-      return function() {
-        Pusher.ready();
-      }
-    } else {
-      // Initialize function for fallback case
-      return function() {
-        if (window['WebSocket']) {
-          // window['WebSocket'] is a flash emulation of WebSocket
-          Pusher.Transport = window['WebSocket'];
-          Pusher.TransportType = 'flash';
-
-          // window.WEB_SOCKET_SWF_LOCATION = root + "/WebSocketMain.swf";
-          window.WEB_SOCKET_SWF_LOCATION = "https://s3.amazonaws.com/uploadcare-static/WebSocketMainInsecure.swf"
-          WebSocket.__addTask(function() {
-            Pusher.ready();
-          })
-          WebSocket.__initialize();
-        } else {
-          // Flash must not be installed
-          Pusher.Transport = null;
-          Pusher.TransportType = 'none';
-          Pusher.ready();
-        }
-      }
-    }
-  }();
-
-  // Allows calling a function when the document body is available
-  var ondocumentbody = function(callback) {
-    var load_body = function() {
-      document.body ? callback() : setTimeout(load_body, 0);
-    }
-    load_body();
-  };
-
-  var initializeOnDocumentBody = function() {
-    ondocumentbody(initialize);
-  }
-
-  if (deps.length > 0) {
-    _require(deps, initializeOnDocumentBody);
-  } else {
-    initializeOnDocumentBody();
-  }
-})();
-
-
-this.Pusher = Pusher;
-
-}).call(uploadcare);
-(function() {
-
-
-}).call(this);
 (function() {
   uploadcare.namespace('utils.abilities', function(ns) {
-    var ios, ver;
+    var ios, url, ver, _ref;
     ns.fileAPI = !!(window.File && window.FileList && window.FileReader);
     ns.sendFileAPI = !!(window.FormData && ns.fileAPI);
-    ns.blob = (function() {
-      try {
-        return !!new Blob;
-      } catch (_error) {
-        return false;
-      }
-    })();
     ns.dragAndDrop = (function() {
       var el;
       el = document.createElement("div");
@@ -1653,61 +121,18 @@ this.Pusher = Pusher;
     ns.iOSVersion = null;
     if (ios = /^[^(]+\(iP(?:hone|od|ad);\s*(.+?)\)/.exec(navigator.userAgent)) {
       if (ver = /OS (\d)_(\d)/.exec(ios[1])) {
-        return ns.iOSVersion = +ver[1] + ver[2] / 10;
+        ns.iOSVersion = +ver[1] + ver[2] / 10;
       }
     }
-  });
-
-}).call(this);
-(function() {
-  var $,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  $ = uploadcare.jQuery;
-
-  uploadcare.namespace('utils.pusher', function(ns) {
-    var ManagedPusher, pushers, _ref;
-    pushers = {};
-    uploadcare.Pusher.prototype.constructor = uploadcare.Pusher;
-    ManagedPusher = (function(_super) {
-      __extends(ManagedPusher, _super);
-
-      function ManagedPusher() {
-        _ref = ManagedPusher.__super__.constructor.apply(this, arguments);
-        return _ref;
+    ns.Blob = false;
+    try {
+      if (new window.Blob) {
+        ns.Blob = window.Blob;
       }
-
-      ManagedPusher.prototype.subscribe = function(name) {
-        if (this.disconnectTimeout) {
-          clearTimeout(this.disconnectTimeout);
-          this.disconnectTimeout = null;
-        }
-        this.connect();
-        return ManagedPusher.__super__.subscribe.apply(this, arguments);
-      };
-
-      ManagedPusher.prototype.unsubscribe = function(name) {
-        var _this = this;
-        ManagedPusher.__super__.unsubscribe.apply(this, arguments);
-        if ($.isEmptyObject(this.channels.channels)) {
-          return this.disconnectTimeout = setTimeout(function() {
-            _this.disconnectTimeout = null;
-            return _this.disconnect();
-          }, 5000);
-        }
-      };
-
-      return ManagedPusher;
-
-    })(uploadcare.Pusher);
-    return ns.getPusher = function(key) {
-      if (pushers[key] == null) {
-        pushers[key] = new ManagedPusher(key);
-      }
-      pushers[key].connect();
-      return pushers[key];
-    };
+    } catch (_error) {}
+    url = window.URL || window.webkitURL || false;
+    ns.URL = url && url.createObjectURL && url;
+    return ns.FileReader = ((_ref = window.FileReader) != null ? _ref.prototype.readAsArrayBuffer : void 0) && window.FileReader;
   });
 
 }).call(this);
@@ -2265,7 +690,7 @@ this.Pusher = Pusher;
       if (accept === '') {
         accept = settings.imagesOnly ? 'image/*' : null;
       }
-      return (settings.multiple ? $('<input type="file" multiple>') : $('<input type="file">')).attr('accept', accept).css({
+      return $(settings.multiple ? '<input type="file" multiple>' : '<input type="file">').attr('accept', accept).css({
         position: 'fixed',
         bottom: 0,
         opacity: 0
@@ -2330,9 +755,6 @@ this.Pusher = Pusher;
         ns.warn("JSONP unexpected error: " + text + " while loading " + url);
         return text;
       });
-    };
-    ns.plugin = function(fn) {
-      return fn(uploadcare);
     };
     ns.canvasToBlob = function(canvas, type, quality, callback) {
       var arr, binStr, dataURL, i, _i, _ref;
@@ -2400,256 +822,6 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, utils;
-
-  $ = uploadcare.jQuery, utils = uploadcare.utils;
-
-  uploadcare.namespace('utils.imageProcessor', function(ns) {
-    var Blob, DataView, FileReader, URL, taskRunner, _ref;
-    DataView = window.DataView;
-    FileReader = ((_ref = window.FileReader) != null ? _ref.prototype.readAsArrayBuffer : void 0) && window.FileReader;
-    URL = window.URL || window.webkitURL;
-    URL = URL && URL.createObjectURL && URL;
-    Blob = utils.abilities.blob && window.Blob;
-    taskRunner = utils.taskRunner(1);
-    ns.shrinkFile = function(file, settings) {
-      var df,
-        _this = this;
-      df = $.Deferred();
-      if (!(URL && DataView && Blob)) {
-        return df.reject('support');
-      }
-      taskRunner(function(release) {
-        var img;
-        df.always(release);
-        img = new Image();
-        img.onerror = function() {
-          return df.reject('not image');
-        };
-        img.onload = function() {
-          var exif, op;
-          URL.revokeObjectURL(img.src);
-          img.onerror = null;
-          df.notify(.10);
-          exif = null;
-          op = ns.readJpegChunks(file);
-          op.progress(function(pos, length, marker, view) {
-            if (!exif && marker === 0xe1) {
-              if (view.byteLength >= 14) {
-                if (view.getUint32(0) === 0x45786966 && view.getUint16(4) === 0) {
-                  return exif = view.buffer;
-                }
-              }
-            }
-          });
-          return op.always(function() {
-            var isJPEG;
-            df.notify(.2);
-            isJPEG = op.state() === 'resolved';
-            op = ns.shrinkImage(img, settings);
-            op.progress(function(progress) {
-              return df.notify(.2 + progress * .6);
-            });
-            op.fail(df.reject);
-            op.done(function(canvas) {
-              var format, quality;
-              format = 'image/jpeg';
-              quality = settings.quality || 0.8;
-              if (!isJPEG && ns.hasTransparency(canvas)) {
-                format = 'image/png';
-                quality = void 0;
-              }
-              return utils.canvasToBlob(canvas, format, quality, function(blob) {
-                canvas.width = canvas.height = 1;
-                df.notify(.9);
-                if (exif) {
-                  op = ns.replaceJpegChunk(blob, 0xe1, [exif]);
-                  op.done(df.resolve);
-                  return op.fail(function() {
-                    return df.resolve(blob);
-                  });
-                } else {
-                  return df.resolve(blob);
-                }
-              });
-            });
-            return img = null;
-          });
-        };
-        return img.src = URL.createObjectURL(file);
-      });
-      return df.promise();
-    };
-    ns.shrinkImage = function(img, settings) {
-      var df, h, maxSize, maxSquare, originalW, ratio, run, sH, sW, step, w;
-      df = $.Deferred();
-      step = 0.71;
-      if (img.width * step * img.height * step < settings.size) {
-        return df.reject('not required');
-      }
-      sW = originalW = img.width;
-      sH = img.height;
-      ratio = sW / sH;
-      w = Math.floor(Math.sqrt(settings.size * ratio));
-      h = Math.floor(settings.size / Math.sqrt(settings.size * ratio));
-      maxSquare = 5000000;
-      maxSize = 4096;
-      (run = function() {
-        if (sW <= w) {
-          df.resolve(img);
-          return;
-        }
-        return utils.defer(function() {
-          var canvas;
-          sW = Math.round(sW * step);
-          sH = Math.round(sH * step);
-          if (sW * step < w) {
-            sW = w;
-            sH = h;
-          }
-          if (sW * sH > maxSquare) {
-            sW = Math.floor(Math.sqrt(maxSquare * ratio));
-            sH = Math.floor(maxSquare / Math.sqrt(maxSquare * ratio));
-          }
-          if (sW > maxSize) {
-            sW = maxSize;
-            sH = Math.round(sW / ratio);
-          }
-          if (sH > maxSize) {
-            sH = maxSize;
-            sW = Math.round(ratio * sH);
-          }
-          canvas = document.createElement('canvas');
-          canvas.width = sW;
-          canvas.height = sH;
-          canvas.getContext('2d').drawImage(img, 0, 0, sW, sH);
-          img.src = '//:0';
-          img.width = img.height = 1;
-          img = canvas;
-          df.notify((originalW - sW) / (originalW - w));
-          return run();
-        });
-      })();
-      return df.promise();
-    };
-    ns.readJpegChunks = function(file) {
-      var df, pos, readNext, readNextChunk, readToView;
-      readToView = function(file, cb) {
-        var reader;
-        reader = new FileReader();
-        reader.onload = function() {
-          return cb(new DataView(reader.result));
-        };
-        reader.onerror = function(e) {
-          return df.reject('reader', e);
-        };
-        return reader.readAsArrayBuffer(file);
-      };
-      readNext = function() {
-        return readToView(file.slice(pos, pos + 128), function(view) {
-          var i, _i, _ref1;
-          for (i = _i = 0, _ref1 = view.byteLength; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-            if (view.getUint8(i) === 0xff) {
-              pos += i;
-              break;
-            }
-          }
-          return readNextChunk();
-        });
-      };
-      readNextChunk = function() {
-        var startPos;
-        startPos = pos;
-        return readToView(file.slice(pos, pos += 4), function(view) {
-          var length, marker;
-          if (view.byteLength !== 4 || view.getUint8(0) !== 0xff) {
-            return df.reject('corrupted');
-          }
-          marker = view.getUint8(1);
-          if (marker === 0xda) {
-            return df.resolve();
-          }
-          length = view.getUint16(2) - 2;
-          return readToView(file.slice(pos, pos += length), function(view) {
-            if (view.byteLength !== length) {
-              return df.reject('corrupted');
-            }
-            df.notify(startPos, length, marker, view);
-            return readNext();
-          });
-        });
-      };
-      df = $.Deferred();
-      if (!(FileReader && DataView)) {
-        return df.reject('support');
-      }
-      pos = 2;
-      readToView(file.slice(0, 2), function(view) {
-        if (view.getUint16(0) !== 0xffd8) {
-          return df.reject('not jpeg');
-        }
-        return readNext();
-      });
-      return df.promise();
-    };
-    ns.replaceJpegChunk = function(blob, marker, chunks) {
-      var df, oldChunkLength, oldChunkPos, op;
-      df = $.Deferred();
-      oldChunkPos = [];
-      oldChunkLength = [];
-      op = ns.readJpegChunks(blob);
-      op.fail(df.reject);
-      op.progress(function(pos, length, oldMarker) {
-        if (oldMarker === marker) {
-          oldChunkPos.push(pos);
-          return oldChunkLength.push(length);
-        }
-      });
-      op.done(function() {
-        var chunk, i, intro, newChunks, pos, _i, _j, _len, _ref1;
-        newChunks = [blob.slice(0, 2)];
-        for (_i = 0, _len = chunks.length; _i < _len; _i++) {
-          chunk = chunks[_i];
-          intro = new DataView(new ArrayBuffer(4));
-          intro.setUint16(0, 0xff00 + marker);
-          intro.setUint16(2, chunk.byteLength + 2);
-          newChunks.push(intro.buffer);
-          newChunks.push(chunk);
-        }
-        pos = 2;
-        for (i = _j = 0, _ref1 = oldChunkPos.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-          if (oldChunkPos[i] > pos) {
-            newChunks.push(blob.slice(pos, oldChunkPos[i]));
-          }
-          pos = oldChunkPos[i] + oldChunkLength[i] + 4;
-        }
-        newChunks.push(blob.slice(pos, blob.size));
-        return df.resolve(new Blob(newChunks, {
-          type: blob.type
-        }));
-      });
-      return df.promise();
-    };
-    return ns.hasTransparency = function(img) {
-      var canvas, ctx, data, i, pcsn, _i, _ref1;
-      pcsn = 50;
-      canvas = document.createElement('canvas');
-      canvas.width = canvas.height = pcsn;
-      ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, pcsn, pcsn);
-      data = ctx.getImageData(0, 0, pcsn, pcsn).data;
-      canvas.width = canvas.height = 1;
-      for (i = _i = 3, _ref1 = data.length; _i < _ref1; i = _i += 4) {
-        if (data[i] < 254) {
-          return true;
-        }
-      }
-      return false;
-    };
-  });
-
-}).call(this);
-(function() {
   var $, expose, utils,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
@@ -2683,6 +855,7 @@ this.Pusher = Pusher;
       cdnBase: 'https://ucarecdn.com',
       urlBase: 'https://upload.uploadcare.com',
       socialBase: 'https://social.uploadcare.com',
+      imagePreviewMaxSize: 25 * 1024 * 1024,
       multipartMinSize: 25 * 1024 * 1024,
       multipartPartSize: 5 * 1024 * 1024,
       multipartMinLastPartSize: 1024 * 1024,
@@ -3010,9 +1183,6 @@ this.Pusher = Pusher;
               done: 'تم'
             }
           }
-        },
-        footer: {
-          text: ' تحميل وتخزين ومعالجة الملفات بوساطة'
         }
       }
     };
@@ -3169,9 +1339,6 @@ this.Pusher = Pusher;
               done: 'Hazırdır'
             }
           }
-        },
-        footer: {
-          text: 'Faylları yükləyən, yadda saxlayan və icra edən'
         }
       }
     };
@@ -3310,9 +1477,6 @@ this.Pusher = Pusher;
               done: 'Fet'
             }
           }
-        },
-        footer: {
-          text: 'Els fitxers han estat carregats, gestionats i processats per'
         }
       }
     };
@@ -3465,10 +1629,6 @@ this.Pusher = Pusher;
               done: 'Hotovo'
             }
           }
-        },
-        footer: {
-          text: 'Provozováno pomocí',
-          link: 'Uploadcare.com'
         }
       }
     };
@@ -3528,15 +1688,15 @@ this.Pusher = Pusher;
         tabs: {
           names: {
             preview: 'Vis',
-            file: 'Komputer',
+            file: 'Computer',
             gdrive: 'Google Drev',
             url: 'Direkte link'
           },
           file: {
             drag: 'Drop en fil her',
-            nodrop: 'Hent filer fra din komputer',
+            nodrop: 'Hent filer fra din computer',
             or: 'eller',
-            button: 'Hent fil fra din komputer',
+            button: 'Hent fil fra din computer',
             also: 'Du kan også hente fra'
           },
           url: {
@@ -3597,9 +1757,6 @@ this.Pusher = Pusher;
               done: 'Fortsæt'
             }
           }
-        },
-        footer: {
-          text: 'Uploader gemmer og behandler filer ved hjælp af'
         }
       }
     };
@@ -3741,9 +1898,6 @@ this.Pusher = Pusher;
               done: 'Fertig'
             }
           }
-        },
-        footer: {
-          text: 'Hochladen, Speichern und Verarbeiten von Dateien durch'
         }
       }
     };
@@ -3897,8 +2051,8 @@ this.Pusher = Pusher;
           }
         },
         footer: {
-          text: 'Uploading, storing and processing files by',
-          link: 'Uploadcare.com'
+          text: 'powered by',
+          link: 'uploadcare'
         }
       }
     };
@@ -4040,9 +2194,6 @@ this.Pusher = Pusher;
               done: 'Hecho'
             }
           }
-        },
-        footer: {
-          text: 'Subido, almacenado y procesado por'
         }
       }
     };
@@ -4184,9 +2335,6 @@ this.Pusher = Pusher;
               tooFewFiles: 'Vous avez choisi %fichiers%. %min% est le minimum.'
             }
           }
-        },
-        footer: {
-          text: 'Envoi, stockage et traitement des fichiers par'
         }
       }
     };
@@ -4313,9 +2461,6 @@ this.Pusher = Pusher;
               done: 'סיום'
             }
           }
-        },
-        footer: {
-          text: 'העלאה, מיון ועיבוד קבצים על ידי'
         }
       }
     };
@@ -4457,9 +2602,6 @@ this.Pusher = Pusher;
               done: 'Fatto'
             }
           }
-        },
-        footer: {
-          text: 'Caricamento, memorizzazione ed elaborazione file eseguiti da'
         }
       }
     };
@@ -4585,9 +2727,6 @@ this.Pusher = Pusher;
               done: '完了'
             }
           }
-        },
-        footer: {
-          text: '画像のアップロード、保存および加工の提供：'
         }
       }
     };
@@ -4770,9 +2909,6 @@ this.Pusher = Pusher;
               done: 'Ferdig'
             }
           }
-        },
-        footer: {
-          text: 'Laster opp, lagrer og prosesserer filer med'
         }
       }
     };
@@ -4897,9 +3033,6 @@ this.Pusher = Pusher;
               done: 'Klaar'
             }
           }
-        },
-        footer: {
-          text: 'Uploaden, opslaan en verwerken bestanden door'
         }
       }
     };
@@ -5042,10 +3175,6 @@ this.Pusher = Pusher;
               done: 'Wykonano'
             }
           }
-        },
-        footer: {
-          text: 'Pliki przesyła, przechowuje i przetwarza',
-          link: 'Uploadcare.com'
         }
       }
     };
@@ -5173,9 +3302,6 @@ this.Pusher = Pusher;
               done: 'OK'
             }
           }
-        },
-        footer: {
-          text: 'Upload, armazenamento e processamento dos arquivos feito por'
         }
       }
     };
@@ -5319,9 +3445,6 @@ this.Pusher = Pusher;
               done: 'Готово'
             }
           }
-        },
-        footer: {
-          text: 'Для загрузки, хранения и обработки файлов используется'
         }
       }
     };
@@ -5466,9 +3589,6 @@ this.Pusher = Pusher;
               done: 'Klar'
             }
           }
-        },
-        footer: {
-          text: 'Laddar upp, lagrar och bearbetar filer genom'
         }
       }
     };
@@ -5608,9 +3728,6 @@ this.Pusher = Pusher;
               done: 'Bitti'
             }
           }
-        },
-        footer: {
-          text: 'Dosya yükleme, saklama ve işleme servisi'
         }
       }
     };
@@ -5748,9 +3865,6 @@ this.Pusher = Pusher;
               done: '完成'
             }
           }
-        },
-        footer: {
-          text: '為您提供檔案上傳、存儲和編輯功能。 Copyright ©'
         }
       }
     };
@@ -5858,9 +3972,6 @@ this.Pusher = Pusher;
               done: '完成'
             }
           }
-        },
-        footer: {
-          text: '为您提供文件上传、存储和编辑功能。 Copyright ©'
         }
       }
     };
@@ -5955,7 +4066,8 @@ this.Pusher = Pusher;
       if (fn != null) {
         return fn($.extend({
           t: locale.t,
-          utils: utils
+          utils: utils,
+          uploadcare: uploadcare
         }, ctx));
       } else {
         return '';
@@ -5964,13 +4076,12 @@ this.Pusher = Pusher;
   });
 
 }).call(this);
-uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-circle-back">\n  <div class="uploadcare-widget-circle-text"></div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog uploadcare-responsive-panel"><!--\n--><div class="uploadcare-dialog-inner-wrap">\n    <div class="uploadcare-dialog-close">×</div>\n    <div class="uploadcare-dialog-placeholder"></div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["panel"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-panel">\n  <div class="uploadcare-dialog-tabs"></div>\n\n  <div class="uploadcare-panel-footer uploadcare-panel-footer__summary">\n    <div class="uploadcare-dialog-button uploadcare-dialog-source-base-show-files"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.showFiles') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n      <div class="uploadcare-panel-footer-counter"></div>\n    </div>\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-source-base-done"\n         tabindex="0" role="button">',(''+ t('dialog.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n    <div class="uploadcare-panel-footer-text"></div>\n  </div>\n</div>\n<div class="uploadcare-dialog-footer">\n  ',(''+ t('dialog.footer.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  <a href="https://uploadcare.com/" target="_blank">',(''+ t('dialog.footer.link') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</a>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons.png");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active.png");background-size:50px}.uploadcare-dialog-file-sources:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png")}.uploadcare-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-file-item__error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-file-icon{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-zoomable-icon:after{background-image:url("',  settings.scriptBase ,'/images/zoom@2x.png")}.uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-default.png")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-image.png")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons@2x.png")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active@2x.png")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;-webkit-box-shadow:0 1px 2px rgba(0,0,0,0.35);-moz-box-shadow:0 1px 2px rgba(0,0,0,0.35);box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .33s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:opacity .33s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .33s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .33s cubic-bezier(0.05,0.7,0.25,1);-moz-transition:-moz-transform .33s cubic-bezier(0.05,0.7,0.25,1);transition:transform .33s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-moz-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-moz-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-moz-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal;padding-left:75px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}.uploadcare-dialog-panel :focus{outline:2px dotted #0094c0}.uploadcare-dialog-panel :active,.uploadcare-dialog-panel .uploadcare-mouse-focused:focus{outline:none}.uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-left:0}.uploadcare-dialog-tabs{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:75px;height:616px;margin-left:-75px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-panel-hide-tabs .uploadcare-dialog-tabs{display:none}.uploadcare-dialog-tab{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none!important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-multiple .uploadcare-dialog-tabs-panel{height:550px}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:#ddd;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer a{color:#c2c2c2;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f8f8f8;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:-moz-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:-moz-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3786eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:-moz-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#3279d6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:-moz-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);-webkit-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3177d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:-moz-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);-webkit-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);-moz-box-shadow:inset 0 2px 2px rgba(0,0,0,0.05);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{-webkit-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);-moz-box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5);box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{-webkit-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);-moz-box-shadow:inset 0 1px 3px rgba(22,82,160,0.4);box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;-webkit-box-shadow:inset 0 -2px #1f66c1;-moz-box-shadow:inset 0 -2px #1f66c1;box-shadow:inset 0 -2px #1f66c1;background:#458dee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:-moz-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{-webkit-box-shadow:inset 0 -2px #1652a0;-moz-box-shadow:inset 0 -2px #1652a0;box-shadow:inset 0 -2px #1652a0;background:#3279d6;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:-moz-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{-webkit-box-shadow:inset 0 2px #2561b9;-moz-box-shadow:inset 0 2px #2561b9;box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:-moz-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{position:relative;top:-40px;height:422px}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-tabs-panel-preview.uploadcare-dialog-tabs-panel_current ~ .uploadcare-panel-footer{display:none}.uploadcare-panel-footer{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-panel-footer .uploadcare-dialog-button-success{float:right}.uploadcare-panel-footer .uploadcare-dialog-button{float:left}.uploadcare-panel-footer .uploadcare-dialog-button-success,.uploadcare-panel-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-panel-footer .uploadcare-error{color:red}.uploadcare-panel-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;border:none;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;transition:transform .8s cubic-bezier(0.23,1,0.32,1);-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{transform:scale(-1,1);-webkit-transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-file-list{height:550px;overflow:auto;position:relative;margin:0 -25px -22px 0}.uploadcare-dialog-multiple .uploadcare-file-list{height:484px}.uploadcare-file-list_table .uploadcare-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px}.uploadcare-file-list_table .uploadcare-file-item>*{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-file-list_table .uploadcare-file-item:last-child{margin-bottom:0}.uploadcare-file-list_table .uploadcare-file-item:hover{background:#ececec}.uploadcare-file-list_table .uploadcare-file-item__preview{width:55px;padding-right:10px}.uploadcare-file-list_table .uploadcare-file-item__preview>img{height:55px}.uploadcare-file-list_table .uploadcare-file-item__size{width:3.5em}.uploadcare-file-list_table .uploadcare-file-item__progressbar{width:80px}.uploadcare-file-list_table .uploadcare-zoomable-icon:after{width:55px}.uploadcare-file-list_tiles .uploadcare-file-item{text-align:left;position:relative;display:inline-block;vertical-align:top;width:170px;min-height:170px;padding:0 20px 10px 0}.uploadcare-file-list_tiles .uploadcare-file-item>*{padding-bottom:10px}.uploadcare-file-list_tiles .uploadcare-file-item__name{padding-top:10px}.uploadcare-file-list_tiles .uploadcare-file-item__remove{position:absolute;top:0;right:10px}.uploadcare-file-list_tiles .uploadcare-file-item__preview{white-space:nowrap;width:170px;height:170px;padding-bottom:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview img{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-file-list_tiles .uploadcare-file-item_uploading .uploadcare-file-item__preview,.uploadcare-file-list_tiles .uploadcare-file-item_error .uploadcare-file-item__preview{display:none}.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__size,.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__name{display:none}.uploadcare-file-item__error:before,.uploadcare-file-icon{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-file-item{font-size:13px;line-height:1.2}.uploadcare-file-item:hover .uploadcare-file-item__remove{visibility:visible}.uploadcare-file-item:hover .uploadcare-zoomable-icon:after{display:block}.uploadcare-file-item_uploading .uploadcare-file-item__error{display:none}.uploadcare-file-item_uploaded .uploadcare-file-item__progressbar,.uploadcare-file-item_uploaded .uploadcare-file-item__error{display:none}.uploadcare-file-item_error .uploadcare-file-item__size,.uploadcare-file-item_error .uploadcare-file-item__progressbar{display:none}.uploadcare-file-item__preview{text-align:center;line-height:0}.uploadcare-file-item__preview>img{display:inline-block;width:auto;height:auto;max-width:100%;max-height:100%}.uploadcare-file-item__name{width:100%;word-wrap:break-word}.uploadcare-file-item__error{width:200px;color:#f5444b}.uploadcare-file-item__remove{visibility:hidden;width:20px;text-align:right;line-height:0}.uploadcare-remove{width:20px;height:20px;cursor:pointer}.uploadcare-zoomable-icon{position:relative;cursor:pointer}.uploadcare-zoomable-icon:after{content:\'\';position:absolute;top:0;left:0;display:none;width:100%;height:100%;background-size:45px 45px;background-repeat:no-repeat;background-position:center}.uploadcare-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-progressbar__value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-file-icon{margin:0}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-panel-footer__summary{display:none}.uploadcare-dialog-multiple .uploadcare-panel-footer__summary{display:block}.uploadcare-panel-footer-counter{display:none}.uploadcare-hidden{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:760px){.uploadcare-dialog-opened{overflow:visible!important;position:static!important;width:auto!important;height:auto!important;min-width:0!important;background:#efefef!important}body.uploadcare-dialog-opened>.uploadcare-inactive,body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none!important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;padding:50px 0 0;border-radius:0;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-top:0}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{top:auto;height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item__progressbar{width:40px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item{width:140px;min-height:140px;padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__preview{width:140px;height:140px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__remove{right:10px}.uploadcare-responsive-panel .uploadcare-file-item__remove{visibility:visible}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab.uploadcare-dialog-tab-camera{display:none}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-panel-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-panel-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-panel-footer-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple.uploadcare-dialog-panel{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;margin:0;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current,.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-panel-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:absolute;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:auto;margin-bottom:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline,.uploadcare-crop-widget .jcrop-handle{position:absolute;font-size:0;background-color:white;box-shadow:0 0 0 1px rgba(0,0,0,0.2);z-index:320}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px!important}.uploadcare-crop-widget .jcrop-hline{height:1px!important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none}.uploadcare-crop-widget .jcrop-handle{border-radius:50%;width:13px;height:13px;z-index:330}.uploadcare-crop-widget .jcrop-handle:before,.uploadcare-crop-widget .jcrop-handle:after{content:"";position:absolute;display:block;width:1px;height:1px;background:white}.uploadcare-crop-widget .jcrop-handle:before{width:3px;top:6px}.uploadcare-crop-widget .jcrop-handle:after{height:3px;left:6px}.uploadcare-crop-widget .jcrop-handle.ord-nw:before,.uploadcare-crop-widget .jcrop-handle.ord-sw:before{left:12px}.uploadcare-crop-widget .jcrop-handle.ord-ne:before,.uploadcare-crop-widget .jcrop-handle.ord-se:before{left:-2px}.uploadcare-crop-widget .jcrop-handle.ord-nw:after,.uploadcare-crop-widget .jcrop-handle.ord-ne:after{top:12px}.uploadcare-crop-widget .jcrop-handle.ord-sw:after,.uploadcare-crop-widget .jcrop-handle.ord-se:after{top:-2px}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-6px;margin-top:-6px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-6px;margin-top:-6px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-6px;margin-right:-6px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-6px;margin-left:-6px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle>div{width:35px;height:35px;margin:-11px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0)}.uploadcare-crop-widget>img{filter:url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'saturate\' values=\'.5\'/></filter></svg>#grayscale");-webkit-filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:433px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2}.uploadcare-widget :focus{outline:2px dotted #0094c0}.uploadcare-widget :active,.uploadcare-widget .uploadcare-mouse-focused:focus{outline:none}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block!important}.uploadcare-widget-option-clearable.uploadcare-widget-status-error .uploadcare-widget-button-open{display:none!important}.uploadcare-widget-option-clearable.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-option-clearable.uploadcare-widget-status-error .uploadcare-widget-button-remove{display:inline-block!important}.uploadcare-widget-status{display:none!important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none!important;margin-right:1ex;white-space:nowrap}.uploadcare-widget-file-name{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:-moz-initial;border-color:initial}.uploadcare-link:hover{color:#176e8f}.uploadcare-widget-button{display:none!important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default;white-space:nowrap}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;display:none;position:absolute;white-space:nowrap;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};uploadcare.templates.JST["tab-camera"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-camera-holder"><!--\n  --><video class="uploadcare-dialog-camera-video uploadcare-dialog-camera--mirrored"></video><!--\n  --><div class="uploadcare-dialog-camera-message">\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-camera-retry uploadcare-dialog-button"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.tabs.camera.retry') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n  </div><!--\n--></div>\n<div class="uploadcare-dialog-camera-controls">\n  <div class="uploadcare-dialog-camera-mirror uploadcare-dialog-button"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.mirror') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-camera-capture uploadcare-dialog-button-success"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.capture') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-dialog-file-source-or">\n    ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-sources">\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-error"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-error-tab-wrap uloadcare-dialog-error-tab-',(''+ error ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"><!--\n  --><div class="uploadcare-dialog-error-tab-wrap2">\n\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title">',(''+
+uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-circle-back">\n  <div class="uploadcare-widget-circle-text"></div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog uploadcare-responsive-panel"><!--\n--><div class="uploadcare-dialog-inner-wrap">\n    <div class="uploadcare-dialog-close">×</div>\n    <div class="uploadcare-dialog-placeholder"></div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["panel"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-panel">\n  <div class="uploadcare-dialog-tabs"></div>\n\n  <div class="uploadcare-panel-footer uploadcare-panel-footer__summary">\n    <div class="uploadcare-dialog-button uploadcare-dialog-source-base-show-files"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.showFiles') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n      <div class="uploadcare-panel-footer-counter"></div>\n    </div>\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-source-base-done"\n         tabindex="0" role="button">',(''+ t('dialog.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n    <div class="uploadcare-panel-footer-text"></div>\n  </div>\n</div>\n<div class="uploadcare-dialog-footer">\n  ',(''+ t('dialog.footer.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  <svg width="13" height="13" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><title>Uploadcare Logo</title><g fill="none" fill-rule="evenodd"><path d="M-1-1h32v32H-1z"/><path d="M15 29.452c7.98 0 14.452-6.47 14.452-14.452C29.452 7.02 22.982.548 15 .548 7.02.548.548 7.018.548 15c0 7.98 6.47 14.452 14.452 14.452zm0-12.846c.887 0 1.606-.72 1.606-1.606 0-.887-.72-1.606-1.606-1.606-.887 0-1.606.72-1.606 1.606 0 .887.72 1.606 1.606 1.606z" fill="#FFD800"/></g></svg>\n  <a href="https://uploadcare.com/?utm_campaign=widget&utm_source=copyright&utm_medium=desktop&utm_content=',(''+ uploadcare.version ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n     target="_blank">',(''+ t('dialog.footer.link') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</a>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["styles"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('\n\n\n\n\n\n\n\n.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons.png");background-size:50px}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active.png");background-size:50px}.uploadcare-dialog-file-sources:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png")}.uploadcare-remove{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABM0lEQVQoz5VTvW7CMBC2kHivQsjrZGRjaB6lXWCJbWScIT8PYN0GQ7s6FUUKL8CA2suR2C4FlfqkyL77cuf7/B1jbp3GdmIW1VIVKq9ezMI+ncbs92omNeeQgYQ1msQdh5o30x+g82ibCAysr4yDgG1yHjngLhkyXVuXeZcMRSNJMI4mAwinGl2siaiFWncOAW/QgO4vwCGHD/QI2tca27LxEDrAF7QE5fg94ungfrMxM89ZXyqnYAsbtG53RM/lKhmYlJUr6XrUPbQlmHY8SChXTBUhHRsCXfKGdKmCKe2PApQDKmokAJavD5b2zei+hTvNDPQI+HR5PD3C0+MJf4c95vCE79ETEI5POPvzCWf/EwXJbH5XZvNAZqSh6U3hRjc0jqMQmxRHoVRltTSpjcNR+AZwwvykEau0BgAAAABJRU5ErkJggg==)}.uploadcare-file-item__error:before{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAABIklEQVR42q3Vv2rCUBTHcaEQH825TdLl9hl0FsFdV7s5uXSpb+DoEziV6JCgATdR02D9E09/R64KF3NPbQx84BJOvgRyuSktK5VbHHiFDwhhCwl86Xu+nimZbsWeYQIkmMCLLfgELaA7tfSzRlCISVEz6AEV5J2DDszyBtNGg7L5/CSt123BGBwOKqA8WRzT+cqmU+kt3zj4aQ0myTW4WEjBPgcj29B+NLoE98OhFIw4+GMb2vR6l+Cm25WCWw6ubUPftRrR8XiSVKt/CgZADxKJH2XlurQbDBivxY8ibpu02SR98VrcNuLGXitFh/GYDkHAa2ljlznIfKCCfPNwaBeItfOOr84/Yu/m8WVy7zhgPfHE1hxQ0IcQdlqo76m8X8Avwkyxg4iIuCEAAAAASUVORK5CYII=)}.uploadcare-file-icon{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAQAAAAngNWGAAABD0lEQVQoFQXBPa5OARQF0LXPvfKS9wo/hegMQUzEJESiUIpOoxOlRKJDIgqVUZiNqPGdba0AAPLj48Mn/8ApgEcPOAGArx/uPVvrEFVRA04A+PTu+vk1BlSwLuAE4Pubvy+vHGAFxABOgC+v/ryO24oYUVUDGODzi+PtjfuuXBBUxG8XASd8e3rz/o5rY60YwVjXKAj8/HXrblDFIAKCehxOOHcxCggWUTHghJYqIqIigoqCEyCKEcXFgAjghCAWi1EDIlgwABWxoIhYaxUMsIo4BEHBRR1ggMMogoqq4jCAgVo1VhGMgFjACQUjCKIqIigYqKiLILiogFULBkbUWhSDqKpYMFAFwaJGUVUH+A8ToG9OM8KqQQAAAABJRU5ErkJggg==)}.uploadcare-zoomable-icon:after{background-image:url("',  settings.scriptBase ,'/images/zoom@2x.png")}.uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-default.png")}.uploadcare-dialog-camera-holder .uploadcare-dialog-error-tab-illustration,.uploadcare-dialog-error-tab-image .uploadcare-dialog-error-tab-illustration{background-image:url("',  settings.scriptBase ,'/images/error-image.png")}.uploadcare-dialog{background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQIHWMw/AQAAVcBJCiBozgAAAAASUVORK5CYII=);background:rgba(48,48,48,0.7)}@media(-webkit-min-device-pixel-ratio:1.5),(min-resolution:144dpi){.uploadcare-dialog-tab:before,.uploadcare-dialog-tab:hover:before,.uploadcare-dialog-disabled-tab:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons@2x.png")}.uploadcare-dialog-tab_current:before,.uploadcare-dialog-tab_current:hover:before{background-image:url("',  settings.scriptBase ,'/images/tab-icons-active@2x.png")}}html.uploadcare-dialog-opened{overflow:hidden}.uploadcare-dialog{font-family:"Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;overflow:auto;white-space:nowrap;text-align:center}.uploadcare-dialog:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog *{margin:0;padding:0}.uploadcare-dialog .uploadcare-dialog-panel{border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.35)}.uploadcare-dialog{-webkit-transition:opacity .33s cubic-bezier(0.05,0.7,0.25,1);transition:opacity .33s cubic-bezier(0.05,0.7,0.25,1);opacity:0}.uploadcare-dialog .uploadcare-dialog-inner-wrap{-webkit-transition:-webkit-transform .33s cubic-bezier(0.05,0.7,0.25,1);transition:-webkit-transform .33s cubic-bezier(0.05,0.7,0.25,1);transition:transform .33s cubic-bezier(0.05,0.7,0.25,1);transition:transform .33s cubic-bezier(0.05,0.7,0.25,1),-webkit-transform .33s cubic-bezier(0.05,0.7,0.25,1);-webkit-transform:scale(0.8);-ms-transform:scale(0.8);transform:scale(0.8);-webkit-transform-origin:50% 100%;-ms-transform-origin:50% 100%;transform-origin:50% 100%}.uploadcare-dialog.uploadcare-active{opacity:1}.uploadcare-dialog.uploadcare-active .uploadcare-dialog-inner-wrap{-webkit-transform:none;-ms-transform:none;transform:none}.uploadcare-dialog-inner-wrap{display:inline-block;vertical-align:middle;white-space:normal;text-align:left;box-sizing:border-box;position:relative;width:100%;min-width:760px;max-width:944px;padding:0 33px 0 11px}.uploadcare-dialog-close{width:33px;height:33px;line-height:33px;font-size:29.7px;font-weight:bold;color:#fff;cursor:pointer;position:absolute;text-align:center;right:0}.uploadcare-dialog-panel{overflow:hidden;position:relative;background:#efefef;font-weight:normal;padding-left:75px;box-sizing:border-box}.uploadcare-dialog-panel :focus{outline:2px dotted #0094c0}.uploadcare-dialog-panel :active,.uploadcare-dialog-panel .uploadcare-mouse-focused:focus{outline:0}.uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-left:0}.uploadcare-dialog-tabs{box-sizing:border-box;width:75px;height:616px;margin-left:-75px;float:left;background:#dee0e1;border-right:1px solid #c5cace}.uploadcare-panel-hide-tabs .uploadcare-dialog-tabs{display:none}.uploadcare-dialog-tab{box-sizing:border-box;height:56px;position:relative;border-bottom:1px solid #c5cace;cursor:pointer}.uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-dialog-tab:before{box-sizing:border-box;position:absolute;top:50%;left:50%;display:inline-block;width:50px;height:50px;margin:-25px;opacity:.66}.uploadcare-dialog-tab:before{content:\'\'}.uploadcare-dialog-tab:hover{background-color:#e5e7e8}.uploadcare-dialog-tab:hover .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab:hover:before{opacity:1}.uploadcare-dialog-tab_current{margin-right:-1px;border-right:1px solid #efefef}.uploadcare-dialog-tab_current,.uploadcare-dialog-tab_current:hover{background-color:#efefef}.uploadcare-dialog-tab_current .uploadcare-dialog-icon{opacity:1}.uploadcare-dialog-tab_current:before{opacity:1}.uploadcare-dialog-tab_hidden{display:none !important}.uploadcare-dialog-disabled-tab{cursor:default}.uploadcare-dialog-disabled-tab:hover{background-color:#dee0e1}.uploadcare-dialog-tab-preview .uploadcare-widget-circle{padding:10px}.uploadcare-dialog-tab-preview .uploadcare-widget-circle--canvas{color:#828689;border-color:#bfbfbf}.uploadcare-dialog-tab-preview.uploadcare-dialog-tab_current .uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-dialog-tab-preview:before{display:none}.uploadcare-dialog-tab-file:before{background-position:0 -50px}.uploadcare-dialog-tab-url:before{background-position:0 -100px}.uploadcare-dialog-tab-facebook:before{background-position:0 -150px}.uploadcare-dialog-tab-dropbox:before{background-position:0 -200px}.uploadcare-dialog-tab-gdrive:before{background-position:0 -250px}.uploadcare-dialog-tab-instagram:before{background-position:0 -300px}.uploadcare-dialog-tab-vk:before{background-position:0 -350px}.uploadcare-dialog-tab-evernote:before{background-position:0 -400px}.uploadcare-dialog-tab-box:before{background-position:0 -450px}.uploadcare-dialog-tab-skydrive:before{background-position:0 -500px}.uploadcare-dialog-tab-flickr:before{background-position:0 -550px}.uploadcare-dialog-tab-camera:before{background-position:0 -600px}.uploadcare-dialog-tab-huddle:before{background-position:0 -650px}.uploadcare-dialog-tabs-panel{position:relative;display:none;box-sizing:border-box;height:616px;line-height:22px;font-size:16px;color:#000}.uploadcare-dialog-multiple .uploadcare-dialog-tabs-panel{height:550px}.uploadcare-dialog-tabs-panel .uploadcare-dialog-input{box-sizing:border-box;width:100%;height:44px;margin-bottom:22px;padding:11px 12.5px;font-family:inherit;font-size:16px;border:1px solid #c5cace;background:#fff;color:#000}.uploadcare-dialog-tabs-panel_current{display:block}.uploadcare-pre{white-space:pre;font-family:monospace;margin:22px auto;padding:22px 25px;background-color:#fff;border:1px solid #c5cace;border-radius:3px;text-align:left;font-size:15px;line-height:22px}.uploadcare-dialog-footer{font-size:13px;line-height:1.4em;text-align:center;color:white;margin:15px}.uploadcare-dialog .uploadcare-dialog-footer svg{vertical-align:middle;padding:0 2px}.uploadcare-dialog .uploadcare-dialog-footer a{color:white;text-decoration:none}.uploadcare-dialog .uploadcare-dialog-footer a:hover{text-decoration:underline}.uploadcare-dialog-title{font-size:22px;line-height:1;margin-bottom:22px}.uploadcare-dialog-title.uploadcare-error{color:red}.uploadcare-dialog-title2{font-size:20px;line-height:1;padding-bottom:11px}.uploadcare-dialog-big-title{font-size:40px;font-weight:bold;line-height:1em;margin-bottom:50px}.uploadcare-dialog-label{font-size:15px;line-height:25px;margin-bottom:12.5px;word-wrap:break-word}.uploadcare-dialog-large-text{font-size:20px;font-weight:normal;line-height:1.5em}.uploadcare-dialog-large-text .uploadcare-pre{display:inline-block;font-size:18px}.uploadcare-dialog-section{margin-bottom:22px}.uploadcare-dialog-normal-text{font-size:13px;color:#545454}.uploadcare-dialog-button{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#444}.uploadcare-dialog-button,.uploadcare-dialog-button[disabled]:active,.uploadcare-dialog-button.uploadcare-disabled-el:active,.uploadcare-dialog-button[disabled]:hover,.uploadcare-dialog-button.uploadcare-disabled-el:hover{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);box-shadow:none;border-color:#dcdcdc}.uploadcare-dialog-button:hover{background:#f9f9f9;background:-webkit-linear-gradient(#fbfbfb,#f6f6f6);background:linear-gradient(#fbfbfb,#f6f6f6);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button:active{background:#f3f3f3;background:-webkit-linear-gradient(#f5f5f5,#f1f1f1);background:linear-gradient(#f5f5f5,#f1f1f1);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button[disabled],.uploadcare-dialog-button.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button:active,.uploadcare-dialog-button:hover{border-color:#cbcbcb}.uploadcare-dialog-button-success{display:inline-block;font-size:13px;line-height:30px;padding:0 12.5px;margin-right:.5em;border:solid 1px;border-radius:3px;cursor:pointer;color:#fff}.uploadcare-dialog-button-success,.uploadcare-dialog-button-success[disabled]:active,.uploadcare-dialog-button-success.uploadcare-disabled-el:active,.uploadcare-dialog-button-success[disabled]:hover,.uploadcare-dialog-button-success.uploadcare-disabled-el:hover{background:#3886eb;background:-webkit-linear-gradient(#3b8df7,#347fdf);background:linear-gradient(#3b8df7,#347fdf);box-shadow:none;border-color:#266fcb}.uploadcare-dialog-button-success:hover{background:#337ad6;background:-webkit-linear-gradient(#3986ea,#2c6dc2);background:linear-gradient(#3986ea,#2c6dc2);box-shadow:inset 0 -1px 3px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success:active{background:#3178d3;background:-webkit-linear-gradient(#3680e1,#2c6fc5);background:linear-gradient(#3680e1,#2c6fc5);box-shadow:inset 0 2px 2px rgba(0,0,0,0.05)}.uploadcare-dialog-button-success[disabled],.uploadcare-dialog-button-success.uploadcare-disabled-el{cursor:default;opacity:.6}.uploadcare-dialog-button-success:active,.uploadcare-dialog-button-success:hover{border-color:#266eca #1f62b7 #1753a1}.uploadcare-dialog-button-success:hover{box-shadow:inset 0 -1px 3px rgba(22,82,160,0.5)}.uploadcare-dialog-button-success:active{box-shadow:inset 0 1px 3px rgba(22,82,160,0.4)}.uploadcare-dialog-big-button{border-radius:100px;font-size:20px;font-weight:normal;letter-spacing:1px;color:white;line-height:33px;border:solid 1px #276fcb;text-shadow:0 -1px #2a7ce5;display:inline-block;padding:16.5px 2em;cursor:pointer;box-shadow:inset 0 -2px #1f66c1;background:#458eee;background:-webkit-linear-gradient(#4892f6,#4289e6);background:linear-gradient(#4892f6,#4289e6)}.uploadcare-dialog-big-button:hover{box-shadow:inset 0 -2px #1652a0;background:#337ad7;background:-webkit-linear-gradient(#3986eb,#2c6dc2);background:linear-gradient(#3986eb,#2c6dc2)}.uploadcare-dialog-big-button:active{box-shadow:inset 0 2px #2561b9;background:#2c6ec3;background:-webkit-linear-gradient(#2c6ec3,#2c6ec3);background:linear-gradient(#2c6ec3,#2c6ec3)}.uploadcare-dialog-preview-image-wrap{white-space:nowrap;text-align:center;width:100%;height:462px}.uploadcare-dialog-preview-image-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-preview--with-sizes .uploadcare-dialog-preview-image-wrap{position:relative;top:-40px;height:422px}.uploadcare-dialog-preview-image{display:inline-block;vertical-align:middle;white-space:normal;max-width:100%;max-height:100%}.uploadcare-dialog-tabs-panel-preview.uploadcare-dialog-tabs-panel_current ~ .uploadcare-panel-footer{display:none}.uploadcare-panel-footer{box-sizing:border-box;background:#fff3be;border-top:1px solid #efe2a9;height:66px;padding:17px 25px 0}.uploadcare-panel-footer .uploadcare-dialog-button-success{float:right}.uploadcare-panel-footer .uploadcare-dialog-button{float:left}.uploadcare-panel-footer .uploadcare-dialog-button-success,.uploadcare-panel-footer .uploadcare-dialog-button{min-width:100px;text-align:center;margin-right:0}.uploadcare-panel-footer .uploadcare-error{color:red}.uploadcare-panel-footer-text{text-align:center;color:#85732c;font-size:15px;line-height:32px}.uploadcare-dialog-message-center{text-align:center;padding-top:110px}.uploadcare-dialog-preview-center{text-align:center;padding-top:176px}.uploadcare-dialog-preview-circle{width:66px;height:66px;display:inline-block;margin-bottom:22px}.uploadcare-dialog-error-tab-wrap{height:100%;text-align:center;white-space:nowrap}.uploadcare-dialog-error-tab-wrap:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-title{margin-bottom:12px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-error-tab-wrap .uploadcare-dialog-button-success{margin:0}.uploadcare-dialog-error-tab-wrap2{display:inline-block;vertical-align:middle;white-space:normal;margin-top:-22px}.uploadcare-dialog-error-tab-illustration{display:inline-block;width:170px;height:120px;background-position:center;background-repeat:no-repeat;margin-bottom:38px}.uploadcare-if-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-no-draganddrop{display:none}.uploadcare-draganddrop .uploadcare-if-draganddrop{display:block}.uploadcare-draganddrop .uploadcare-dialog-file-drop-area{border:dashed 3px #c5cacd;background:rgba(255,255,255,0.64)}.uploadcare-draganddrop .uploadcare-dialog-file-title{color:#dee0e1;text-shadow:0 1px white;margin-top:0}.uploadcare-dialog-file-drop-area{width:100%;height:100%;box-sizing:border-box;border:0;text-align:center;border-radius:3px;padding-top:70px}.uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{margin-top:11px;margin-bottom:55px}.uploadcare-dialog-file-title{font-size:40px;line-height:1;color:black;font-weight:bold;margin:66px 0}.uploadcare-dialog-file-or{font-size:13px;color:#8f9498;margin-bottom:33px}.uploadcare-dialog-file-sources{position:relative;display:inline-block;padding:0 80px 0 100px;line-height:2em}.uploadcare-dialog-file-sources:before{background-repeat:no-repeat;content:\'\';display:block;position:absolute;width:67px;height:44px;padding:0;top:-30px;left:10px}.uploadcare-dialog-file-source{display:inline;font-size:15px;margin-right:.2em;cursor:pointer;font-weight:300;white-space:nowrap}.uploadcare-dialog-file-source:after{content:\'\\00B7\';color:#b7babc;margin-left:.5em}.uploadcare-dialog-file-source:last-child:after{display:none}.uploadcare-dragging .uploadcare-dialog-file-or,.uploadcare-dragging .uploadcare-dialog-file-sources,.uploadcare-dragging .uploadcare-dialog-file-drop-area .uploadcare-dialog-big-button{display:none}.uploadcare-dragging .uploadcare-dialog-file-drop-area{background-color:#f0f0f0;border-color:#b3b5b6;padding-top:264px}.uploadcare-dragging .uploadcare-dialog-file-title{color:#707478}.uploadcare-dragging.uploadcare-dialog-file-drop-area{background-color:#f2f7fe;border-color:#438ae7}.uploadcare-dragging.uploadcare-dialog-file-drop-area .uploadcare-dialog-file-title{color:#438ae7}.uploadcare-dialog-camera-holder{white-space:nowrap;text-align:center;height:528px}.uploadcare-dialog-camera-holder:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-dialog-camera-holder .uploadcare-dialog-normal-text{margin-bottom:38px}.uploadcare-dialog-multiple .uploadcare-dialog-camera-holder{height:462px}.uploadcare-dialog-camera-video{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:100%;max-height:528px;-webkit-transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1);transition:-webkit-transform .8s cubic-bezier(0.23,1,0.32,1);transition:transform .8s cubic-bezier(0.23,1,0.32,1);transition:transform .8s cubic-bezier(0.23,1,0.32,1),-webkit-transform .8s cubic-bezier(0.23,1,0.32,1)}.uploadcare-dialog-multiple .uploadcare-dialog-camera-video{max-height:462px}.uploadcare-dialog-camera--mirrored{-webkit-transform:scale(-1,1);-ms-transform:scale(-1,1);transform:scale(-1,1)}.uploadcare-dialog-camera-message{display:inline-block;vertical-align:middle;white-space:normal;display:none;max-width:450px}.uploadcare-dialog-camera-controls{margin-top:17px;text-align:center}.uploadcare-dialog-camera-mirror{position:absolute;margin-right:0;right:25px}.uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-retry,.uploadcare-dialog-camera-mirror{display:none}.uploadcare-dialog-camera-requested .uploadcare-dialog-camera-message{display:inline-block}.uploadcare-dialog-camera-not-found{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-please-allow{display:none}.uploadcare-dialog-camera-not-founded .uploadcare-dialog-camera-not-found{display:block}.uploadcare-dialog-camera-denied .uploadcare-dialog-camera-retry{display:inline-block}.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-video,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-capture,.uploadcare-dialog-camera-ready .uploadcare-dialog-camera-mirror{display:inline-block}.uploadcare-file-list{height:550px;overflow:auto;position:relative;margin:0 -25px -22px 0}.uploadcare-dialog-multiple .uploadcare-file-list{height:484px}.uploadcare-file-list_table .uploadcare-file-item{border-top:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;margin-bottom:-1px;display:table;table-layout:fixed;width:100%;padding:10px 0;min-height:20px}.uploadcare-file-list_table .uploadcare-file-item>*{box-sizing:content-box;display:table-cell;vertical-align:middle;padding-right:20px}.uploadcare-file-list_table .uploadcare-file-item:last-child{margin-bottom:0}.uploadcare-file-list_table .uploadcare-file-item:hover{background:#ececec}.uploadcare-file-list_table .uploadcare-file-item__preview{width:55px;padding-right:10px}.uploadcare-file-list_table .uploadcare-file-item__preview>img{height:55px}.uploadcare-file-list_table .uploadcare-file-item__size{width:3.5em}.uploadcare-file-list_table .uploadcare-file-item__progressbar{width:80px}.uploadcare-file-list_table .uploadcare-zoomable-icon:after{width:55px}.uploadcare-file-list_tiles .uploadcare-file-item{text-align:left;position:relative;display:inline-block;vertical-align:top;width:170px;min-height:170px;padding:0 20px 10px 0}.uploadcare-file-list_tiles .uploadcare-file-item>*{padding-bottom:10px}.uploadcare-file-list_tiles .uploadcare-file-item__name{padding-top:10px}.uploadcare-file-list_tiles .uploadcare-file-item__remove{position:absolute;top:0;right:10px}.uploadcare-file-list_tiles .uploadcare-file-item__preview{white-space:nowrap;width:170px;height:170px;padding-bottom:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview:before{display:inline-block;vertical-align:middle;content:\'\';height:100%;position:static;width:0}.uploadcare-file-list_tiles .uploadcare-file-item__preview img{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-file-list_tiles .uploadcare-file-item_uploading .uploadcare-file-item__preview,.uploadcare-file-list_tiles .uploadcare-file-item_error .uploadcare-file-item__preview{display:none}.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__size,.uploadcare-file-list_tiles .uploadcare-file-item_uploaded .uploadcare-file-item__name{display:none}.uploadcare-file-item__error:before,.uploadcare-file-icon{content:\'\';display:inline-block;width:20px;height:20px;margin:-3.5px .7em -3.5px 0}.uploadcare-file-item{font-size:13px;line-height:1.2}.uploadcare-file-item:hover .uploadcare-file-item__remove{visibility:visible}.uploadcare-file-item:hover .uploadcare-zoomable-icon:after{display:block}.uploadcare-file-item_uploading .uploadcare-file-item__error{display:none}.uploadcare-file-item_uploaded .uploadcare-file-item__progressbar,.uploadcare-file-item_uploaded .uploadcare-file-item__error{display:none}.uploadcare-file-item_error .uploadcare-file-item__size,.uploadcare-file-item_error .uploadcare-file-item__progressbar{display:none}.uploadcare-file-item__preview{text-align:center;line-height:0}.uploadcare-file-item__preview>img{display:inline-block;width:auto;height:auto;max-width:100%;max-height:100%}.uploadcare-file-item__name{width:100%;word-wrap:break-word}.uploadcare-file-item__error{width:200px;color:#f5444b}.uploadcare-file-item__remove{visibility:hidden;width:20px;text-align:right;line-height:0}.uploadcare-remove{width:20px;height:20px;cursor:pointer}.uploadcare-zoomable-icon{position:relative;cursor:pointer}.uploadcare-zoomable-icon:after{content:\'\';position:absolute;top:0;left:0;display:none;width:100%;height:100%;background-size:45px 45px;background-repeat:no-repeat;background-position:center}.uploadcare-progressbar{width:100%;height:8px;background:#e0e0e0;border-radius:100px}.uploadcare-progressbar__value{height:100%;background:#d6b849;border-radius:100px}.uploadcare-file-icon{margin:0}.uploadcare-dialog-padding{padding:22px 25px}.uploadcare-dialog-remote-iframe-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.uploadcare-dialog-remote-iframe{display:block;width:100%;height:100%;border:0;opacity:0}.uploadcare-panel-footer__summary{display:none}.uploadcare-dialog-multiple .uploadcare-panel-footer__summary{display:block}.uploadcare-panel-footer-counter{display:none}.uploadcare-hidden{display:none}.uploadcare-if-mobile{display:none}@media screen and (max-width:760px){.uploadcare-dialog-opened{overflow:visible !important;position:static !important;width:auto !important;height:auto !important;min-width:0 !important;background:#efefef !important}body.uploadcare-dialog-opened>.uploadcare-inactive,body.uploadcare-dialog-opened>:not(.uploadcare-dialog){display:none !important}.uploadcare-if-mobile{display:block}.uploadcare-if-no-mobile{display:none}.uploadcare-dialog{position:absolute;overflow:visible;-webkit-text-size-adjust:100%}.uploadcare-dialog:before{display:none}.uploadcare-dialog-inner-wrap{padding:0;min-width:310px;height:100%}.uploadcare-dialog-close{position:fixed;z-index:2;color:#000;width:50px;height:50px;line-height:45px}.uploadcare-dialog-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-panel{overflow:visible;height:100%;padding:50px 0 0;border-radius:0;box-shadow:none}.uploadcare-responsive-panel .uploadcare-dialog-panel.uploadcare-panel-hide-tabs{padding-top:0}.uploadcare-responsive-panel .uploadcare-dialog-tabs-panel{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-remote-iframe-wrap{overflow:visible;height:100%}.uploadcare-responsive-panel .uploadcare-dialog-padding{padding:22px 15px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image-wrap{top:auto;height:auto;padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-preview-image{max-height:450px}.uploadcare-responsive-panel .uploadcare-file-list{height:auto;margin:0 -15px 0 0}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item>*{padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_table .uploadcare-file-item__progressbar{width:40px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item{width:140px;min-height:140px;padding-right:10px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__preview{width:140px;height:140px}.uploadcare-responsive-panel .uploadcare-file-list_tiles .uploadcare-file-item__remove{right:10px}.uploadcare-responsive-panel .uploadcare-file-item__remove{visibility:visible}.uploadcare-responsive-panel .uploadcare-dialog-file-sources,.uploadcare-responsive-panel .uploadcare-dialog-file-or{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-title{display:none}.uploadcare-responsive-panel .uploadcare-dialog-file-drop-area{padding-top:0;border:0;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-big-button{margin:110px 0 0}.uploadcare-responsive-panel .uploadcare-clouds-tip{color:#909498;font-size:.75em;line-height:1.4;text-align:left;padding:10px 0 0 50px}.uploadcare-responsive-panel .uploadcare-clouds-tip:before{background-image:url("',  settings.scriptBase ,'/images/arrow.png");background-repeat:no-repeat;background-size:51px 33px;content:\'\';position:absolute;margin:-20px -36px;display:block;width:28px;height:30px}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab.uploadcare-dialog-tab-camera{display:none}.uploadcare-responsive-panel .uploadcare-dialog-camera-holder{height:auto}.uploadcare-responsive-panel .uploadcare-dialog-camera-mirror{right:15px}.uploadcare-responsive-panel .uploadcare-panel-footer{position:fixed;left:0;bottom:0;width:100%;min-width:310px;height:50px;padding:9px 15px 0;background:rgba(255,243,190,0.95)}.uploadcare-responsive-panel .uploadcare-panel-footer-text{display:none}.uploadcare-responsive-panel .uploadcare-panel-footer-counter{display:inline}.uploadcare-responsive-panel .uploadcare-dialog-multiple.uploadcare-dialog-panel{padding-bottom:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-remote-iframe-wrap:after{content:\'\';display:block;height:50px}.uploadcare-responsive-panel .uploadcare-dialog-multiple .uploadcare-dialog-padding{padding-bottom:72px}.uploadcare-responsive-panel .uploadcare-dialog-tabs{position:fixed;top:0;left:0;width:100%;min-width:310px;height:auto;float:none;margin:0;z-index:1;background:transparent}.uploadcare-responsive-panel .uploadcare-dialog-tab{display:none;height:50px;white-space:nowrap;background:#dee0e1}.uploadcare-responsive-panel .uploadcare-dialog-tab .uploadcare-dialog-icon,.uploadcare-responsive-panel .uploadcare-dialog-tab:before{position:static;margin:0 6px;vertical-align:middle;opacity:1}.uploadcare-responsive-panel .uploadcare-dialog-tab_current{display:block;background:rgba(239,239,239,0.95)}.uploadcare-responsive-panel .uploadcare-dialog-tab:after{content:attr(title);font-size:20px;vertical-align:middle}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs-panel_current,.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-panel-footer{display:none}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tabs{position:absolute;z-index:3}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab{display:block}.uploadcare-responsive-panel .uploadcare-dialog-opened-tabs .uploadcare-dialog-tab_current{background:#efefef}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current{text-align:center}.uploadcare-responsive-panel .uploadcare-dialog-panel:not(.uploadcare-dialog-opened-tabs) .uploadcare-dialog-tab_current:after{content:\'\';position:absolute;top:16px;left:14px;display:block;width:22px;height:18px;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAOCAQAAAD+6Ta3AAAARklEQVR4Ae3SsRFEIQhAwW1IR2s3s6zTGUN+AxdK5tucAIBmOuKSY2pQbHHZVhgiweAnEixW1uC0VdSU41Xo19+te73+9AGOg1FzTMH13gAAAABJRU5ErkJggg==);background-size:22px}.uploadcare-responsive-panel .uploadcare-crop-sizes{top:auto;margin-bottom:15px}.uploadcare-responsive-panel .uploadcare-crop-size{margin:0 10px}}.uploadcare-crop-widget.jcrop-holder{direction:ltr;text-align:left;z-index:0}.uploadcare-crop-widget .jcrop-vline,.uploadcare-crop-widget .jcrop-hline,.uploadcare-crop-widget .jcrop-handle{position:absolute;font-size:0;background-color:white;box-shadow:0 0 0 1px rgba(0,0,0,0.2);z-index:320}.uploadcare-crop-widget .jcrop-vline{height:100%;width:1px !important}.uploadcare-crop-widget .jcrop-hline{height:1px !important;width:100%}.uploadcare-crop-widget .jcrop-vline.right{right:0}.uploadcare-crop-widget .jcrop-hline.bottom{bottom:0}.uploadcare-crop-widget .jcrop-tracker{height:100%;width:100%;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.uploadcare-crop-widget .jcrop-handle{border-radius:50%;width:13px;height:13px;z-index:330}.uploadcare-crop-widget .jcrop-handle:before,.uploadcare-crop-widget .jcrop-handle:after{content:"";position:absolute;display:block;width:1px;height:1px;background:white}.uploadcare-crop-widget .jcrop-handle:before{width:3px;top:6px}.uploadcare-crop-widget .jcrop-handle:after{height:3px;left:6px}.uploadcare-crop-widget .jcrop-handle.ord-nw:before,.uploadcare-crop-widget .jcrop-handle.ord-sw:before{left:12px}.uploadcare-crop-widget .jcrop-handle.ord-ne:before,.uploadcare-crop-widget .jcrop-handle.ord-se:before{left:-2px}.uploadcare-crop-widget .jcrop-handle.ord-nw:after,.uploadcare-crop-widget .jcrop-handle.ord-ne:after{top:12px}.uploadcare-crop-widget .jcrop-handle.ord-sw:after,.uploadcare-crop-widget .jcrop-handle.ord-se:after{top:-2px}.uploadcare-crop-widget .jcrop-handle.ord-nw{left:0;margin-left:-6px;margin-top:-6px;top:0}.uploadcare-crop-widget .jcrop-handle.ord-ne{margin-right:-6px;margin-top:-6px;right:0;top:0}.uploadcare-crop-widget .jcrop-handle.ord-se{bottom:0;margin-bottom:-6px;margin-right:-6px;right:0}.uploadcare-crop-widget .jcrop-handle.ord-sw{bottom:0;left:0;margin-bottom:-6px;margin-left:-6px}.uploadcare-crop-widget.jcrop-holder img,.uploadcare-crop-widget img.jcrop-preview{max-width:none}.uploadcare-crop-widget{display:inline-block;vertical-align:middle;white-space:normal}.uploadcare-crop-widget .jcrop-handle>div{width:35px;height:35px;margin:-11px}.uploadcare-crop-widget>div:first-child{-webkit-transform:translateZ(0);transform:translateZ(0)}.uploadcare-crop-widget>img{-webkit-filter:grayscale(50%);filter:grayscale(50%)}.uploadcare-crop-sizes{display:none;visibility:hidden;position:relative;top:433px;text-align:center}.uploadcare-dialog-preview--with-sizes .uploadcare-crop-sizes{display:block}.uploadcare-dialog-preview--loaded .uploadcare-crop-sizes{visibility:visible}.uploadcare-crop-size{position:relative;display:inline-block;width:40px;height:40px;line-height:40px;margin:0 20px;font-size:.55em;cursor:pointer;color:#444}.uploadcare-crop-size div{box-sizing:border-box;width:40px;height:30px;display:inline-block;vertical-align:middle;border:1px solid #ccc}.uploadcare-crop-size:after{content:attr(data-caption);position:absolute;top:1px;left:0;width:100%;text-align:center;margin:0}.uploadcare-crop-size--current div{background:white}.uploadcare-widget{position:relative;display:inline-block;vertical-align:baseline;line-height:2}.uploadcare-widget :focus{outline:2px dotted #0094c0}.uploadcare-widget :active,.uploadcare-widget .uploadcare-mouse-focused:focus{outline:0}.uploadcare-widget-status-ready .uploadcare-widget-button-open,.uploadcare-widget-status-started .uploadcare-widget-status,.uploadcare-widget-status-started .uploadcare-widget-text,.uploadcare-widget-status-started .uploadcare-widget-button-cancel,.uploadcare-widget-status-loaded .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-text,.uploadcare-widget-status-error .uploadcare-widget-button-open{display:inline-block !important}.uploadcare-widget-option-clearable.uploadcare-widget-status-error .uploadcare-widget-button-open{display:none !important}.uploadcare-widget-option-clearable.uploadcare-widget-status-loaded .uploadcare-widget-button-remove,.uploadcare-widget-option-clearable.uploadcare-widget-status-error .uploadcare-widget-button-remove{display:inline-block !important}.uploadcare-widget-status{display:none !important;width:1.8em;height:1.8em;margin:-1em 0;margin-right:1ex;line-height:0;vertical-align:middle}.uploadcare-widget-circle--text .uploadcare-widget-circle-back{width:100%;height:100%;display:table;white-space:normal}.uploadcare-widget-circle--text .uploadcare-widget-circle-text{display:table-cell;vertical-align:middle;text-align:center;font-size:60%;line-height:1}.uploadcare-widget-circle--canvas{color:#d0bf26;border-color:#e1e5e7}.uploadcare-widget-circle--canvas canvas{width:100%;height:100%}.uploadcare-widget-text{display:none !important;margin-right:1ex;white-space:nowrap}.uploadcare-widget-file-name,.uploadcare-widget-file-size{display:inline}.uploadcare-link,.uploadcare-link:link,.uploadcare-link:visited{cursor:pointer;color:#1a85ad;text-decoration:none;border-bottom:1px dotted #1a85ad;border-color:initial}.uploadcare-link:hover{color:#176e8f}.uploadcare-widget-button{display:none !important;color:white;padding:.4em .6em;line-height:1;margin:-1em 0;margin-right:.5ex;border-radius:.25em;background:#c3c3c3;cursor:default;white-space:nowrap}.uploadcare-widget-button:hover{background:#b3b3b3}.uploadcare-widget-button-open{padding:.5em .8em;background:#18a5d0}.uploadcare-widget-button-open:hover{background:#0094c0}.uploadcare-widget-dragndrop-area{box-sizing:content-box;display:none;position:absolute;white-space:nowrap;top:50%;margin-top:-1.3em;left:-1em;padding:0 1em;line-height:2.6;min-width:100%;text-align:center;background-color:#f0f0f0;color:#707478;border:1px dashed #b3b5b6;border-radius:100px}.uploadcare-widget.uploadcare-dragging .uploadcare-widget-dragndrop-area{background-color:#f2f7fe;border-color:#438ae7;color:#438ae7}.uploadcare-dragging .uploadcare-widget-dragndrop-area{display:block}.uploadcare-dialog-opened .uploadcare-widget-dragndrop-area{display:none}\n');}return __p.join('');};uploadcare.templates.JST["tab-camera"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-camera-holder"><!--\n  --><video class="uploadcare-dialog-camera-video uploadcare-dialog-camera--mirrored"></video><!--\n  --><div class="uploadcare-dialog-camera-message">\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-please-allow">\n      ',(''+ t('dialog.tabs.camera.pleaseAllow.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-title uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n    <div class="uploadcare-dialog-normal-text uploadcare-dialog-camera-not-found">\n      ',(''+ t('dialog.tabs.camera.notFound.text') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n\n    <div class="uploadcare-dialog-camera-retry uploadcare-dialog-button"\n         tabindex="0" role="button">\n      ',(''+ t('dialog.tabs.camera.retry') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n    </div>\n  </div><!--\n--></div>\n<div class="uploadcare-dialog-camera-controls">\n  <div class="uploadcare-dialog-camera-mirror uploadcare-dialog-button"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.mirror') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-camera-capture uploadcare-dialog-button-success"\n       tabindex="0" role="button">\n    ',(''+ t('dialog.tabs.camera.capture') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-file-drop-area">\n  <div class="uploadcare-dialog-file-title uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.drag') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-title uploadcare-if-no-draganddrop">\n    ',(''+ t('dialog.tabs.file.nodrop') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-if-draganddrop">\n    ',(''+ t('dialog.tabs.file.or') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-clouds-tip uploadcare-if-mobile">\n    ',  t('dialog.tabs.file.cloudsTip') ,'\n  </div>\n  <div class="uploadcare-dialog-big-button needsclick">\n    ',(''+ t('dialog.tabs.file.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-or uploadcare-dialog-file-source-or">\n    ',(''+ t('dialog.tabs.file.also') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-dialog-file-sources">\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-error"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-error-tab-wrap uloadcare-dialog-error-tab-',(''+ error ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"><!--\n  --><div class="uploadcare-dialog-error-tab-wrap2">\n\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title">',(''+
         t('dialog.tabs.preview.error.'+error+'.title') || t('dialog.tabs.preview.error.default.title')
       ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-normal-text">',(''+ 
         t('dialog.tabs.preview.error.'+error+'.text') || t('dialog.tabs.preview.error.default.text') 
-      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-back"\n         tabindex="0" role="button"\n            >',(''+ t('dialog.tabs.preview.error.'+error+'.back') || t('dialog.tabs.preview.error.default.back') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-image"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding uploadcare-dialog-preview-root">\n  <div class="uploadcare-dialog-title uploadcare-dialog-preview-title">\n    ',(''+ t('dialog.tabs.preview.image.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-crop-sizes uploadcare-dialog-preview-crop-sizes">\n    <div class="uploadcare-crop-size" data-caption="free"><div></div></div>\n  </div>\n\n  <div class="uploadcare-dialog-preview-image-wrap"><!--\n      1162x684 is 1.5 size of conteiner\n    --><img\n      src="',(''+ file.originalUrl ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'-/preview/1162x684/-/setfill/efefef/-/format/jpeg/-/progressive/yes/"\n      title="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      alt="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      class="uploadcare-dialog-preview-image"\n    />\n  </div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.image.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-file-item uploadcare-file-item_uploading">\n  <div class="uploadcare-file-item__preview">\n    <div class="uploadcare-file-icon"></div>\n  </div>\n  <div class="uploadcare-file-item__name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-file-item__progressbar">\n    <div class="uploadcare-progressbar">\n      <div class="uploadcare-progressbar__value"></div>\n    </div>\n  </div>\n  <div class="uploadcare-file-item__size"></div>\n  <div class="uploadcare-file-item__error"></div>\n  <div class="uploadcare-file-item__remove">\n    <div class="uploadcare-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile uploadcare-dpm-mobile-title"></div>\n\n  <div class="uploadcare-file-list"></div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-panel-footer-text uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-regular"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.regular.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label">\n    ',(''+ (file.name || t('dialog.tabs.preview.unknownName')) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'',(''+
-        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n    ',(''+ t('dialog.tabs.preview.regular.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'<br/>\n    ',(''+ t('dialog.tabs.preview.regular.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-unknown"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.unknown.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label">\n    ',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'',(''+
-        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.unknown.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-url"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.url.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n<div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n  <div>',(''+ t('dialog.tabs.url.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div>',(''+ t('dialog.tabs.url.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n<form class="uploadcare-dialog-url-form">\n  <input type="text" class="uploadcare-dialog-input" placeholder="',(''+ t('dialog.tabs.url.input') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'">\n  <button class="uploadcare-dialog-button uploadcare-dialog-url-submit" type="submit">',(''+ t('dialog.tabs.url.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</button>\n</form>\n');}return __p.join('');};uploadcare.templates.JST["widget-button"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div tabindex="0" role="button"\n     class="uploadcare-widget-button uploadcare-widget-button-',  name ,'"\n>',(''+ caption ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n');}return __p.join('');};uploadcare.templates.JST["widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-file-name uploadcare-link"\n     tabindex="0" role="link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>,\n',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n');}return __p.join('');};uploadcare.templates.JST["widget"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget">\n  <div class="uploadcare-widget-dragndrop-area">\n    ',(''+ t('draghere') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div><div class="uploadcare-widget-status">\n  </div><div class="uploadcare-widget-text">\n</div></div>\n');}return __p.join('');};(function() {
+      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-back"\n         tabindex="0" role="button"\n            >',(''+ t('dialog.tabs.preview.error.'+error+'.back') || t('dialog.tabs.preview.error.default.back') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-image"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding uploadcare-dialog-preview-root">\n  <div class="uploadcare-dialog-title uploadcare-dialog-preview-title">\n    ',(''+ t('dialog.tabs.preview.image.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-crop-sizes uploadcare-dialog-preview-crop-sizes">\n    <div class="uploadcare-crop-size" data-caption="free"><div></div></div>\n  </div>\n\n  <div class="uploadcare-dialog-preview-image-wrap"><!--\n      1162x684 is 1.5 size of conteiner\n    --><img\n      ');  if (file) { ; __p.push('\n        src="',(''+ file.originalUrl ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'-/preview/1162x693/-/setfill/efefef/-/format/jpeg/-/progressive/yes/"\n        title="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n        alt="',(''+ (file.name || "") ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"\n      ');  } else { ; __p.push('\n        src="//:0"\n      ');  } ; __p.push('\n      class="uploadcare-dialog-preview-image"\n    />\n  </div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.image.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-multiple-file"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-file-item uploadcare-file-item_uploading">\n  <div class="uploadcare-file-item__preview">\n    <div class="uploadcare-file-icon"></div>\n  </div>\n  <div class="uploadcare-file-item__name">\n    ',(''+ t('dialog.tabs.preview.unknownName') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n  <div class="uploadcare-file-item__progressbar">\n    <div class="uploadcare-progressbar">\n      <div class="uploadcare-progressbar__value"></div>\n    </div>\n  </div>\n  <div class="uploadcare-file-item__size"></div>\n  <div class="uploadcare-file-item__error"></div>\n  <div class="uploadcare-file-item__remove">\n    <div class="uploadcare-remove"></div>\n  </div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-multiple"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title uploadcare-if-no-mobile uploadcare-dpm-title"></div>\n  <div class="uploadcare-dialog-title uploadcare-if-mobile uploadcare-dpm-mobile-title"></div>\n\n  <div class="uploadcare-file-list"></div>\n</div>\n\n<div class="uploadcare-panel-footer">\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.clear') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.multiple.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-panel-footer-text uploadcare-dpm-footer-text"></div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-regular"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.regular.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label">\n    ',(''+ (file.name || t('dialog.tabs.preview.unknownName')) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'',(''+
+        utils.readableFileSize(file.size, '', ', ') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n    ',(''+ t('dialog.tabs.preview.regular.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'<br/>\n    ',(''+ t('dialog.tabs.preview.regular.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div class="uploadcare-dialog-button uploadcare-dialog-preview-back"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.change') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-preview-unknown"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-padding">\n\n  <div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.preview.unknown.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n  <div class="uploadcare-dialog-label uploadcare-dialog-preview-label"></div>\n\n  <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-done"\n       tabindex="0" role="button"\n          >',(''+ t('dialog.tabs.preview.unknown.done') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n');}return __p.join('');};uploadcare.templates.JST["tab-url"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-title">',(''+ t('dialog.tabs.url.title') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n<div class="uploadcare-dialog-section uploadcare-dialog-normal-text">\n  <div>',(''+ t('dialog.tabs.url.line1') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  <div>',(''+ t('dialog.tabs.url.line2') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n</div>\n<form class="uploadcare-dialog-url-form">\n  <input type="text" class="uploadcare-dialog-input" placeholder="',(''+ t('dialog.tabs.url.input') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'">\n  <button class="uploadcare-dialog-button uploadcare-dialog-url-submit" type="submit">',(''+ t('dialog.tabs.url.button') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</button>\n</form>\n');}return __p.join('');};uploadcare.templates.JST["widget-button"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div tabindex="0" role="button"\n     class="uploadcare-widget-button uploadcare-widget-button-',  name ,'"\n>',(''+ caption ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n');}return __p.join('');};uploadcare.templates.JST["widget-file-name"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget-file-name uploadcare-link"\n     tabindex="0" role="link">',(''+ utils.fitText(name, 20) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div><!--\n--><div class="uploadcare-widget-file-size">,\n    ',(''+ utils.readableFileSize(size) ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n</div>\n');}return __p.join('');};uploadcare.templates.JST["widget"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-widget">\n  <div class="uploadcare-widget-dragndrop-area">\n    ',(''+ t('draghere') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'\n  </div><div class="uploadcare-widget-status">\n  </div><div class="uploadcare-widget-text">\n</div></div>\n');}return __p.join('');};(function() {
   var $, tpl;
 
   $ = uploadcare.jQuery;
@@ -7603,16 +5714,18 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
   namespace('files', function(ns) {
     return ns.BaseFile = (function() {
-      function BaseFile(settings) {
+      function BaseFile(param, settings, sourceInfo) {
+        var _base;
         this.settings = settings;
+        this.sourceInfo = sourceInfo != null ? sourceInfo : {};
+        this.__extendApi = __bind(this.__extendApi, this);
+        this.__cancel = __bind(this.__cancel, this);
         this.__resolveApi = __bind(this.__resolveApi, this);
         this.__rejectApi = __bind(this.__rejectApi, this);
-        this.__extendApi = __bind(this.__extendApi, this);
         this.__runValidators = __bind(this.__runValidators, this);
-        this.__cancel = __bind(this.__cancel, this);
         this.__fileInfo = __bind(this.__fileInfo, this);
-        this.__updateInfo = __bind(this.__updateInfo, this);
         this.__handleFileData = __bind(this.__handleFileData, this);
+        this.__updateInfo = __bind(this.__updateInfo, this);
         this.__completeUpload = __bind(this.__completeUpload, this);
         this.fileId = null;
         this.fileName = null;
@@ -7622,8 +5735,8 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.cdnUrlModifiers = null;
         this.isImage = null;
         this.imageInfo = null;
-        this.sourceInfo = null;
         this.s3Bucket = null;
+        (_base = this.sourceInfo).source || (_base.source = this.sourceName);
         this.onInfoReady = $.Callbacks('once memory');
         this.__setupValidation();
         this.__initApi();
@@ -7660,6 +5773,21 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         })();
       };
 
+      BaseFile.prototype.__updateInfo = function() {
+        var _this = this;
+        return utils.jsonp("" + this.settings.urlBase + "/info/", {
+          jsonerrors: 1,
+          file_id: this.fileId,
+          pub_key: this.settings.publicKey,
+          wait_is_ready: +this.onInfoReady.fired()
+        }).fail(function(reason) {
+          if (_this.settings.debugUploads) {
+            utils.log("Can't load file info. Probably removed.", _this.fileId, _this.settings.publicKey, reason);
+          }
+          return _this.__rejectApi('info');
+        }).done(this.__handleFileData);
+      };
+
       BaseFile.prototype.__handleFileData = function(data) {
         this.fileName = data.original_filename;
         this.sanitizedName = data.filename;
@@ -7680,21 +5808,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (data.is_ready) {
           return this.__resolveApi();
         }
-      };
-
-      BaseFile.prototype.__updateInfo = function() {
-        var _this = this;
-        return utils.jsonp("" + this.settings.urlBase + "/info/", {
-          jsonerrors: 1,
-          file_id: this.fileId,
-          pub_key: this.settings.publicKey,
-          wait_is_ready: +this.onInfoReady.fired()
-        }).fail(function(reason) {
-          if (_this.settings.debugUploads) {
-            utils.log("Can't load file info. Probably removed.", _this.fileId, _this.settings.publicKey, reason);
-          }
-          return _this.__rejectApi('info');
-        }).done(this.__handleFileData);
       };
 
       BaseFile.prototype.__progressInfo = function() {
@@ -7728,10 +5841,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         };
       };
 
-      BaseFile.prototype.__cancel = function() {
-        return this.__rejectApi('user');
-      };
-
       BaseFile.prototype.__setupValidation = function() {
         this.validators = this.settings.validators || this.settings.__validators || [];
         if (this.settings.imagesOnly) {
@@ -7761,13 +5870,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }
       };
 
-      BaseFile.prototype.__extendApi = function(api) {
-        var _this = this;
-        api.cancel = this.__cancel;
-        api.pipe = api.then = function() {
-          return _this.__extendApi(utils.fixedPipe.apply(utils, [api].concat(__slice.call(arguments))));
-        };
-        return api;
+      BaseFile.prototype.__initApi = function() {
+        this.apiDeferred = $.Deferred();
+        this.__progressState = 'uploading';
+        this.__progress = 0;
+        return this.__notifyApi();
       };
 
       BaseFile.prototype.__notifyApi = function() {
@@ -7786,11 +5893,17 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         return this.apiDeferred.resolve(this.__fileInfo());
       };
 
-      BaseFile.prototype.__initApi = function() {
-        this.apiDeferred = $.Deferred();
-        this.__progressState = 'uploading';
-        this.__progress = 0;
-        return this.__notifyApi();
+      BaseFile.prototype.__cancel = function() {
+        return this.__rejectApi('user');
+      };
+
+      BaseFile.prototype.__extendApi = function(api) {
+        var _this = this;
+        api.cancel = this.__cancel;
+        api.pipe = api.then = function() {
+          return _this.__extendApi(utils.fixedPipe.apply(utils, [api].concat(__slice.call(arguments))));
+        };
+        return api;
       };
 
       BaseFile.prototype.promise = function() {
@@ -7801,11 +5914,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           this.__runValidators();
           if (this.apiDeferred.state() === 'pending') {
             op = this.__startUpload();
-            op.done(this.__completeUpload);
             op.done(function() {
               _this.__progressState = 'uploaded';
               _this.__progress = 1;
-              return _this.__notifyApi();
+              _this.__notifyApi();
+              return _this.__completeUpload();
             });
             op.progress(function(progress) {
               if (progress > _this.__progress) {
@@ -7841,6 +5954,334 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
+  var $, Blob, FileReader, URL, utils, _ref, _ref1;
+
+  $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.utils, (_ref1 = _ref.abilities, Blob = _ref1.Blob, FileReader = _ref1.FileReader, URL = _ref1.URL));
+
+  uploadcare.namespace('utils.image', function(ns) {
+    var DataView, taskRunner;
+    DataView = window.DataView;
+    taskRunner = utils.taskRunner(1);
+    ns.shrinkFile = function(file, settings) {
+      var df,
+        _this = this;
+      df = $.Deferred();
+      if (!(URL && DataView && Blob)) {
+        return df.reject('support');
+      }
+      taskRunner(function(release) {
+        var op;
+        df.always(release);
+        op = utils.imageLoader(URL.createObjectURL(file));
+        op.always(function(e) {
+          return URL.revokeObjectURL(e.target.src);
+        });
+        op.fail(function() {
+          return df.reject('not image');
+        });
+        return op.done(function(e) {
+          df.notify(.10);
+          return ns.getExif(file).always(function(exif) {
+            var isJPEG;
+            df.notify(.2);
+            isJPEG = this.state() === 'resolved';
+            op = ns.shrinkImage(e.target, settings);
+            op.progress(function(progress) {
+              return df.notify(.2 + progress * .6);
+            });
+            op.fail(df.reject);
+            op.done(function(canvas) {
+              var format, quality;
+              format = 'image/jpeg';
+              quality = settings.quality || 0.8;
+              if (!isJPEG && ns.hasTransparency(canvas)) {
+                format = 'image/png';
+                quality = void 0;
+              }
+              return utils.canvasToBlob(canvas, format, quality, function(blob) {
+                canvas.width = canvas.height = 1;
+                df.notify(.9);
+                if (exif) {
+                  op = ns.replaceJpegChunk(blob, 0xe1, [exif.buffer]);
+                  op.done(df.resolve);
+                  return op.fail(function() {
+                    return df.resolve(blob);
+                  });
+                } else {
+                  return df.resolve(blob);
+                }
+              });
+            });
+            return e = null;
+          });
+        });
+      });
+      return df.promise();
+    };
+    ns.shrinkImage = function(img, settings) {
+      var df, h, maxSize, maxSquare, originalW, ratio, run, sH, sW, step, w;
+      df = $.Deferred();
+      step = 0.71;
+      if (img.width * step * img.height * step < settings.size) {
+        return df.reject('not required');
+      }
+      sW = originalW = img.width;
+      sH = img.height;
+      ratio = sW / sH;
+      w = Math.floor(Math.sqrt(settings.size * ratio));
+      h = Math.floor(settings.size / Math.sqrt(settings.size * ratio));
+      maxSquare = 5000000;
+      maxSize = 4096;
+      (run = function() {
+        if (sW <= w) {
+          df.resolve(img);
+          return;
+        }
+        return utils.defer(function() {
+          var canvas;
+          sW = Math.round(sW * step);
+          sH = Math.round(sH * step);
+          if (sW * step < w) {
+            sW = w;
+            sH = h;
+          }
+          if (sW * sH > maxSquare) {
+            sW = Math.floor(Math.sqrt(maxSquare * ratio));
+            sH = Math.floor(maxSquare / Math.sqrt(maxSquare * ratio));
+          }
+          if (sW > maxSize) {
+            sW = maxSize;
+            sH = Math.round(sW / ratio);
+          }
+          if (sH > maxSize) {
+            sH = maxSize;
+            sW = Math.round(ratio * sH);
+          }
+          canvas = document.createElement('canvas');
+          canvas.width = sW;
+          canvas.height = sH;
+          canvas.getContext('2d').drawImage(img, 0, 0, sW, sH);
+          img.src = '//:0';
+          img.width = img.height = 1;
+          img = canvas;
+          df.notify((originalW - sW) / (originalW - w));
+          return run();
+        });
+      })();
+      return df.promise();
+    };
+    ns.drawFileToCanvas = function(file, mW, mH, bg, maxSource) {
+      var df, op;
+      df = $.Deferred();
+      if (!URL) {
+        return df.reject('support');
+      }
+      op = utils.imageLoader(URL.createObjectURL(file));
+      op.always(function(e) {
+        return URL.revokeObjectURL(e.target.src);
+      });
+      op.fail(function() {
+        return df.reject('not image');
+      });
+      op.done(function(e) {
+        var img;
+        img = e.target;
+        df.always(function() {
+          return img.src = '//:0';
+        });
+        if (maxSource && img.width * img.height > maxSource) {
+          return df.reject('max source');
+        }
+        return ns.getExif(file).always(function(exif) {
+          var canvas, ctx, dH, dW, orientation, sSize, swap, trns, _ref2, _ref3;
+          orientation = ns.parseExifOrientation(exif) || 1;
+          swap = orientation > 4;
+          sSize = swap ? [img.height, img.width] : [img.width, img.height];
+          _ref2 = utils.fitSize(sSize, [mW, mH]), dW = _ref2[0], dH = _ref2[1];
+          trns = [[1, 0, 0, 1, 0, 0], [-1, 0, 0, 1, dW, 0], [-1, 0, 0, -1, dW, dH], [1, 0, 0, -1, 0, dH], [0, 1, 1, 0, 0, 0], [0, 1, -1, 0, dW, 0], [0, -1, -1, 0, dW, dH], [0, -1, 1, 0, 0, dH]][orientation - 1];
+          if (!trns) {
+            return df.reject('bad image');
+          }
+          canvas = document.createElement('canvas');
+          canvas.width = dW;
+          canvas.height = dH;
+          ctx = canvas.getContext('2d');
+          ctx.transform.apply(ctx, trns);
+          if (swap) {
+            _ref3 = [dH, dW], dW = _ref3[0], dH = _ref3[1];
+          }
+          if (bg) {
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, dW, dH);
+          }
+          ctx.drawImage(img, 0, 0, dW, dH);
+          return df.resolve(canvas, sSize);
+        });
+      });
+      return df.promise();
+    };
+    ns.readJpegChunks = function(file) {
+      var df, pos, readNext, readNextChunk, readToView;
+      readToView = function(file, cb) {
+        var reader;
+        reader = new FileReader();
+        reader.onload = function() {
+          return cb(new DataView(reader.result));
+        };
+        reader.onerror = function(e) {
+          return df.reject('reader', e);
+        };
+        return reader.readAsArrayBuffer(file);
+      };
+      readNext = function() {
+        return readToView(file.slice(pos, pos + 128), function(view) {
+          var i, _i, _ref2;
+          for (i = _i = 0, _ref2 = view.byteLength; 0 <= _ref2 ? _i < _ref2 : _i > _ref2; i = 0 <= _ref2 ? ++_i : --_i) {
+            if (view.getUint8(i) === 0xff) {
+              pos += i;
+              break;
+            }
+          }
+          return readNextChunk();
+        });
+      };
+      readNextChunk = function() {
+        var startPos;
+        startPos = pos;
+        return readToView(file.slice(pos, pos += 4), function(view) {
+          var length, marker;
+          if (view.byteLength !== 4 || view.getUint8(0) !== 0xff) {
+            return df.reject('corrupted');
+          }
+          marker = view.getUint8(1);
+          if (marker === 0xda) {
+            return df.resolve();
+          }
+          length = view.getUint16(2) - 2;
+          return readToView(file.slice(pos, pos += length), function(view) {
+            if (view.byteLength !== length) {
+              return df.reject('corrupted');
+            }
+            df.notify(startPos, length, marker, view);
+            return readNext();
+          });
+        });
+      };
+      df = $.Deferred();
+      if (!(FileReader && DataView)) {
+        return df.reject('support');
+      }
+      pos = 2;
+      readToView(file.slice(0, 2), function(view) {
+        if (view.getUint16(0) !== 0xffd8) {
+          return df.reject('not jpeg');
+        }
+        return readNext();
+      });
+      return df.promise();
+    };
+    ns.replaceJpegChunk = function(blob, marker, chunks) {
+      var df, oldChunkLength, oldChunkPos, op;
+      df = $.Deferred();
+      oldChunkPos = [];
+      oldChunkLength = [];
+      op = ns.readJpegChunks(blob);
+      op.fail(df.reject);
+      op.progress(function(pos, length, oldMarker) {
+        if (oldMarker === marker) {
+          oldChunkPos.push(pos);
+          return oldChunkLength.push(length);
+        }
+      });
+      op.done(function() {
+        var chunk, i, intro, newChunks, pos, _i, _j, _len, _ref2;
+        newChunks = [blob.slice(0, 2)];
+        for (_i = 0, _len = chunks.length; _i < _len; _i++) {
+          chunk = chunks[_i];
+          intro = new DataView(new ArrayBuffer(4));
+          intro.setUint16(0, 0xff00 + marker);
+          intro.setUint16(2, chunk.byteLength + 2);
+          newChunks.push(intro.buffer);
+          newChunks.push(chunk);
+        }
+        pos = 2;
+        for (i = _j = 0, _ref2 = oldChunkPos.length; 0 <= _ref2 ? _j < _ref2 : _j > _ref2; i = 0 <= _ref2 ? ++_j : --_j) {
+          if (oldChunkPos[i] > pos) {
+            newChunks.push(blob.slice(pos, oldChunkPos[i]));
+          }
+          pos = oldChunkPos[i] + oldChunkLength[i] + 4;
+        }
+        newChunks.push(blob.slice(pos, blob.size));
+        return df.resolve(new Blob(newChunks, {
+          type: blob.type
+        }));
+      });
+      return df.promise();
+    };
+    ns.getExif = function(file) {
+      var exif, op;
+      exif = null;
+      op = ns.readJpegChunks(file);
+      op.progress(function(pos, l, marker, view) {
+        if (!exif && marker === 0xe1) {
+          if (view.byteLength >= 14) {
+            if (view.getUint32(0) === 0x45786966 && view.getUint16(4) === 0) {
+              return exif = view;
+            }
+          }
+        }
+      });
+      return op.then(function() {
+        return exif;
+      }, function(reason) {
+        return $.Deferred().reject(exif, reason);
+      });
+    };
+    ns.parseExifOrientation = function(exif) {
+      var count, i, little, offset, _i;
+      if (!exif || exif.byteLength < 14 || exif.getUint32(0) !== 0x45786966 || exif.getUint16(4) !== 0 || exif.getUint16(8) !== 0x002A) {
+        return null;
+      }
+      if (exif.getUint16(6) === 0x4949) {
+        little = true;
+      } else if (exif.getUint16(6) === 0x4D4D) {
+        little = false;
+      } else {
+        return null;
+      }
+      offset = 8 + exif.getUint32(10, little);
+      count = exif.getUint16(offset - 2, little);
+      for (i = _i = 0; 0 <= count ? _i < count : _i > count; i = 0 <= count ? ++_i : --_i) {
+        if (exif.byteLength < offset + 10) {
+          return null;
+        }
+        if (exif.getUint16(offset, little) === 0x0112) {
+          return exif.getUint16(offset + 8, little);
+        }
+        offset += 12;
+      }
+      return null;
+    };
+    return ns.hasTransparency = function(img) {
+      var canvas, ctx, data, i, pcsn, _i, _ref2;
+      pcsn = 50;
+      canvas = document.createElement('canvas');
+      canvas.width = canvas.height = pcsn;
+      ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, pcsn, pcsn);
+      data = ctx.getImageData(0, 0, pcsn, pcsn).data;
+      canvas.width = canvas.height = 1;
+      for (i = _i = 3, _ref2 = data.length; _i < _ref2; i = _i += 4) {
+        if (data[i] < 254) {
+          return true;
+        }
+      }
+      return false;
+    };
+  });
+
+}).call(this);
+(function() {
   var $, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
@@ -7856,7 +6297,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
       _directRunner = null;
 
-      function ObjectFile(settings, __file) {
+      ObjectFile.prototype.sourceName = 'local';
+
+      function ObjectFile(__file) {
         this.__file = __file;
         this.setFile = __bind(this.setFile, this);
         ObjectFile.__super__.constructor.apply(this, arguments);
@@ -7868,6 +6311,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (file) {
           this.__file = file;
         }
+        this.sourceInfo.file = this.__file;
         if (!this.__file) {
           return;
         }
@@ -7886,7 +6330,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.apiDeferred.always(function() {
           return _this.__file = null;
         });
-        if (this.__file.size >= this.settings.multipartMinSize && utils.abilities.blob) {
+        if (this.__file.size >= this.settings.multipartMinSize && utils.abilities.Blob) {
           this.setFile();
           return this.multipartUpload();
         }
@@ -7897,7 +6341,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }
         df = $.Deferred();
         resizeShare = .4;
-        utils.imageProcessor.shrinkFile(this.__file, this.settings.imageShrink).progress(function(progress) {
+        utils.image.shrinkFile(this.__file, this.settings.imageShrink).progress(function(progress) {
           return df.notify(progress * resizeShare);
         }).done(this.setFile).fail(function() {
           _this.setFile();
@@ -7946,6 +6390,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           formData.append('UPLOADCARE_STORE', _this.settings.doNotStore ? '' : 'auto');
           formData.append('file', _this.__file, _this.fileName);
           formData.append('file_name', _this.fileName);
+          formData.append('source', _this.sourceInfo.source);
           return _this.__autoAbort($.ajax({
             xhr: function() {
               var xhr;
@@ -8010,6 +6455,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         data = {
           UPLOADCARE_PUB_KEY: this.settings.publicKey,
           filename: this.fileName,
+          source: this.sourceInfo.source,
           size: this.fileSize,
           content_type: this.fileType,
           part_size: this.settings.multipartPartSize,
@@ -8144,7 +6590,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     return ns.InputFile = (function(_super) {
       __extends(InputFile, _super);
 
-      function InputFile(settings, __input) {
+      InputFile.prototype.sourceName = 'local-compat';
+
+      function InputFile(__input) {
         this.__input = __input;
         this.__cleanUp = __bind(this.__cleanUp, this);
         InputFile.__super__.constructor.apply(this, arguments);
@@ -8175,7 +6623,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           action: targetUrl,
           enctype: 'multipart/form-data',
           target: iframeId
-        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(formParam('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto')).append(this.__input).css('display', 'none').appendTo('body').submit();
+        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(formParam('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto')).append(formParam('UPLOADCARE_SOURCE', this.sourceInfo.source)).append(this.__input).css('display', 'none').appendTo('body').submit();
         return df.always(this.__cleanUp);
       };
 
@@ -8197,6 +6645,1347 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   });
 
 }).call(this);
+// changed:
+//   Pusher.dependency_suffix = '.min'; (was '')
+//   window.WEB_SOCKET_SWF_LOCATION = "https://s3.amazonaws.com/uploadcare-static/WebSocketMainInsecure.swf"
+
+/*!
+ * Pusher JavaScript Library v1.12.2
+ * http://pusherapp.com/
+ *
+ * Copyright 2011, Pusher
+ * Released under the MIT licence.
+ */
+
+
+;(function() {
+  var Pusher, _require;
+
+;(function() {
+  if (Function.prototype.scopedTo === undefined) {
+    Function.prototype.scopedTo = function(context, args) {
+      var f = this;
+      return function() {
+        return f.apply(context, Array.prototype.slice.call(args || [])
+                       .concat(Array.prototype.slice.call(arguments)));
+      };
+    };
+  }
+
+  Pusher = function(app_key, options) {
+    this.options = options || {};
+    this.key = app_key;
+    this.channels = new Pusher.Channels();
+    this.global_emitter = new Pusher.EventsDispatcher()
+
+    var self = this;
+
+    this.checkAppKey();
+
+    this.connection = new Pusher.Connection(this.key, this.options);
+
+    // Setup / teardown connection
+    this.connection
+      .bind('connected', function() {
+        self.subscribeAll();
+      })
+      .bind('message', function(params) {
+        var internal = (params.event.indexOf('pusher_internal:') === 0);
+        if (params.channel) {
+          var channel;
+          if (channel = self.channel(params.channel)) {
+            channel.emit(params.event, params.data);
+          }
+        }
+        // Emit globaly [deprecated]
+        if (!internal) self.global_emitter.emit(params.event, params.data);
+      })
+      .bind('disconnected', function() {
+        self.channels.disconnect();
+      })
+      .bind('error', function(err) {
+        Pusher.warn('Error', err);
+      });
+
+    Pusher.instances.push(this);
+
+    if (Pusher.isReady) self.connect();
+  };
+  Pusher.instances = [];
+  Pusher.prototype = {
+    channel: function(name) {
+      return this.channels.find(name);
+    },
+
+    connect: function() {
+      this.connection.connect();
+    },
+
+    disconnect: function() {
+      this.connection.disconnect();
+    },
+
+    bind: function(event_name, callback) {
+      this.global_emitter.bind(event_name, callback);
+      return this;
+    },
+
+    bind_all: function(callback) {
+      this.global_emitter.bind_all(callback);
+      return this;
+    },
+
+    subscribeAll: function() {
+      var channel;
+      for (channelName in this.channels.channels) {
+        if (this.channels.channels.hasOwnProperty(channelName)) {
+          this.subscribe(channelName);
+        }
+      }
+    },
+
+    subscribe: function(channel_name) {
+      var self = this;
+      var channel = this.channels.add(channel_name, this);
+
+      if (this.connection.state === 'connected') {
+        channel.authorize(this.connection.socket_id, this.options, function(err, data) {
+          if (err) {
+            channel.emit('pusher:subscription_error', data);
+          } else {
+            self.send_event('pusher:subscribe', {
+              channel: channel_name,
+              auth: data.auth,
+              channel_data: data.channel_data
+            });
+          }
+        });
+      }
+      return channel;
+    },
+
+    unsubscribe: function(channel_name) {
+      this.channels.remove(channel_name);
+      if (this.connection.state === 'connected') {
+        this.send_event('pusher:unsubscribe', {
+          channel: channel_name
+        });
+      }
+    },
+
+    send_event: function(event_name, data, channel) {
+      return this.connection.send_event(event_name, data, channel);
+    },
+
+    checkAppKey: function() {
+      if(this.key === null || this.key === undefined) {
+        Pusher.warn('Warning', 'You must pass your app key when you instantiate Pusher.');
+      }
+    }
+  };
+
+  Pusher.Util = {
+    extend: function extend(target, extensions) {
+      for (var property in extensions) {
+        if (extensions[property] && extensions[property].constructor &&
+            extensions[property].constructor === Object) {
+          target[property] = extend(target[property] || {}, extensions[property]);
+        } else {
+          target[property] = extensions[property];
+        }
+      }
+      return target;
+    },
+
+    stringify: function stringify() {
+      var m = ["Pusher"]
+      for (var i = 0; i < arguments.length; i++){
+        if (typeof arguments[i] === "string") {
+          m.push(arguments[i])
+        } else {
+          if (window['JSON'] == undefined) {
+            m.push(arguments[i].toString());
+          } else {
+            m.push(JSON.stringify(arguments[i]))
+          }
+        }
+      };
+      return m.join(" : ")
+    },
+
+    arrayIndexOf: function(array, item) { // MSIE doesn't have array.indexOf
+      var nativeIndexOf = Array.prototype.indexOf;
+      if (array == null) return -1;
+      if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item);
+      for (i = 0, l = array.length; i < l; i++) if (array[i] === item) return i;
+      return -1;
+    }
+  };
+
+  // To receive log output provide a Pusher.log function, for example
+  // Pusher.log = function(m){console.log(m)}
+  Pusher.debug = function() {
+    if (!Pusher.log) return
+    Pusher.log(Pusher.Util.stringify.apply(this, arguments))
+  }
+  Pusher.warn = function() {
+    if (window.console && window.console.warn) {
+      window.console.warn(Pusher.Util.stringify.apply(this, arguments));
+    } else {
+      if (!Pusher.log) return
+      Pusher.log(Pusher.Util.stringify.apply(this, arguments));
+    }
+  };
+
+  // Pusher defaults
+  Pusher.VERSION = '1.12.2';
+
+  Pusher.host = 'ws.pusherapp.com';
+  Pusher.ws_port = 80;
+  Pusher.wss_port = 443;
+  Pusher.channel_auth_endpoint = '/pusher/auth';
+  Pusher.cdn_http = 'http://js.pusher.com/'
+  Pusher.cdn_https = 'https://d3dy5gmtp8yhk7.cloudfront.net/'
+  Pusher.dependency_suffix = '.min';
+  Pusher.channel_auth_transport = 'ajax';
+  Pusher.activity_timeout = 120000;
+  Pusher.pong_timeout = 30000;
+
+  Pusher.isReady = false;
+  Pusher.ready = function() {
+    Pusher.isReady = true;
+    for (var i = 0, l = Pusher.instances.length; i < l; i++) {
+      Pusher.instances[i].connect();
+    }
+  };
+
+})();
+
+;(function() {
+/* Abstract event binding
+Example:
+
+    var MyEventEmitter = function(){};
+    MyEventEmitter.prototype = new Pusher.EventsDispatcher;
+
+    var emitter = new MyEventEmitter();
+
+    // Bind to single event
+    emitter.bind('foo_event', function(data){ alert(data)} );
+
+    // Bind to all
+    emitter.bind_all(function(eventName, data){ alert(data) });
+
+--------------------------------------------------------*/
+
+  function CallbackRegistry() {
+    this._callbacks = {};
+  };
+
+  CallbackRegistry.prototype.get = function(eventName) {
+    return this._callbacks[this._prefix(eventName)];
+  };
+
+  CallbackRegistry.prototype.add = function(eventName, callback) {
+    var prefixedEventName = this._prefix(eventName);
+    this._callbacks[prefixedEventName] = this._callbacks[prefixedEventName] || [];
+    this._callbacks[prefixedEventName].push(callback);
+  };
+
+  CallbackRegistry.prototype.remove = function(eventName, callback) {
+    if(this.get(eventName)) {
+      var index = Pusher.Util.arrayIndexOf(this.get(eventName), callback);
+      this._callbacks[this._prefix(eventName)].splice(index, 1);
+    }
+  };
+
+  CallbackRegistry.prototype._prefix = function(eventName) {
+    return "_" + eventName;
+  };
+
+
+  function EventsDispatcher(failThrough) {
+    this.callbacks = new CallbackRegistry();
+    this.global_callbacks = [];
+    // Run this function when dispatching an event when no callbacks defined
+    this.failThrough = failThrough;
+  }
+
+  EventsDispatcher.prototype.bind = function(eventName, callback) {
+    this.callbacks.add(eventName, callback);
+    return this;// chainable
+  };
+
+  EventsDispatcher.prototype.unbind = function(eventName, callback) {
+    this.callbacks.remove(eventName, callback);
+    return this;
+  };
+
+  EventsDispatcher.prototype.emit = function(eventName, data) {
+    // Global callbacks
+    for (var i = 0; i < this.global_callbacks.length; i++) {
+      this.global_callbacks[i](eventName, data);
+    }
+
+    // Event callbacks
+    var callbacks = this.callbacks.get(eventName);
+    if (callbacks) {
+      for (var i = 0; i < callbacks.length; i++) {
+        callbacks[i](data);
+      }
+    } else if (this.failThrough) {
+      this.failThrough(eventName, data)
+    }
+
+    return this;
+  };
+
+  EventsDispatcher.prototype.bind_all = function(callback) {
+    this.global_callbacks.push(callback);
+    return this;
+  };
+
+  Pusher.EventsDispatcher = EventsDispatcher;
+})();
+
+;(function() {
+  /*-----------------------------------------------
+    Helpers:
+  -----------------------------------------------*/
+
+  function capitalize(str) {
+    return str.substr(0, 1).toUpperCase() + str.substr(1);
+  }
+
+
+  function safeCall(method, obj, data) {
+    if (obj[method] !== undefined) {
+      obj[method](data);
+    }
+  }
+
+  /*-----------------------------------------------
+    The State Machine
+  -----------------------------------------------*/
+  function Machine(initialState, transitions, stateActions) {
+    Pusher.EventsDispatcher.call(this);
+
+    this.state = undefined;
+    this.errors = [];
+
+    // functions for each state
+    this.stateActions = stateActions;
+
+    // set up the transitions
+    this.transitions = transitions;
+
+    this.transition(initialState);
+  };
+
+  Machine.prototype.transition = function(nextState, data) {
+    var prevState = this.state;
+    var stateCallbacks = this.stateActions;
+
+    if (prevState && (Pusher.Util.arrayIndexOf(this.transitions[prevState], nextState) == -1)) {
+      this.emit('invalid_transition_attempt', {
+        oldState: prevState,
+        newState: nextState
+      });
+
+      throw new Error('Invalid transition [' + prevState + ' to ' + nextState + ']');
+    }
+
+    // exit
+    safeCall(prevState + 'Exit', stateCallbacks, data);
+
+    // tween
+    safeCall(prevState + 'To' + capitalize(nextState), stateCallbacks, data);
+
+    // pre
+    safeCall(nextState + 'Pre', stateCallbacks, data);
+
+    // change state:
+    this.state = nextState;
+
+    // handy to bind to
+    this.emit('state_change', {
+      oldState: prevState,
+      newState: nextState
+    });
+
+    // Post:
+    safeCall(nextState + 'Post', stateCallbacks, data);
+  };
+
+  Machine.prototype.is = function(state) {
+    return this.state === state;
+  };
+
+  Machine.prototype.isNot = function(state) {
+    return this.state !== state;
+  };
+
+  Pusher.Util.extend(Machine.prototype, Pusher.EventsDispatcher.prototype);
+
+  Pusher.Machine = Machine;
+})();
+
+;(function() {
+  /*
+    A little bauble to interface with window.navigator.onLine,
+    window.ononline and window.onoffline.  Easier to mock.
+  */
+
+  var NetInfo = function() {
+    var self = this;
+    Pusher.EventsDispatcher.call(this);
+    // This is okay, as IE doesn't support this stuff anyway.
+    if (window.addEventListener !== undefined) {
+      window.addEventListener("online", function() {
+        self.emit('online', null);
+      }, false);
+      window.addEventListener("offline", function() {
+        self.emit('offline', null);
+      }, false);
+    }
+  };
+
+  // Offline means definitely offline (no connection to router).
+  // Inverse does NOT mean definitely online (only currently supported in Safari
+  // and even there only means the device has a connection to the router).
+  NetInfo.prototype.isOnLine = function() {
+    if (window.navigator.onLine === undefined) {
+      return true;
+    } else {
+      return window.navigator.onLine;
+    }
+  };
+
+  Pusher.Util.extend(NetInfo.prototype, Pusher.EventsDispatcher.prototype);
+
+  Pusher.NetInfo = NetInfo;
+})();
+
+;(function() {
+  var machineTransitions = {
+    'initialized': ['waiting', 'failed'],
+    'waiting': ['connecting', 'permanentlyClosed'],
+    'connecting': ['open', 'permanentlyClosing', 'impermanentlyClosing', 'waiting'],
+    'open': ['connected', 'permanentlyClosing', 'impermanentlyClosing', 'waiting'],
+    'connected': ['permanentlyClosing', 'waiting'],
+    'impermanentlyClosing': ['waiting', 'permanentlyClosing'],
+    'permanentlyClosing': ['permanentlyClosed'],
+    'permanentlyClosed': ['waiting', 'failed'],
+    'failed': ['permanentlyClosed']
+  };
+
+
+  // Amount to add to time between connection attemtpts per failed attempt.
+  var UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT = 2000;
+  var UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT = 2000;
+  var UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT = 2000;
+
+  var MAX_CONNECTION_ATTEMPT_WAIT = 5 * UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT;
+  var MAX_OPEN_ATTEMPT_TIMEOUT = 5 * UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT;
+  var MAX_CONNECTED_ATTEMPT_TIMEOUT = 5 * UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT;
+
+  function resetConnectionParameters(connection) {
+    connection.connectionWait = 0;
+
+    if (Pusher.TransportType === 'flash') {
+      // Flash needs a bit more time
+      connection.openTimeout = 5000;
+    } else {
+      connection.openTimeout = 2000;
+    }
+    connection.connectedTimeout = 2000;
+    connection.connectionSecure = connection.compulsorySecure;
+    connection.connectionAttempts = 0;
+  }
+
+  function Connection(key, options) {
+    var self = this;
+
+    Pusher.EventsDispatcher.call(this);
+
+    this.options = Pusher.Util.extend({encrypted: false}, options);
+
+    this.netInfo = new Pusher.NetInfo();
+
+    this.netInfo.bind('online', function(){
+      if (self._machine.is('waiting')) {
+        self._machine.transition('connecting');
+        updateState('connecting');
+      }
+    });
+
+    this.netInfo.bind('offline', function() {
+      if (self._machine.is('connected')) {
+        // These are for Chrome 15, which ends up
+        // having two sockets hanging around.
+        self.socket.onclose = undefined;
+        self.socket.onmessage = undefined;
+        self.socket.onerror = undefined;
+        self.socket.onopen = undefined;
+
+        self.socket.close();
+        self.socket = undefined;
+        self._machine.transition('waiting');
+      }
+    });
+
+    // define the state machine that runs the connection
+    this._machine = new Pusher.Machine('initialized', machineTransitions, {
+      initializedPre: function() {
+        self.compulsorySecure = self.options.encrypted;
+
+        self.key = key;
+        self.socket = null;
+        self.socket_id = null;
+
+        self.state = 'initialized';
+      },
+
+      waitingPre: function() {
+        if (self.connectionWait > 0) {
+          self.emit('connecting_in', self.connectionWait);
+        }
+
+        if (self.netInfo.isOnLine() && self.connectionAttempts <= 4) {
+          updateState('connecting');
+        } else {
+          updateState('unavailable');
+        }
+
+        // When in the unavailable state we attempt to connect, but don't
+        // broadcast that fact
+        if (self.netInfo.isOnLine()) {
+          self._waitingTimer = setTimeout(function() {
+            self._machine.transition('connecting');
+          }, connectionDelay());
+        }
+      },
+
+      waitingExit: function() {
+        clearTimeout(self._waitingTimer);
+      },
+
+      connectingPre: function() {
+        // Case that a user manages to get to the connecting
+        // state even when offline.
+        if (self.netInfo.isOnLine() === false) {
+          self._machine.transition('waiting');
+          updateState('unavailable');
+
+          return;
+        }
+
+        var url = formatURL(self.key, self.connectionSecure);
+        Pusher.debug('Connecting', url);
+        self.socket = new Pusher.Transport(url);
+        // now that the socket connection attempt has been started,
+        // set up the callbacks fired by the socket for different outcomes
+        self.socket.onopen = ws_onopen;
+        self.socket.onclose = transitionToWaiting;
+        self.socket.onerror = ws_onError;
+
+        // allow time to get ws_onOpen, otherwise close socket and try again
+        self._connectingTimer = setTimeout(TransitionToImpermanentlyClosing, self.openTimeout);
+      },
+
+      connectingExit: function() {
+        clearTimeout(self._connectingTimer);
+        self.socket.onopen = undefined; // unbind to avoid open events that are no longer relevant
+      },
+
+      connectingToWaiting: function() {
+        updateConnectionParameters();
+
+        // FUTURE: update only ssl
+      },
+
+      connectingToImpermanentlyClosing: function() {
+        updateConnectionParameters();
+
+        // FUTURE: update only timeout
+      },
+
+      openPre: function() {
+        self.socket.onmessage = ws_onMessageOpen;
+        self.socket.onerror = ws_onError;
+        self.socket.onclose = transitionToWaiting;
+
+        // allow time to get connected-to-Pusher message, otherwise close socket, try again
+        self._openTimer = setTimeout(TransitionToImpermanentlyClosing, self.connectedTimeout);
+      },
+
+      openExit: function() {
+        clearTimeout(self._openTimer);
+        self.socket.onmessage = undefined; // unbind to avoid messages that are no longer relevant
+      },
+
+      openToWaiting: function() {
+        updateConnectionParameters();
+      },
+
+      openToImpermanentlyClosing: function() {
+        updateConnectionParameters();
+      },
+
+      connectedPre: function(socket_id) {
+        self.socket_id = socket_id;
+
+        self.socket.onmessage = ws_onMessageConnected;
+        self.socket.onerror = ws_onError;
+        self.socket.onclose = transitionToWaiting;
+
+        resetConnectionParameters(self);
+        self.connectedAt = new Date().getTime();
+
+        resetActivityCheck();
+      },
+
+      connectedPost: function() {
+        updateState('connected');
+      },
+
+      connectedExit: function() {
+        stopActivityCheck();
+        updateState('disconnected');
+      },
+
+      impermanentlyClosingPost: function() {
+        if (self.socket) {
+          self.socket.onclose = transitionToWaiting;
+          self.socket.close();
+        }
+      },
+
+      permanentlyClosingPost: function() {
+        if (self.socket) {
+          self.socket.onclose = function() {
+            resetConnectionParameters(self);
+            self._machine.transition('permanentlyClosed');
+          };
+
+          self.socket.close();
+        } else {
+          resetConnectionParameters(self);
+          self._machine.transition('permanentlyClosed');
+        }
+      },
+
+      failedPre: function() {
+        updateState('failed');
+        Pusher.debug('WebSockets are not available in this browser.');
+      },
+
+      permanentlyClosedPost: function() {
+        updateState('disconnected');
+      }
+    });
+
+    /*-----------------------------------------------
+      -----------------------------------------------*/
+
+    function updateConnectionParameters() {
+      if (self.connectionWait < MAX_CONNECTION_ATTEMPT_WAIT) {
+        self.connectionWait += UNSUCCESSFUL_CONNECTION_ATTEMPT_ADDITIONAL_WAIT;
+      }
+
+      if (self.openTimeout < MAX_OPEN_ATTEMPT_TIMEOUT) {
+        self.openTimeout += UNSUCCESSFUL_OPEN_ATTEMPT_ADDITIONAL_TIMEOUT;
+      }
+
+      if (self.connectedTimeout < MAX_CONNECTED_ATTEMPT_TIMEOUT) {
+        self.connectedTimeout += UNSUCCESSFUL_CONNECTED_ATTEMPT_ADDITIONAL_TIMEOUT;
+      }
+
+      if (self.compulsorySecure !== true) {
+        self.connectionSecure = !self.connectionSecure;
+      }
+
+      self.connectionAttempts++;
+    }
+
+    function formatURL(key, isSecure) {
+      var port = Pusher.ws_port;
+      var protocol = 'ws://';
+
+      // Always connect with SSL if the current page has
+      // been loaded via HTTPS.
+      //
+      // FUTURE: Always connect using SSL.
+      //
+      if (isSecure || document.location.protocol === 'https:') {
+        port = Pusher.wss_port;
+        protocol = 'wss://';
+      }
+
+      var flash = (Pusher.TransportType === "flash") ? "true" : "false";
+
+      return protocol + Pusher.host + ':' + port + '/app/' + key + '?protocol=5&client=js'
+        + '&version=' + Pusher.VERSION
+        + '&flash=' + flash;
+    }
+
+    // callback for close and retry.  Used on timeouts.
+    function TransitionToImpermanentlyClosing() {
+      self._machine.transition('impermanentlyClosing');
+    }
+
+    function resetActivityCheck() {
+      if (self._activityTimer) { clearTimeout(self._activityTimer); }
+      // Send ping after inactivity
+      self._activityTimer = setTimeout(function() {
+        self.send_event('pusher:ping', {})
+        // Wait for pong response
+        self._activityTimer = setTimeout(function() {
+          self.socket.close();
+        }, (self.options.pong_timeout || Pusher.pong_timeout))
+      }, (self.options.activity_timeout || Pusher.activity_timeout))
+    }
+
+    function stopActivityCheck() {
+      if (self._activityTimer) { clearTimeout(self._activityTimer); }
+    }
+
+    // Returns the delay before the next connection attempt should be made
+    //
+    // This function guards against attempting to connect more frequently than
+    // once every second
+    //
+    function connectionDelay() {
+      var delay = self.connectionWait;
+      if (delay === 0) {
+        if (self.connectedAt) {
+          var t = 1000;
+          var connectedFor = new Date().getTime() - self.connectedAt;
+          if (connectedFor < t) {
+            delay = t - connectedFor;
+          }
+        }
+      }
+      return delay;
+    }
+
+    /*-----------------------------------------------
+      WebSocket Callbacks
+      -----------------------------------------------*/
+
+    // no-op, as we only care when we get pusher:connection_established
+    function ws_onopen() {
+      self._machine.transition('open');
+    };
+
+    function handleCloseCode(code, message) {
+      // first inform the end-developer of this error
+      self.emit('error', {type: 'PusherError', data: {code: code, message: message}});
+
+      if (code === 4000) {
+        // SSL only app
+        self.compulsorySecure = true;
+        self.connectionSecure = true;
+        self.options.encrypted = true;
+
+        TransitionToImpermanentlyClosing();
+      } else if (code < 4100) {
+        // Permentently close connection
+        self._machine.transition('permanentlyClosing')
+      } else if (code < 4200) {
+        // Backoff before reconnecting
+        self.connectionWait = 1000;
+        self._machine.transition('waiting')
+      } else if (code < 4300) {
+        // Reconnect immediately
+        TransitionToImpermanentlyClosing();
+      } else {
+        // Unknown error
+        self._machine.transition('permanentlyClosing')
+      }
+    }
+
+    function ws_onMessageOpen(event) {
+      var params = parseWebSocketEvent(event);
+      if (params !== undefined) {
+        if (params.event === 'pusher:connection_established') {
+          self._machine.transition('connected', params.data.socket_id);
+        } else if (params.event === 'pusher:error') {
+          handleCloseCode(params.data.code, params.data.message)
+        }
+      }
+    }
+
+    function ws_onMessageConnected(event) {
+      resetActivityCheck();
+
+      var params = parseWebSocketEvent(event);
+      if (params !== undefined) {
+        Pusher.debug('Event recd', params);
+
+        switch (params.event) {
+          case 'pusher:error':
+            self.emit('error', {type: 'PusherError', data: params.data});
+            break;
+          case 'pusher:ping':
+            self.send_event('pusher:pong', {})
+            break;
+        }
+
+        self.emit('message', params);
+      }
+    }
+
+
+    /**
+     * Parses an event from the WebSocket to get
+     * the JSON payload that we require
+     *
+     * @param {MessageEvent} event  The event from the WebSocket.onmessage handler.
+    **/
+    function parseWebSocketEvent(event) {
+      try {
+        var params = JSON.parse(event.data);
+
+        if (typeof params.data === 'string') {
+          try {
+            params.data = JSON.parse(params.data);
+          } catch (e) {
+            if (!(e instanceof SyntaxError)) {
+              throw e;
+            }
+          }
+        }
+
+        return params;
+      } catch (e) {
+        self.emit('error', {type: 'MessageParseError', error: e, data: event.data});
+      }
+    }
+
+    function transitionToWaiting() {
+      self._machine.transition('waiting');
+    }
+
+    function ws_onError(error) {
+      // just emit error to user - socket will already be closed by browser
+      self.emit('error', { type: 'WebSocketError', error: error });
+    }
+
+    // Updates the public state information exposed by connection
+    //
+    // This is distinct from the internal state information used by _machine
+    // to manage the connection
+    //
+    function updateState(newState, data) {
+      var prevState = self.state;
+      self.state = newState;
+
+      // Only emit when the state changes
+      if (prevState !== newState) {
+        Pusher.debug('State changed', prevState + ' -> ' + newState);
+        self.emit('state_change', {previous: prevState, current: newState});
+        self.emit(newState, data);
+      }
+    }
+  };
+
+  Connection.prototype.connect = function() {
+    // no WebSockets
+    if (!this._machine.is('failed') && !Pusher.Transport) {
+      this._machine.transition('failed');
+    }
+    // initial open of connection
+    else if(this._machine.is('initialized')) {
+      resetConnectionParameters(this);
+      this._machine.transition('waiting');
+    }
+    // user skipping connection wait
+    else if (this._machine.is('waiting') && this.netInfo.isOnLine() === true) {
+      this._machine.transition('connecting');
+    }
+    // user re-opening connection after closing it
+    else if(this._machine.is("permanentlyClosed")) {
+      resetConnectionParameters(this);
+      this._machine.transition('waiting');
+    }
+  };
+
+  Connection.prototype.send = function(data) {
+    if (this._machine.is('connected')) {
+      // Workaround for MobileSafari bug (see https://gist.github.com/2052006)
+      var self = this;
+      setTimeout(function() {
+        self.socket.send(data);
+      }, 0);
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  Connection.prototype.send_event = function(event_name, data, channel) {
+    var payload = {
+      event: event_name,
+      data: data
+    };
+    if (channel) payload['channel'] = channel;
+
+    Pusher.debug('Event sent', payload);
+    return this.send(JSON.stringify(payload));
+  }
+
+  Connection.prototype.disconnect = function() {
+    if (this._machine.is('permanentlyClosed')) return;
+
+    if (this._machine.is('waiting') || this._machine.is('failed')) {
+      this._machine.transition('permanentlyClosed');
+    } else {
+      this._machine.transition('permanentlyClosing');
+    }
+  };
+
+  Pusher.Util.extend(Connection.prototype, Pusher.EventsDispatcher.prototype);
+  Pusher.Connection = Connection;
+})();
+
+;(function() {
+  Pusher.Channels = function() {
+    this.channels = {};
+  };
+
+  Pusher.Channels.prototype = {
+    add: function(channel_name, pusher) {
+      var existing_channel = this.find(channel_name);
+      if (!existing_channel) {
+        var channel = Pusher.Channel.factory(channel_name, pusher);
+        this.channels[channel_name] = channel;
+        return channel;
+      } else {
+        return existing_channel;
+      }
+    },
+
+    find: function(channel_name) {
+      return this.channels[channel_name];
+    },
+
+    remove: function(channel_name) {
+      delete this.channels[channel_name];
+    },
+
+    disconnect: function () {
+      for(var channel_name in this.channels){
+        this.channels[channel_name].disconnect()
+      }
+    }
+  };
+
+  Pusher.Channel = function(channel_name, pusher) {
+    var self = this;
+    Pusher.EventsDispatcher.call(this, function(event_name, event_data) {
+      Pusher.debug('No callbacks on ' + channel_name + ' for ' + event_name);
+    });
+
+    this.pusher = pusher;
+    this.name = channel_name;
+    this.subscribed = false;
+
+    this.bind('pusher_internal:subscription_succeeded', function(data) {
+      self.onSubscriptionSucceeded(data);
+    });
+  };
+
+  Pusher.Channel.prototype = {
+    // inheritable constructor
+    init: function() {},
+    disconnect: function() {
+      this.subscribed = false;
+      this.emit("pusher_internal:disconnected");
+    },
+
+    onSubscriptionSucceeded: function(data) {
+      this.subscribed = true;
+      this.emit('pusher:subscription_succeeded');
+    },
+
+    authorize: function(socketId, options, callback){
+      return callback(false, {}); // normal channels don't require auth
+    },
+
+    trigger: function(event, data) {
+      return this.pusher.send_event(event, data, this.name);
+    }
+  };
+
+  Pusher.Util.extend(Pusher.Channel.prototype, Pusher.EventsDispatcher.prototype);
+
+  Pusher.Channel.PrivateChannel = {
+    authorize: function(socketId, options, callback){
+      var self = this;
+      var authorizer = new Pusher.Channel.Authorizer(this, Pusher.channel_auth_transport, options);
+      return authorizer.authorize(socketId, function(err, authData) {
+        if(!err) {
+          self.emit('pusher_internal:authorized', authData);
+        }
+
+        callback(err, authData);
+      });
+    }
+  };
+
+  Pusher.Channel.PresenceChannel = {
+    init: function(){
+      this.members = new Members(this); // leeches off channel events
+    },
+
+    onSubscriptionSucceeded: function(data) {
+      this.subscribed = true;
+      // We override this because we want the Members obj to be responsible for
+      // emitting the pusher:subscription_succeeded.  It will do this after it has done its work.
+    }
+  };
+
+  var Members = function(channel) {
+    var self = this;
+
+    var reset = function() {
+      this._members_map = {};
+      this.count = 0;
+      this.me = null;
+    };
+    reset.call(this);
+
+    channel.bind('pusher_internal:authorized', function(authorizedData) {
+      var channelData = JSON.parse(authorizedData.channel_data);
+      channel.bind("pusher_internal:subscription_succeeded", function(subscriptionData) {
+        self._members_map = subscriptionData.presence.hash;
+        self.count = subscriptionData.presence.count;
+        self.me = self.get(channelData.user_id);
+        channel.emit('pusher:subscription_succeeded', self);
+      });
+    });
+
+    channel.bind('pusher_internal:member_added', function(data) {
+      if(self.get(data.user_id) === null) { // only incr if user_id does not already exist
+        self.count++;
+      }
+
+      self._members_map[data.user_id] = data.user_info;
+      channel.emit('pusher:member_added', self.get(data.user_id));
+    });
+
+    channel.bind('pusher_internal:member_removed', function(data) {
+      var member = self.get(data.user_id);
+      if(member) {
+        delete self._members_map[data.user_id];
+        self.count--;
+        channel.emit('pusher:member_removed', member);
+      }
+    });
+
+    channel.bind('pusher_internal:disconnected', function() {
+      reset.call(self);
+    });
+  };
+
+  Members.prototype = {
+    each: function(callback) {
+      for(var i in this._members_map) {
+        callback(this.get(i));
+      }
+    },
+
+    get: function(user_id) {
+      if (this._members_map.hasOwnProperty(user_id)) { // have heard of this user user_id
+        return {
+          id: user_id,
+          info: this._members_map[user_id]
+        }
+      } else { // have never heard of this user
+        return null;
+      }
+    }
+  };
+
+  Pusher.Channel.factory = function(channel_name, pusher){
+    var channel = new Pusher.Channel(channel_name, pusher);
+    if (channel_name.indexOf('private-') === 0) {
+      Pusher.Util.extend(channel, Pusher.Channel.PrivateChannel);
+    } else if (channel_name.indexOf('presence-') === 0) {
+      Pusher.Util.extend(channel, Pusher.Channel.PrivateChannel);
+      Pusher.Util.extend(channel, Pusher.Channel.PresenceChannel);
+    };
+    channel.init();
+    return channel;
+  };
+})();
+
+;(function() {
+  Pusher.Channel.Authorizer = function(channel, type, options) {
+    this.channel = channel;
+    this.type = type;
+
+    this.authOptions = (options || {}).auth || {};
+  };
+
+  Pusher.Channel.Authorizer.prototype = {
+    composeQuery: function(socketId) {
+      var query = '&socket_id=' + encodeURIComponent(socketId)
+        + '&channel_name=' + encodeURIComponent(this.channel.name);
+
+      for(var i in this.authOptions.params) {
+        query += "&" + encodeURIComponent(i) + "=" + encodeURIComponent(this.authOptions.params[i]);
+      }
+
+      return query;
+    },
+
+    authorize: function(socketId, callback) {
+      return Pusher.authorizers[this.type].call(this, socketId, callback);
+    }
+  };
+
+
+  Pusher.auth_callbacks = {};
+  Pusher.authorizers = {
+    ajax: function(socketId, callback){
+      var self = this, xhr;
+
+      if (Pusher.XHR) {
+        xhr = new Pusher.XHR();
+      } else {
+        xhr = (window.XMLHttpRequest ? new window.XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP"));
+      }
+
+      xhr.open("POST", Pusher.channel_auth_endpoint, true);
+
+      // add request headers
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+      for(var headerName in this.authOptions.headers) {
+        xhr.setRequestHeader(headerName, this.authOptions.headers[headerName]);
+      }
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          if (xhr.status == 200) {
+            var data, parsed = false;
+
+            try {
+              data = JSON.parse(xhr.responseText);
+              parsed = true;
+            } catch (e) {
+              callback(true, 'JSON returned from webapp was invalid, yet status code was 200. Data was: ' + xhr.responseText);
+            }
+
+            if (parsed) { // prevents double execution.
+              callback(false, data);
+            }
+          } else {
+            Pusher.warn("Couldn't get auth info from your webapp", xhr.status);
+            callback(true, xhr.status);
+          }
+        }
+      };
+
+      xhr.send(this.composeQuery(socketId));
+      return xhr;
+    },
+
+    jsonp: function(socketId, callback){
+      if(this.authOptions.headers !== undefined) {
+        Pusher.warn("Warn", "To send headers with the auth request, you must use AJAX, rather than JSONP.");
+      }
+
+      var script = document.createElement("script");
+      // Hacked wrapper.
+      Pusher.auth_callbacks[this.channel.name] = function(data) {
+        callback(false, data);
+      };
+
+      var callback_name = "Pusher.auth_callbacks['" + this.channel.name + "']";
+      script.src = Pusher.channel_auth_endpoint
+        + '?callback='
+        + encodeURIComponent(callback_name)
+        + this.composeQuery(socketId);
+
+      var head = document.getElementsByTagName("head")[0] || document.documentElement;
+      head.insertBefore( script, head.firstChild );
+    }
+  };
+})();
+
+// _require(dependencies, callback) takes an array of dependency urls and a
+// callback to call when all the dependecies have finished loading
+var _require = (function() {
+  function handleScriptLoaded(elem, callback) {
+    if (document.addEventListener) {
+      elem.addEventListener('load', callback, false);
+    } else {
+      elem.attachEvent('onreadystatechange', function () {
+        if (elem.readyState == 'loaded' || elem.readyState == 'complete') {
+          callback();
+        }
+      });
+    }
+  }
+
+  function addScript(src, callback) {
+    var head = document.getElementsByTagName('head')[0];
+    var script = document.createElement('script');
+    script.setAttribute('src', src);
+    script.setAttribute("type","text/javascript");
+    script.setAttribute('async', true);
+
+    handleScriptLoaded(script, function() {
+      callback();
+    });
+
+    head.appendChild(script);
+  }
+
+  return function(deps, callback) {
+    var deps_loaded = 0;
+    for (var i = 0; i < deps.length; i++) {
+      addScript(deps[i], function() {
+        if (deps.length == ++deps_loaded) {
+          // This setTimeout is a workaround for an Opera issue
+          setTimeout(callback, 0);
+        }
+      });
+    }
+  }
+})();
+
+;(function() {
+  // Support Firefox versions which prefix WebSocket
+  if (!window['WebSocket'] && window['MozWebSocket']) {
+    window['WebSocket'] = window['MozWebSocket']
+  }
+
+  if (window['WebSocket']) {
+    Pusher.Transport = window['WebSocket'];
+    Pusher.TransportType = 'native';
+  }
+
+  var cdn = (document.location.protocol == 'http:') ? Pusher.cdn_http : Pusher.cdn_https;
+  var root = cdn + Pusher.VERSION;
+  var deps = [];
+
+  if (!window['JSON']) {
+    deps.push(root + '/json2' + Pusher.dependency_suffix + '.js');
+  }
+  if (!window['WebSocket']) {
+    // We manually initialize web-socket-js to iron out cross browser issues
+    window.WEB_SOCKET_DISABLE_AUTO_INITIALIZATION = true;
+    deps.push(root + '/flashfallback' + Pusher.dependency_suffix + '.js');
+  }
+
+  var initialize = function() {
+    if (window['WebSocket']) {
+      // Initialize function in the case that we have native WebSocket support
+      return function() {
+        Pusher.ready();
+      }
+    } else {
+      // Initialize function for fallback case
+      return function() {
+        if (window['WebSocket']) {
+          // window['WebSocket'] is a flash emulation of WebSocket
+          Pusher.Transport = window['WebSocket'];
+          Pusher.TransportType = 'flash';
+
+          // window.WEB_SOCKET_SWF_LOCATION = root + "/WebSocketMain.swf";
+          window.WEB_SOCKET_SWF_LOCATION = "https://s3.amazonaws.com/uploadcare-static/WebSocketMainInsecure.swf"
+          WebSocket.__addTask(function() {
+            Pusher.ready();
+          })
+          WebSocket.__initialize();
+        } else {
+          // Flash must not be installed
+          Pusher.Transport = null;
+          Pusher.TransportType = 'none';
+          Pusher.ready();
+        }
+      }
+    }
+  }();
+
+  // Allows calling a function when the document body is available
+  var ondocumentbody = function(callback) {
+    var load_body = function() {
+      document.body ? callback() : setTimeout(load_body, 0);
+    }
+    load_body();
+  };
+
+  var initializeOnDocumentBody = function() {
+    ondocumentbody(initialize);
+  }
+
+  if (deps.length > 0) {
+    _require(deps, initializeOnDocumentBody);
+  } else {
+    initializeOnDocumentBody();
+  }
+})();
+
+
+this.Pusher = Pusher;
+
+}).call(uploadcare);
+(function() {
+  var $,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  $ = uploadcare.jQuery;
+
+  uploadcare.namespace('utils.pusher', function(ns) {
+    var ManagedPusher, pushers, _ref;
+    pushers = {};
+    uploadcare.Pusher.prototype.constructor = uploadcare.Pusher;
+    ManagedPusher = (function(_super) {
+      __extends(ManagedPusher, _super);
+
+      function ManagedPusher() {
+        _ref = ManagedPusher.__super__.constructor.apply(this, arguments);
+        return _ref;
+      }
+
+      ManagedPusher.prototype.subscribe = function(name) {
+        if (this.disconnectTimeout) {
+          clearTimeout(this.disconnectTimeout);
+          this.disconnectTimeout = null;
+        }
+        this.connect();
+        return ManagedPusher.__super__.subscribe.apply(this, arguments);
+      };
+
+      ManagedPusher.prototype.unsubscribe = function(name) {
+        var _this = this;
+        ManagedPusher.__super__.unsubscribe.apply(this, arguments);
+        if ($.isEmptyObject(this.channels.channels)) {
+          return this.disconnectTimeout = setTimeout(function() {
+            _this.disconnectTimeout = null;
+            return _this.disconnect();
+          }, 5000);
+        }
+      };
+
+      return ManagedPusher;
+
+    })(uploadcare.Pusher);
+    return ns.getPusher = function(key) {
+      if (pushers[key] == null) {
+        pushers[key] = new ManagedPusher(key);
+      }
+      pushers[key].connect();
+      return pushers[key];
+    };
+  });
+
+}).call(this);
 (function() {
   var $, pusher, utils,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -8212,9 +8001,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     ns.UrlFile = (function(_super) {
       __extends(UrlFile, _super);
 
+      UrlFile.prototype.sourceName = 'url';
+
       UrlFile.prototype.allEvents = 'progress success error fail';
 
-      function UrlFile(settings, __url) {
+      function UrlFile(__url) {
         var err, filename;
         this.__url = __url;
         this.__listenWatcher = __bind(this.__listenWatcher, this);
@@ -8242,11 +8033,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         return this.__notifyApi();
       };
 
-      UrlFile.prototype.setSourceInfo = function(sourceInfo) {
-        this.sourceInfo = sourceInfo;
-        return this.__notifyApi();
-      };
-
       UrlFile.prototype.__startUpload = function() {
         var data, df, pollWatcher, pusherWatcher,
           _this = this;
@@ -8257,12 +8043,10 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           pub_key: this.settings.publicKey,
           source_url: this.__url,
           filename: this.__realFileName || '',
+          source: this.sourceInfo.source,
           store: this.settings.doNotStore ? '' : 'auto',
           jsonerrors: 1
         };
-        if (this.sourceInfo) {
-          data.source = this.sourceInfo.source;
-        }
         utils.defer(function() {
           if (_this.apiDeferred.state() !== 'pending') {
             return;
@@ -8415,7 +8199,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     ns.UploadedFile = (function(_super) {
       __extends(UploadedFile, _super);
 
-      function UploadedFile(settings, fileIdOrUrl) {
+      UploadedFile.prototype.sourceName = 'uploaded';
+
+      function UploadedFile(fileIdOrUrl) {
         var cdnUrl;
         UploadedFile.__super__.constructor.apply(this, arguments);
         cdnUrl = utils.splitCdnUrl(fileIdOrUrl);
@@ -8435,7 +8221,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
     return ns.ReadyFile = (function(_super) {
       __extends(ReadyFile, _super);
 
-      function ReadyFile(settings, data) {
+      ReadyFile.prototype.sourceName = 'uploaded';
+
+      function ReadyFile(data) {
         ReadyFile.__super__.constructor.apply(this, arguments);
         if (!data) {
           this.__rejectApi('deleted');
@@ -8760,12 +8548,17 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       return ns.filesFrom(type, [data], s)[0];
     };
     ns.filesFrom = function(type, data, s) {
-      var part, _i, _len, _results;
+      var info, param, _i, _len, _results;
       s = settings.build(s || {});
       _results = [];
       for (_i = 0, _len = data.length; _i < _len; _i++) {
-        part = data[_i];
-        _results.push(new converters[type](s, part).promise());
+        param = data[_i];
+        info = null;
+        if ($.isArray(param)) {
+          info = param[1];
+          param = param[0];
+        }
+        _results.push(new converters[type](param, s, info).promise());
       }
       return _results;
     };
@@ -9253,7 +9046,13 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.container.find('.uploadcare-dialog-url-form').on('submit', function() {
           var url;
           if (url = fixUrl(input.val())) {
-            _this.dialogApi.addFiles('url', [url]);
+            _this.dialogApi.addFiles('url', [
+              [
+                url, {
+                  source: 'url-tab'
+                }
+              ]
+            ]);
             input.val('');
           }
           return false;
@@ -9397,10 +9196,15 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         }
         ctx.drawImage(video, 0, 0, w, h);
         return utils.canvasToBlob(canvas, 'image/jpeg', 0.9, function(blob) {
-          canvas.width = 1;
-          canvas.height = 1;
+          canvas.width = canvas.height = 1;
           blob.name = "camera.jpg";
-          _this.dialogApi.addFiles('object', [blob]);
+          _this.dialogApi.addFiles('object', [
+            [
+              blob, {
+                source: 'camera'
+              }
+            ]
+          ]);
           return _this.dialogApi.switchTab('preview');
         });
       };
@@ -9488,7 +9292,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         });
         iframe = this.iframe[0].contentWindow;
         utils.registerMessage('file-selected', iframe, function(message) {
-          var file, info, url;
+          var file, sourceInfo, url;
           url = (function() {
             var key, type, _i, _len, _ref1;
             if (message.alternatives) {
@@ -9505,20 +9309,16 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
             }
             return message.url;
           })();
-          file = new files.UrlFile(_this.settings, url);
+          sourceInfo = $.extend({
+            source: _this.name
+          }, message.info || {});
+          file = new files.UrlFile(url, _this.settings, sourceInfo);
           if (message.filename) {
             file.setName(message.filename);
           }
           if (message.is_image != null) {
             file.setIsImage(message.is_image);
           }
-          info = {
-            source: _this.name
-          };
-          if (message.info) {
-            $.extend(info, message.info);
-          }
-          file.setSourceInfo(info);
           return _this.dialogApi.addFiles([file.promise()]);
         });
         utils.registerMessage('open-new-window', iframe, function(message) {
@@ -9620,18 +9420,19 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
 }).call(this);
 (function() {
-  var $, CropWidget, progress, t, tpl, utils, _ref, _ref1, _ref2, _ref3,
+  var $, CropWidget, URL, progress, t, tpl, utils, _ref, _ref1, _ref2, _ref3, _ref4, _ref5,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.crop, CropWidget = _ref2.CropWidget), (_ref3 = uploadcare.locale, t = _ref3.t);
+  utils = uploadcare.utils, (_ref = uploadcare.utils, (_ref1 = _ref.abilities, URL = _ref1.URL)), (_ref2 = uploadcare.ui, progress = _ref2.progress), (_ref3 = uploadcare.templates, tpl = _ref3.tpl), $ = uploadcare.jQuery, (_ref4 = uploadcare.crop, CropWidget = _ref4.CropWidget), (_ref5 = uploadcare.locale, t = _ref5.t);
 
   uploadcare.namespace('widget.tabs', function(ns) {
     return ns.PreviewTab = (function(_super) {
       __extends(PreviewTab, _super);
 
       function PreviewTab() {
+        this.__tryToLoadImage = __bind(this.__tryToLoadImage, this);
         this.__setFile = __bind(this.__setFile, this);
         var _this = this;
         PreviewTab.__super__.constructor.apply(this, arguments);
@@ -9640,10 +9441,11 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         });
         this.dialogApi.fileColl.onAdd.add(this.__setFile);
         this.widget = null;
+        this.__state = null;
       }
 
       PreviewTab.prototype.__setFile = function(file) {
-        var ifCur,
+        var ifCur, tryToLoadImage,
           _this = this;
         this.file = file;
         ifCur = function(fn) {
@@ -9653,24 +9455,58 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
             }
           };
         };
-        this.file.progress(ifCur(utils.once(function(info) {
-          return _this.__setState('unknown', {
-            file: info.incompleteFileInfo
-          });
-        })));
-        this.file.done(ifCur(function(file) {
-          var state;
-          state = file.isImage ? 'image' : 'regular';
-          return _this.__setState(state, {
-            file: file
-          });
+        tryToLoadImage = utils.once(this.__tryToLoadImage);
+        this.__setState('unknown', {});
+        this.file.progress(ifCur(function(info) {
+          var label, source;
+          info = info.incompleteFileInfo;
+          label = (info.name || "") + utils.readableFileSize(info.size, '', ', ');
+          _this.element('label').text(label);
+          source = info.sourceInfo;
+          if (source.source === 'local' && source.file) {
+            return tryToLoadImage(file, source.file);
+          }
         }));
-        return this.file.fail(ifCur(function(error, file) {
+        this.file.done(ifCur(function(info) {
+          var state;
+          state = info.isImage ? 'image' : 'regular';
+          if (state !== 'image' || state !== _this.__state) {
+            return _this.__setState(state, {
+              file: info
+            });
+          }
+        }));
+        return this.file.fail(ifCur(function(error, info) {
           return _this.__setState('error', {
             error: error,
-            file: file
+            file: info
           });
         }));
+      };
+
+      PreviewTab.prototype.__tryToLoadImage = function(file, blob) {
+        var _this = this;
+        if (file.state() !== 'pending' || !blob.size || blob.size >= this.settings.multipartMinSize) {
+          return;
+        }
+        return utils.image.drawFileToCanvas(blob, 1550, 924, '#efefef', this.settings.imagePreviewMaxSize).done(function(canvas, size) {
+          return utils.canvasToBlob(canvas, 'image/jpeg', 0.95, function(blob) {
+            var src;
+            canvas.width = canvas.height = 1;
+            if (file.state() !== 'pending' || _this.file !== file) {
+              return;
+            }
+            src = URL.createObjectURL(blob);
+            _this.dialogApi.always(function() {
+              return URL.revokeObjectURL(src);
+            });
+            _this.__setState('image', {
+              file: false
+            });
+            _this.element('image').attr('src', src);
+            return _this.initImage(size);
+          });
+        });
       };
 
       PreviewTab.prototype.element = function(name) {
@@ -9678,21 +9514,23 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       };
 
       PreviewTab.prototype.__setState = function(state, data) {
+        var imgInfo;
+        this.__state = state;
         this.container.empty().append(tpl("tab-preview-" + state, data));
         if (state === 'unknown' && this.settings.crop) {
           this.element('done').hide();
         }
-        if (state === 'image') {
-          return this.initImage(data.file);
+        if (state === 'image' && data.file) {
+          imgInfo = data.file.originalImageInfo;
+          return this.initImage([imgInfo.width, imgInfo.height], data.file.cdnUrlModifiers);
         }
       };
 
-      PreviewTab.prototype.initImage = function(info) {
-        var done, img, imgLoader, imgSize, startCrop,
+      PreviewTab.prototype.initImage = function(imgSize, cdnModifiers) {
+        var done, img, imgLoader, startCrop,
           _this = this;
         img = this.element('image');
         done = this.element('done');
-        imgSize = [info.originalImageInfo.width, info.originalImageInfo.height];
         imgLoader = utils.imageLoader(img.attr('src')).done(function() {
           return _this.element('root').addClass('uploadcare-dialog-preview--loaded');
         }).fail(function() {
@@ -9704,7 +9542,9 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         startCrop = function() {
           done.removeClass('uploadcare-disabled-el');
           _this.widget = new CropWidget(img, imgSize, _this.settings.crop[0]);
-          _this.widget.setSelectionFromModifiers(info.cdnUrlModifiers);
+          if (cdnModifiers) {
+            _this.widget.setSelectionFromModifiers(cdnModifiers);
+          }
           return done.on('click', function() {
             var newFile;
             newFile = _this.widget.applySelectionToFile(_this.file);
@@ -9767,6 +9607,257 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   });
 
 }).call(this);
+// from https://github.com/homm/jquery-ordering
+
+(function($) {
+  function nearestFinder (targets) {
+    this.targets = targets;
+    this.last = null;
+    this.update();
+  }
+  nearestFinder.prototype = {
+    update: function() {
+      var rows = {};
+
+      this.targets.each(function(i) {
+        var offset = $(this).offset();
+        if ( ! (offset.top in rows)) {
+          rows[offset.top] = [];
+        }
+        rows[offset.top].push([offset.left + this.offsetWidth/2, this]);
+      });
+
+      this.rows = rows;
+    },
+
+    find: function(x, y) {
+      var minDistance = Infinity;
+      var rows = this.rows;
+      var nearestRow, top, nearest;
+
+      for (top in rows) {
+        var distance = Math.abs(top - y);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestRow = rows[top];
+        }
+      }
+
+      minDistance = Math.abs(nearestRow[0][0] - x);
+      nearest = nearestRow[0][1];
+      for (var i = 1; i < nearestRow.length; i++) {
+        var distance = Math.abs(nearestRow[i][0] - x);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearest = nearestRow[i][1];
+        }
+      }
+
+      return nearest;
+    },
+
+    findNotLast: function(x, y) {
+      var nearest = this.find(x, y);
+
+      if (this.last && nearest && this.last == nearest) {
+        return null;
+      }
+
+      return this.last = nearest;
+    }
+  };
+
+
+  var movableName = 'uploadcareMovable';
+  var sortableName = 'uploadcareSortable';
+  var extend = {};
+  extend[movableName] = function(o) {
+    o = $.extend({
+      distance: 4,
+      anyButton: false,
+      axis: false,
+      zIndex: 1000,
+      start: $.noop,
+      move: $.noop,
+      finish: $.noop,
+      items: null,
+      keepFake: false,
+      touch: true
+    }, o);
+
+    function fixTouch(e) {
+      if ( ! o.touch) {
+        return;
+      }
+      var touch, s;
+      s = e.originalEvent.touches;
+      if (s && s.length) {
+        touch = s[0];
+      } else {
+        s = e.originalEvent.changedTouches;
+        if (s && s.length) {
+          touch = s[0];
+        } else {
+          return;
+        }
+      }
+      e.pageX = touch.pageX;
+      e.pageY = touch.pageY;
+      e.which = 1;
+    }
+
+    var events = 'mousedown.{} touchstart.{}'.replace(/\{}/g, movableName);
+    this.on(events, o.items, null, function(eDown) {
+      fixTouch(eDown);
+
+      if ( ! o.anyButton && eDown.which != 1) {
+        return;
+      }
+      eDown.preventDefault();
+
+      var dragged = false;
+      var $dragged = $(this);
+      var $fake = false;
+      var originalPos = $dragged.position();  // offset parent
+
+      originalPos.top += $dragged.offsetParent().scrollTop();
+      originalPos.left += $dragged.offsetParent().scrollLeft();
+
+      var events = 'mousemove.{} touchmove.{}'.replace(/\{}/g, movableName);
+      $(document).on(events, function(eMove) {
+        fixTouch(eMove);
+
+        if ( ! dragged && (Math.abs(eMove.pageX - eDown.pageX) > o.distance || Math.abs(eMove.pageY - eDown.pageY) > o.distance)) {
+          dragged = true;
+          $fake = $dragged.clone()
+            .css({
+              position: 'absolute',
+              zIndex: o.zIndex,
+              width: $dragged.width()
+            })
+            .appendTo($dragged.offsetParent());
+          o.start({
+            event: eMove,
+            dragged: $dragged,
+            fake: $fake
+          });
+        }
+
+        if ( ! dragged) {
+          return;
+        }
+        eMove.preventDefault();
+
+        var dx = o.axis == 'y' ? 0 : eMove.pageX - eDown.pageX;
+        var dy = o.axis == 'x' ? 0 : eMove.pageY - eDown.pageY;
+        $fake.css({left: dx + originalPos.left, top: dy + originalPos.top});
+        o.move({
+          event: eMove,
+          dragged: $dragged,
+          fake: $fake,
+          dx: dx,
+          dy: dy
+        });
+      });
+
+      var events = 'mouseup.{} touchend.{} touchcancel.{} touchleave.{}';
+      $(document).on(events.replace(/\{}/g, movableName), function(eUp) {
+        fixTouch(eUp);
+
+        var events = 'mousemove.{} touchmove.{} mouseup.{} touchend.{} touchcancel.{} touchleave.{}';
+        $(document).off(events.replace(/\{}/g, movableName));
+
+        if ( ! dragged) {
+          return;
+        }
+        eUp.preventDefault();
+
+        var dx = eUp.pageX - eDown.pageX;
+        var dy = eUp.pageY - eDown.pageY;
+        dragged = false;
+        o.finish({
+          event: eUp,
+          dragged: $dragged,
+          fake: $fake,
+          dx: dx,
+          dy: dy
+        });
+        if ( ! o.keepFake) {
+          $fake.remove();
+        }
+      });
+    });
+  };
+
+  extend[sortableName] = function(o) {
+    var oMovable = $.extend({
+      items: '>*'
+    }, o);
+    var o = $.extend({
+      checkBounds: function () {return true;},
+      start: $.noop,
+      attach: $.noop,
+      move: $.noop,
+      finish: $.noop
+    }, o);
+    var finder;
+    var initialNext = false;
+    var parent = this;
+
+    oMovable.start = function(info) {
+      o.start(info);
+      finder = new nearestFinder(parent.find(oMovable.items).not(info.fake));
+      initialNext = info.dragged.next();
+    };
+
+    oMovable.move = function(info) {
+      info.nearest = null;
+
+      if (o.checkBounds(info)) {
+        var offset = info.fake.offset();
+        var nearest = finder.findNotLast(
+            offset.left + info.dragged.width() / 2, offset.top);
+        info.nearest = $(nearest);
+
+        if (nearest && nearest != info.dragged[0]) {
+          if (info.dragged.nextAll().filter(nearest).length > 0) {
+            info.dragged.insertAfter(nearest);
+          } else {
+            info.dragged.insertBefore(nearest);
+          }
+          o.attach(info);
+          finder.last = null;
+          finder.update();
+        }
+      } else if (finder.last !== null) {
+        finder.last = null;
+        if (initialNext.length) {
+          info.dragged.insertBefore(initialNext);
+        } else {
+          info.dragged.parent().append(info.dragged);
+        }
+        o.attach(info);
+        finder.update();
+      }
+
+      o.move(info);
+    };
+
+    oMovable.finish = function(info) {
+      var offset = info.fake.offset();
+      info.nearest = null;
+      if (o.checkBounds(info)) {
+        info.nearest = $(finder.find(
+            offset.left + info.dragged.width() / 2, offset.top));
+      }
+      o.finish(info);
+      finder = null;
+    };
+
+    return this[movableName](oMovable);
+  };
+  $.fn.extend(extend);
+})(uploadcare.jQuery);
 (function() {
   var $, progress, t, tpl, utils, _ref, _ref1, _ref2,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -10771,13 +10862,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
   var expose, key,
     __hasProp = {}.hasOwnProperty;
 
-  uploadcare.version = '2.5.9';
-
   expose = uploadcare.expose;
-
-  expose('version');
-
-  expose('jQuery');
 
   expose('globals', uploadcare.settings.common);
 
@@ -10820,8 +10905,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
   expose('Widget');
 
-  expose('plugin', uploadcare.utils.plugin);
-
   expose('tabsCss');
 
   expose('dragdrop.support');
@@ -10830,9 +10913,5 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
   expose('dragdrop.uploadDrop');
 
-  expose('whenReady', function(fn) {
-    return fn();
-  });
-
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.5.9/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.6.0/uploadcare/'));
