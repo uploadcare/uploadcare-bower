@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.6.0)
- * Date: 2016-01-09 17:48:10 +0300
- * Rev: f3718f9f2b
+ * Uploadcare (2.7.0)
+ * Date: 2016-03-06 20:03:05 +0300
+ * Rev: 047a892ec3
  */
 ;(function(uploadcare, SCRIPT_BASE){
 (function() {
@@ -40,7 +40,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.6.0';
+  uploadcare.version = '2.7.0';
 
   uploadcare.jQuery = jQuery;
 
@@ -5735,6 +5735,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.cdnUrlModifiers = null;
         this.isImage = null;
         this.imageInfo = null;
+        this.mimeType = null;
         this.s3Bucket = null;
         (_base = this.sourceInfo).source || (_base.source = this.sourceName);
         this.onInfoReady = $.Callbacks('once memory');
@@ -5794,6 +5795,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.fileSize = data.size;
         this.isImage = data.is_image;
         this.imageInfo = data.image_info;
+        this.mimeType = data.mime_type;
         this.isStored = data.is_stored;
         this.s3Bucket = data.s3_bucket;
         if (data.default_effects) {
@@ -5834,6 +5836,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           isStored: this.isStored,
           isImage: !this.s3Bucket && this.isImage,
           originalImageInfo: this.imageInfo,
+          mimeType: this.mimeType,
           originalUrl: this.fileId ? urlBase : null,
           cdnUrl: this.fileId ? "" + urlBase + (this.cdnUrlModifiers || '') : null,
           cdnUrlModifiers: this.cdnUrlModifiers,
@@ -9114,9 +9117,15 @@ this.Pusher = Pusher;
       }
 
       CameraTab.prototype.__checkCompatibility = function() {
+        var isHttp, isLocalhost;
         this.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        isHttp = window.location.protocol === 'http:';
+        isLocalhost = window.location.hostname === 'localhost';
+        if (isHttp) {
+          uploadcare.utils.warn('Camera not allowed for HTTP connections. To get access to camera please use HTTPS connection');
+        }
         this.URL = window.URL || window.webkitURL;
-        return !!this.getUserMedia && Uint8Array;
+        return !!this.getUserMedia && Uint8Array && !(isHttp && !isLocalhost);
       };
 
       CameraTab.prototype.__requestCamera = function() {
@@ -9493,7 +9502,7 @@ this.Pusher = Pusher;
           return utils.canvasToBlob(canvas, 'image/jpeg', 0.95, function(blob) {
             var src;
             canvas.width = canvas.height = 1;
-            if (file.state() !== 'pending' || _this.file !== file) {
+            if (file.state() !== 'pending' || _this.dialogApi.state() !== 'pending' || _this.file !== file) {
               return;
             }
             src = URL.createObjectURL(blob);
@@ -10739,8 +10748,14 @@ this.Pusher = Pusher;
       return initializeWidget(el);
     };
     initializeWidget = function(input, targetClass) {
-      var Widget, api, s, widget;
-      input = $(input).eq(0);
+      var Widget, api, inputArr, s, widget;
+      inputArr = $(input);
+      if (inputArr.length === 0) {
+        throw new Error("No DOM elements found matching selector");
+      } else if (inputArr.length > 1) {
+        utils.warn("There are multiple DOM elements matching selector");
+      }
+      input = inputArr.eq(0);
       s = settings.build(input.data());
       Widget = s.multiple ? ns.widget.MultipleWidget : ns.widget.Widget;
       if (targetClass && Widget !== targetClass) {
@@ -10914,4 +10929,4 @@ this.Pusher = Pusher;
   expose('dragdrop.uploadDrop');
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.6.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.7.0/uploadcare/'));
