@@ -5,7 +5,9 @@
  */
 ;(function(uploadcare, SCRIPT_BASE){
 (function() {
-  window.uploadcare = {};
+  if ( typeof exports === 'undefined' ) {
+    window.uploadcare = {};
+  }
 
   uploadcare.namespace = function(path, fn) {
     var part, target, _i, _len, _ref;
@@ -25,7 +27,11 @@
     var last, part, parts, source, target, _i, _len;
     parts = key.split('.');
     last = parts.pop();
-    target = window.uploadcare;
+    if ( window.uploadcare ) {
+      target = window.uploadcare;
+    } else {
+      target = exports;
+    }
     source = uploadcare;
     for (_i = 0, _len = parts.length; _i < _len; _i++) {
       part = parts[_i];
