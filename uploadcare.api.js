@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.8.0)
- * Date: 2016-03-14 17:51:13 +0300
- * Rev: 44f8f878e4
+ * Uploadcare (2.8.1)
+ * Date: 2016-03-18 19:06:00 +0300
+ * Rev: f37f6c8119
  */
 ;(function(uploadcare, SCRIPT_BASE){
 (function() {
@@ -48,7 +48,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.8.0';
+  uploadcare.version = '2.8.1';
 
   uploadcare.jQuery = jQuery;
 
@@ -4157,16 +4157,13 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var expose, key,
-    __hasProp = {}.hasOwnProperty;
+  var expose, key;
 
   expose = uploadcare.expose;
 
   expose('globals', uploadcare.settings.common);
 
-  expose('start');
-
-  expose('initialize');
+  expose('start', uploadcare.settings.common);
 
   expose('fileFrom');
 
@@ -4177,15 +4174,13 @@ this.Pusher = Pusher;
   expose('loadFileGroup');
 
   expose('locales', (function() {
-    var _ref, _results;
-    _ref = uploadcare.locale.translations;
+    var _results;
     _results = [];
-    for (key in _ref) {
-      if (!__hasProp.call(_ref, key)) continue;
+    for (key in uploadcare.locale.translations) {
       _results.push(key);
     }
     return _results;
   })());
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.8.0/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.8.1/uploadcare/'));
