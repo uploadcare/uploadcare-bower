@@ -1,14 +1,16 @@
 Uploadcare Widget
 =================
 
-[Uploadcare](https://uploadcare.com) is an IaaS for file uploads,
+[Uploadcare](https://uploadcare.com) is an PaaS for file uploads,
 cloud storage and on-the-fly image transformations.
 
-This package contains HTML5 widget and JavaScript API:
+This package contains compiled version of the widget.
 
+  * [Source code](https://github.com/uploadcare/uploadcare-widget)
+  * [Issues](https://github.com/uploadcare/uploadcare-widget/issues)
+  * [License](https://github.com/uploadcare/uploadcare-widget/blob/master/LICENSE)
   * [Widget documentation](https://uploadcare.com/documentation/widget/)
   * [JavaScript API documentation](https://uploadcare.com/documentation/javascript_api/)
-
 
 ## Files
 
