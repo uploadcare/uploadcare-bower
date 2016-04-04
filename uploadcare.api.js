@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.8.1)
- * Date: 2016-03-18 19:06:00 +0300
- * Rev: f37f6c8119
+ * Uploadcare (2.8.2)
+ * Date: 2016-04-04 16:38:30 +0300
+ * Rev: cbeb45c654
  */
 ;(function(uploadcare, SCRIPT_BASE){
 (function() {
@@ -48,7 +48,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.8.1';
+  uploadcare.version = '2.8.2';
 
   uploadcare.jQuery = jQuery;
 
@@ -493,6 +493,12 @@ if ( window.XDomainRequest ) {
       var def;
       def = $.Deferred();
       $(new Image).on('load', def.resolve).on('error', def.reject).attr('src', src);
+      return def.promise();
+    };
+    ns.videoLoader = function(src) {
+      var def;
+      def = $.Deferred();
+      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).load();
       return def.promise();
     };
     ns.defer = function(fn) {
@@ -1171,6 +1177,10 @@ if ( window.XDomainRequest ) {
               title: 'Crop and add this image',
               done: 'Done',
               free: 'free'
+            },
+            video: {
+              title: 'Add this video?',
+              change: 'Cancel'
             },
             error: {
               "default": {
@@ -4183,4 +4193,4 @@ this.Pusher = Pusher;
   })());
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.8.1/uploadcare/'));
+}({}, '//ucarecdn.com/widget/2.8.2/uploadcare/'));
