@@ -1,20 +1,25 @@
 /*
- * Uploadcare (2.8.2)
- * Date: 2016-04-04 16:38:30 +0300
- * Rev: cbeb45c654
+ * Uploadcare (2.9.0)
+ * Date: 2016-05-13 16:51:44 +0000
+ * Rev: 55ded7fe23
  */
-;(function(uploadcare, SCRIPT_BASE){
-(function() {
-  var __exports;
-
-  __exports = {};
-
-  if (typeof module === "object" && typeof module.exports === "object") {
-    module.exports = __exports;
-  } else {
-    window.uploadcare = __exports;
+;(function(global, factory) {
+  // Not a browser enviroment at all: not Browserify/Webpack.
+  if ( ! global.document) {
+    return;
   }
 
+  if (typeof module === "object" && module.exports) {
+    module.exports = factory(global, require("jquery"));
+  } else {
+    global.uploadcare = factory(global);
+  }
+
+}(typeof window !== "undefined" ? window : this, function(window, jQuery) {
+  var uploadcare, document = window.document;
+
+(function() {
+  uploadcare = {__exports: {}};
   uploadcare.namespace = function(path, fn) {
     var part, target, _i, _len, _ref;
     target = uploadcare;
@@ -33,7 +38,7 @@
     var last, part, parts, source, target, _i, _len;
     parts = key.split('.');
     last = parts.pop();
-    target = __exports;
+    target = uploadcare.__exports;
     source = uploadcare;
     for (_i = 0, _len = parts.length; _i < _len; _i++) {
       part = parts[_i];
@@ -48,9 +53,13 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.8.2';
+  uploadcare.version = '2.9.0';
 
-  uploadcare.jQuery = jQuery;
+  uploadcare.jQuery = jQuery || window.jQuery;
+
+  if (typeof uploadcare.jQuery === 'undefined') {
+    throw new ReferenceError('jQuery is not defined');
+  }
 
   expose = uploadcare.expose;
 
@@ -62,15 +71,11 @@
     return fn(uploadcare);
   });
 
-  expose('whenReady', function(fn) {
-    return fn();
-  });
-
 }).call(this);
 // from https://github.com/jaubourg/ajaxHooks/blob/master/src/xdr.js
 
 if ( window.XDomainRequest ) {
-	jQuery.ajaxTransport(function( s ) {
+	uploadcare.jQuery.ajaxTransport(function( s ) {
 		if ( s.crossDomain && s.async ) {
 			if ( s.timeout ) {
 				s.xdrTimeout = s.timeout;
@@ -865,6 +870,8 @@ if ( window.XDomainRequest ) {
       inputAcceptTypes: '',
       doNotStore: false,
       publicKey: null,
+      secureSignature: '',
+      secureExpire: '',
       pusherKey: '79ae88bd931ea68464d9',
       cdnBase: 'https://ucarecdn.com',
       urlBase: 'https://upload.uploadcare.com',
@@ -877,7 +884,7 @@ if ( window.XDomainRequest ) {
       multipartMaxAttempts: 3,
       parallelDirectUploads: 10,
       passWindowOpen: false,
-      scriptBase: typeof SCRIPT_BASE !== "undefined" && SCRIPT_BASE !== null ? SCRIPT_BASE : '',
+      scriptBase: "//ucarecdn.com/widget/" + uploadcare.version + "/uploadcare/",
       debugUploads: false
     };
     presets = {
@@ -1981,6 +1988,8 @@ if ( window.XDomainRequest ) {
           }
           formData = new FormData();
           formData.append('UPLOADCARE_PUB_KEY', _this.settings.publicKey);
+          formData.append('signature', _this.settings.secureSignature);
+          formData.append('expire', _this.settings.secureExpire);
           formData.append('UPLOADCARE_STORE', _this.settings.doNotStore ? '' : 'auto');
           formData.append('file', _this.__file, _this.fileName);
           formData.append('file_name', _this.fileName);
@@ -2048,6 +2057,8 @@ if ( window.XDomainRequest ) {
           _this = this;
         data = {
           UPLOADCARE_PUB_KEY: this.settings.publicKey,
+          signature: this.settings.secureSignature,
+          expire: this.settings.secureExpire,
           filename: this.fileName,
           source: this.sourceInfo.source,
           size: this.fileSize,
@@ -2217,7 +2228,7 @@ if ( window.XDomainRequest ) {
           action: targetUrl,
           enctype: 'multipart/form-data',
           target: iframeId
-        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(formParam('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto')).append(formParam('UPLOADCARE_SOURCE', this.sourceInfo.source)).append(this.__input).css('display', 'none').appendTo('body').submit();
+        }).append(formParam('UPLOADCARE_PUB_KEY', this.settings.publicKey)).append(formParam('UPLOADCARE_SIGNATURE', this.settings.secureSignature)).append(formParam('UPLOADCARE_EXPIRE', this.settings.secureExpire)).append(formParam('UPLOADCARE_FILE_ID', this.fileId)).append(formParam('UPLOADCARE_STORE', this.settings.doNotStore ? '' : 'auto')).append(formParam('UPLOADCARE_SOURCE', this.sourceInfo.source)).append(this.__input).css('display', 'none').appendTo('body').submit();
         return df.always(this.__cleanUp);
       };
 
@@ -3635,6 +3646,8 @@ this.Pusher = Pusher;
         pollWatcher = new PollWatcher(this.settings);
         data = {
           pub_key: this.settings.publicKey,
+          signature: this.settings.secureSignature,
+          expire: this.settings.secureExpire,
           source_url: this.__url,
           filename: this.__realFileName || '',
           source: this.sourceInfo.source,
@@ -4193,4 +4206,7 @@ this.Pusher = Pusher;
   })());
 
 }).call(this);
-}({}, '//ucarecdn.com/widget/2.8.2/uploadcare/'));
+
+
+  return uploadcare.__exports;
+}));
