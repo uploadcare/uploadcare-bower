@@ -2769,7 +2769,7 @@ this.Pusher = Pusher;
       publicDefaults[$.camelCase(key)] = value;
     }
     expose('defaults', publicDefaults);
-    ns.globals = utils.once(function() {
+    ns.globals = function() {
       var fallback, values;
       values = {};
       for (key in defaults) {
@@ -2779,8 +2779,8 @@ this.Pusher = Pusher;
         values[$.camelCase(key)] = value !== void 0 ? value : fallback;
       }
       return normalize(values);
-    });
-    ns.common = utils.once(function(settings) {
+    };
+    ns.common = function(settings) {
       var result;
       result = normalize($.extend({}, ns.globals(), settings || {}));
       if (!result.publicKey) {
@@ -2788,7 +2788,7 @@ this.Pusher = Pusher;
       }
       ns.waitForSettings.fire(result);
       return result;
-    });
+    };
     ns.build = function(settings) {
       var result;
       result = $.extend({}, ns.common());
@@ -4992,8 +4992,8 @@ this.Pusher = Pusher;
   this.JST || (this.JST = {});
   this.JST["uploadcare/templates/tab-preview-error"] = function(obj){var __p=[],print=function(){__p.push.apply(__p,arguments);};with(obj||{}){__p.push('<div class="uploadcare-dialog-error-tab-wrap uloadcare-dialog-error-tab-',(''+ error ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'"><!--\n  --><div class="uploadcare-dialog-error-tab-wrap2">\n\n    <div class="uploadcare-dialog-error-tab-illustration"></div>\n\n    <div class="uploadcare-dialog-title">',(''+
         t('dialog.tabs.preview.error.'+error+'.title') || t('dialog.tabs.preview.error.default.title')
-      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-normal-text">',(''+ 
-        t('dialog.tabs.preview.error.'+error+'.text') || t('dialog.tabs.preview.error.default.text') 
+      ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-normal-text">',(''+
+        t('dialog.tabs.preview.error.'+error+'.text') || t('dialog.tabs.preview.error.default.text')
       ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n\n    <div class="uploadcare-dialog-button-success uploadcare-dialog-preview-back"\n         tabindex="0" role="button"\n            >',(''+ t('dialog.tabs.preview.error.'+error+'.back') || t('dialog.tabs.preview.error.default.back') ).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g,'&#x2F;'),'</div>\n  </div>\n</div>\n');}return __p.join('');};
 }).call(this);
 (function() {
@@ -5083,7 +5083,7 @@ this.Pusher = Pusher;
 }).call(this);
 /**
  * jquery.Jcrop.js v0.9.10
- * jQuery Image Cropping Plugin - released under MIT License 
+ * jQuery Image Cropping Plugin - released under MIT License
  * Author: Kelly Hallman <khallman@gmail.com>
  * http://github.com/tapmodo/Jcrop
  * Copyright (c) 2008-2012 Tapmodo Interactive LLC {{{
@@ -5252,7 +5252,7 @@ this.Pusher = Pusher;
         if ((ord === 'move') && !options.allowMove) {
           return false;
         }
-        
+
         // Fix position of crop area when dragged the very first time.
         // Necessary when crop image is in a hidden element when page is loaded.
         docOffset = getPos($img);
@@ -5359,12 +5359,12 @@ this.Pusher = Pusher;
         $origimg.width($origimg[0].width);
         $origimg.height($origimg[0].height);
       } else {
-        // Obtain dimensions from temporary image in case the original is not loaded yet (e.g. IE 7.0). 
+        // Obtain dimensions from temporary image in case the original is not loaded yet (e.g. IE 7.0).
         var tempImage = new Image();
         tempImage.src = $origimg[0].src;
         $origimg.width(tempImage.width);
         $origimg.height(tempImage.height);
-      } 
+      }
 
       var $img = $origimg.clone().removeAttr('id').css(img_css).show();
 
@@ -5394,24 +5394,24 @@ this.Pusher = Pusher;
 
     var $img2 = $('<div />'),
 
-        $img_holder = $('<div />') 
+        $img_holder = $('<div />')
         .width('100%').height('100%').css({
           zIndex: 310,
           position: 'absolute',
           overflow: 'hidden'
         }),
 
-        $hdl_holder = $('<div />') 
-        .width('100%').height('100%').css('zIndex', 320), 
+        $hdl_holder = $('<div />')
+        .width('100%').height('100%').css('zIndex', 320),
 
-        $sel = $('<div />') 
+        $sel = $('<div />')
         .css({
           position: 'absolute',
           zIndex: 600
         }).dblclick(function(){
           var c = Coords.getFixed();
           options.onDblClick.call(api,c);
-        }).insertBefore($img).append($img_holder, $hdl_holder); 
+        }).insertBefore($img).append($img_holder, $hdl_holder);
 
     if (img_mode) {
 
@@ -5441,7 +5441,7 @@ this.Pusher = Pusher;
     // }}}
     // }}}
     // Internal Modules {{{
-    // Touch Module {{{ 
+    // Touch Module {{{
     var Touch = (function () {
       // Touch support detection function adapted (under MIT License)
       // from code by Jeffrey Sambells - http://github.com/iamamused/
@@ -5572,8 +5572,8 @@ this.Pusher = Pusher;
         // This function could use some optimization I think...
         var aspect = options.aspectRatio,
             min_x = options.minSize[0] / xscale,
-            
-            
+
+
             //min_y = options.minSize[1]/yscale,
             max_x = options.maxSize[0] / xscale,
             max_y = options.maxSize[1] / yscale,
@@ -6092,7 +6092,7 @@ this.Pusher = Pusher;
       {
         seehandles = false;
         $hdl_holder.hide();
-      } 
+      }
       //}}}
       function animMode(v) //{{{
       {
@@ -6103,13 +6103,13 @@ this.Pusher = Pusher;
           animating = false;
           enableHandles();
         }
-      } 
+      }
       //}}}
       function done() //{{{
       {
         animMode(false);
         refresh();
-      } 
+      }
       //}}}
       // Insert draggable elements {{{
       // Insert border divs for outline
@@ -6165,7 +6165,7 @@ this.Pusher = Pusher;
         done: done
       };
     }());
-    
+
     //}}}
     // Tracker Module {{{
     var Tracker = (function () {
@@ -6188,7 +6188,7 @@ this.Pusher = Pusher;
             .bind('mousemove.jcrop',trackMove)
             .bind('mouseup.jcrop',trackUp);
         }
-      } 
+      }
       //}}}
       function toBack() //{{{
       {
@@ -6196,13 +6196,13 @@ this.Pusher = Pusher;
           zIndex: 290
         });
         $(document).unbind('.jcrop');
-      } 
+      }
       //}}}
       function trackMove(e) //{{{
       {
         onMove(mouseAbs(e));
         return false;
-      } 
+      }
       //}}}
       function trackUp(e) //{{{
       {
