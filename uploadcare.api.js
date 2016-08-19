@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.9.0)
- * Date: 2016-05-13 16:51:44 +0000
- * Rev: 55ded7fe23
+ * Uploadcare (2.10.0)
+ * Date: 2016-08-19 13:09:33 +0000
+ * Rev: 5dc4ed7b3a
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.9.0';
+  uploadcare.version = '2.10.0';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -865,7 +865,7 @@ if ( window.XDomainRequest ) {
       multipleMaxStrict: false,
       imageShrink: false,
       pathValue: true,
-      tabs: 'file camera url facebook gdrive dropbox instagram evernote flickr skydrive',
+      tabs: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr skydrive',
       preferredTypes: '',
       inputAcceptTypes: '',
       doNotStore: false,
@@ -889,7 +889,7 @@ if ( window.XDomainRequest ) {
     };
     presets = {
       tabs: {
-        all: 'file camera url facebook gdrive dropbox instagram evernote flickr skydrive box vk huddle',
+        all: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr skydrive box vk huddle',
         "default": defaults.tabs
       }
     };
@@ -1123,6 +1123,7 @@ if ( window.XDomainRequest ) {
             facebook: 'Facebook',
             dropbox: 'Dropbox',
             gdrive: 'Google Drive',
+            gphotos: 'Google Photos',
             instagram: 'Instagram',
             vk: 'VK',
             evernote: 'Evernote',
@@ -1620,7 +1621,7 @@ if ( window.XDomainRequest ) {
       return df.promise();
     };
     ns.shrinkImage = function(img, settings) {
-      var df, h, maxSize, maxSquare, originalW, ratio, run, sH, sW, step, w;
+      var cx, df, h, isChrome, maxSize, maxSquare, originalW, ratio, run, runNative, sH, sW, step, w;
       df = $.Deferred();
       step = 0.71;
       if (img.width * step * img.height * step < settings.size) {
@@ -1633,7 +1634,7 @@ if ( window.XDomainRequest ) {
       h = Math.floor(settings.size / Math.sqrt(settings.size * ratio));
       maxSquare = 5000000;
       maxSize = 4096;
-      (run = function() {
+      run = function() {
         if (sW <= w) {
           df.resolve(img);
           return;
@@ -1668,7 +1669,26 @@ if ( window.XDomainRequest ) {
           df.notify((originalW - sW) / (originalW - w));
           return run();
         });
-      })();
+      };
+      runNative = function() {
+        var canvas, cx;
+        canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        cx = canvas.getContext('2d');
+        cx.imageSmoothingQuality = 'high';
+        cx.drawImage(img, 0, 0, w, h);
+        img.src = '//:0';
+        img.width = img.height = 1;
+        return df.resolve(canvas);
+      };
+      cx = document.createElement('canvas').getContext('2d');
+      isChrome = navigator.userAgent.match(/\ Chrome\//);
+      if ('imageSmoothingQuality' in cx && !isChrome) {
+        runNative();
+      } else {
+        run();
+      }
       return df.promise();
     };
     ns.drawFileToCanvas = function(file, mW, mH, bg, maxSource) {
