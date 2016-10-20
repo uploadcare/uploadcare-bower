@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.0)
- * Date: 2016-08-19 13:09:33 +0000
- * Rev: 5dc4ed7b3a
+ * Uploadcare (2.10.1)
+ * Date: 2016-10-20 20:39:27 +0300
+ * Rev: b9a928091d
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.10.0';
+  uploadcare.version = '2.10.1';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -385,18 +385,67 @@ if ( window.XDomainRequest ) {
 
 }).call(this);
 (function() {
+  var $;
+
+  $ = uploadcare.jQuery;
+
+  uploadcare.namespace('utils', function(ns) {
+    var trackLoading;
+    trackLoading = function(image, src) {
+      var def,
+        _this = this;
+      def = $.Deferred();
+      if (src) {
+        image.src = src;
+      }
+      if (image.complete) {
+        def.resolve(image);
+      } else {
+        $(image).one('load', function() {
+          return def.resolve(image);
+        });
+        $(image).one('error', function() {
+          return def.reject(image);
+        });
+      }
+      return def.promise();
+    };
+    ns.imageLoader = function(image) {
+      if ($.isArray(image)) {
+        return $.when.apply(null, $.map(image, ns.imageLoader));
+      }
+      if (image.src) {
+        return trackLoading(image);
+      } else {
+        return trackLoading(new Image(), image);
+      }
+    };
+    return ns.videoLoader = function(src) {
+      var def;
+      def = $.Deferred();
+      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).load();
+      return def.promise();
+    };
+  });
+
+}).call(this);
+(function() {
   var __slice = [].slice;
 
   uploadcare.namespace('utils', function(ns) {
     var common, messages;
     ns.log = function() {
       var _ref;
-      return (_ref = window.console) != null ? typeof _ref.log === "function" ? _ref.log.apply(_ref, arguments) : void 0 : void 0;
+      try {
+        return (_ref = window.console) != null ? typeof _ref.log === "function" ? _ref.log.apply(_ref, arguments) : void 0 : void 0;
+      } catch (_error) {}
     };
     ns.debug = function() {
       var _ref, _ref1;
       if ((_ref = window.console) != null ? _ref.debug : void 0) {
-        return (_ref1 = window.console).debug.apply(_ref1, arguments);
+        try {
+          return (_ref1 = window.console).debug.apply(_ref1, arguments);
+        } catch (_error) {}
       } else {
         return ns.log.apply(ns, ["Debug:"].concat(__slice.call(arguments)));
       }
@@ -404,7 +453,9 @@ if ( window.XDomainRequest ) {
     ns.warn = function() {
       var _ref, _ref1;
       if ((_ref = window.console) != null ? _ref.warn : void 0) {
-        return (_ref1 = window.console).warn.apply(_ref1, arguments);
+        try {
+          return (_ref1 = window.console).warn.apply(_ref1, arguments);
+        } catch (_error) {}
       } else {
         return ns.log.apply(ns, ["Warning:"].concat(__slice.call(arguments)));
       }
@@ -493,18 +544,6 @@ if ( window.XDomainRequest ) {
         }
       }
       return result;
-    };
-    ns.imageLoader = function(src) {
-      var def;
-      def = $.Deferred();
-      $(new Image).on('load', def.resolve).on('error', def.reject).attr('src', src);
-      return def.promise();
-    };
-    ns.videoLoader = function(src) {
-      var def;
-      def = $.Deferred();
-      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).load();
-      return def.promise();
     };
     ns.defer = function(fn) {
       return setTimeout(fn, 0);
@@ -1575,19 +1614,19 @@ if ( window.XDomainRequest ) {
         var op;
         df.always(release);
         op = utils.imageLoader(URL.createObjectURL(file));
-        op.always(function(e) {
-          return URL.revokeObjectURL(e.target.src);
+        op.always(function(img) {
+          return URL.revokeObjectURL(img.src);
         });
         op.fail(function() {
           return df.reject('not image');
         });
-        return op.done(function(e) {
+        return op.done(function(img) {
           df.notify(.10);
           return ns.getExif(file).always(function(exif) {
-            var isJPEG;
+            var e, isJPEG;
             df.notify(.2);
             isJPEG = this.state() === 'resolved';
-            op = ns.shrinkImage(e.target, settings);
+            op = ns.shrinkImage(img, settings);
             op.progress(function(progress) {
               return df.notify(.2 + progress * .6);
             });
@@ -1698,15 +1737,13 @@ if ( window.XDomainRequest ) {
         return df.reject('support');
       }
       op = utils.imageLoader(URL.createObjectURL(file));
-      op.always(function(e) {
-        return URL.revokeObjectURL(e.target.src);
+      op.always(function(img) {
+        return URL.revokeObjectURL(img.src);
       });
       op.fail(function() {
         return df.reject('not image');
       });
-      op.done(function(e) {
-        var img;
-        img = e.target;
+      op.done(function(img) {
         df.always(function() {
           return img.src = '//:0';
         });
@@ -1860,7 +1897,7 @@ if ( window.XDomainRequest ) {
     };
     ns.parseExifOrientation = function(exif) {
       var count, i, little, offset, _i;
-      if (!exif || exif.byteLength < 14 || exif.getUint32(0) !== 0x45786966 || exif.getUint16(4) !== 0 || exif.getUint16(8) !== 0x002A) {
+      if (!exif || exif.byteLength < 14 || exif.getUint32(0) !== 0x45786966 || exif.getUint16(4) !== 0) {
         return null;
       }
       if (exif.getUint16(6) === 0x4949) {
@@ -1868,6 +1905,9 @@ if ( window.XDomainRequest ) {
       } else if (exif.getUint16(6) === 0x4D4D) {
         little = false;
       } else {
+        return null;
+      }
+      if (exif.getUint16(8, little) !== 0x002A) {
         return null;
       }
       offset = 8 + exif.getUint32(10, little);
@@ -3867,12 +3907,12 @@ this.Pusher = Pusher;
 
 }).call(this);
 (function() {
-  var $, namespace, s, t, utils, _ref,
+  var $, namespace, s, t, uc_files, utils, _ref,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.locale, t = _ref.t), s = uploadcare.settings;
+  namespace = uploadcare.namespace, $ = uploadcare.jQuery, utils = uploadcare.utils, (_ref = uploadcare.locale, t = _ref.t), s = uploadcare.settings, uc_files = uploadcare.files;
 
   namespace('files', function(ns) {
     ns.FileGroup = (function() {
@@ -4084,7 +4124,7 @@ this.Pusher = Pusher;
           }
         }
       }
-      return new uploadcare.files.FileGroup(files, settings).api();
+      return new uc_files.FileGroup(files, settings).api();
     };
     return ns.loadFileGroup = function(groupIdOrUrl, settings) {
       var df, id,
@@ -4104,7 +4144,7 @@ this.Pusher = Pusher;
           return df.reject();
         }).done(function(data) {
           var group;
-          group = new uploadcare.files.SavedFileGroup(data, settings);
+          group = new uc_files.SavedFileGroup(data, settings);
           return df.resolve(group.api());
         });
       } else {
