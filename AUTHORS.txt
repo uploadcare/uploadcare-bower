@@ -1,0 +1,6 @@
+git log --format='%aN <%aE>' | sort -u
+
+Alexander Karpinsky <homm86@gmail.com>
+David Avsajanishvili <david@davidavs.com>
+Elijah <ilya@uploadcare.com>
+Zarema Khalilova <zarema.khalilova@gmail.com>
