@@ -1,10 +1,10 @@
 Uploadcare Widget
 =================
 
-[Uploadcare](https://uploadcare.com) is an PaaS for file uploads,
-cloud storage and on-the-fly image transformations.
+[Uploadcare](https://uploadcare.com) is a PaaS for file uploads,
+cloud storage, and on-the-fly image transformations.
 
-This package contains compiled version of the widget.
+This package contains a compiled version of the widget.
 
   * [Source code](https://github.com/uploadcare/uploadcare-widget)
   * [Issues](https://github.com/uploadcare/uploadcare-widget/issues)
@@ -19,14 +19,17 @@ Uploadcare library, requiring jQuery as a dependency:
   * uploadcare.js
   * uploadcare.min.js
 
-Standalone Uploadcare library with no external dependences:
+Standalone Uploadcare library with no external dependencies:
 
   * uploadcare.full.js
   * uploadcare.full.min.js
 
-## How to use it
+## Using Uploadcare Widget
 
-Add following code to header of your web page:
+There's a simple two-step process that drives
+you into Uploadcare experience.
+
+Step 1. Add the following code to your web page header:
 
     <script>
         // Widget settings
@@ -35,8 +38,18 @@ Add following code to header of your web page:
     <script src="/bower_components/jquery/jquery.js" charset="utf-8"></script>
     <script src="/bower_components/uploadcare/uploadcare.min.js" charset="utf-8"></script>
 
-Add the tag in the place where widget needs to be displayed:
+Step 2. Add the tag where you'd like the widget to be displayed:
 
     <input type="hidden" role="uploadcare-uploader">
 
-For more info, see [Documentation](https://uploadcare.com/documentation/)
+Check out our [docs](https://uploadcare.com/documentation/)
+for more info.
+
+## Contributors
+
+* [@Zmoki](https://github.com/Zmoki)
+* [@homm](https://github.com/homm)
+* [@avsd](https://github.com/avsd)
+
+Current maintainers: [@Zmoki](https://github.com/Zmoki),
+[@homm](https://github.com/homm).
