@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.2)
- * Date: 2016-11-29 17:09:08 +0300
- * Rev: f26523b040
+ * Uploadcare (2.10.3)
+ * Date: 2017-01-16 15:48:16 +0000
+ * Rev: 75cd9d2537
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.10.2';
+  uploadcare.version = '2.10.3';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -4054,6 +4054,8 @@ this.Pusher = Pusher;
             infos = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
             return utils.jsonp("" + _this.settings.urlBase + "/group/", 'POST', {
               pub_key: _this.settings.publicKey,
+              signature: _this.settings.secureSignature,
+              expire: _this.settings.secureExpire,
               files: (function() {
                 var _i, _len, _results;
                 _results = [];
