@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.3)
- * Date: 2017-01-16 15:48:16 +0000
- * Rev: 75cd9d2537
+ * Uploadcare (2.10.4)
+ * Date: 2017-06-22 14:37:01 +0000
+ * Rev: 74d1f4d6cb
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.10.3';
+  uploadcare.version = '2.10.4';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -423,7 +423,7 @@ if ( window.XDomainRequest ) {
     return ns.videoLoader = function(src) {
       var def;
       def = $.Deferred();
-      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).load();
+      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).get(0).load();
       return def.promise();
     };
   });
@@ -2236,7 +2236,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           .addClass('ord-'+ord);
 
         if (Touch.support) {
-          jq.bind('touchstart.jcrop', Touch.createDragger(ord));
+          jq.on('touchstart.jcrop', Touch.createDragger(ord));
         }
 
         $sel.append(jq);
@@ -2384,13 +2384,13 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           animating = false;
           enableHandles();
         }
-      } 
+      }
       //}}}
       function done() //{{{
       {
         animMode(false);
         refresh();
-      } 
+      }
       //}}}
       // Insert draggable elements {{{
       // Insert border divs for outline
@@ -2404,7 +2404,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       //}}}
 
       // This is a hack for iOS5 to support drag/move touch functionality
-      $(document).bind('touchstart.jcrop-ios',function(e) {
+      $(document).on('touchstart.jcrop-ios',function(e) {
         if ($(e.currentTarget).hasClass('jcrop-tracker')) e.stopPropagation();
       });
 
@@ -2415,7 +2415,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       });
 
       if (Touch.support) {
-        $track.bind('touchstart.jcrop', Touch.createDragger('move'));
+        $track.on('touchstart.jcrop', Touch.createDragger('move'));
       }
 
       $img_holder.append($track);
@@ -2442,7 +2442,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         done: done
       };
     }());
-    
+
     //}}}
     // Tracker Module {{{
     var Tracker = (function () {
@@ -2457,29 +2457,29 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         });
         if (Touch.support) {
           $(document)
-            .bind('touchmove.jcrop', trackTouchMove)
-            .bind('touchend.jcrop', trackTouchEnd);
+            .on('touchmove.jcrop', trackTouchMove)
+            .on('touchend.jcrop', trackTouchEnd);
         }
         if (trackDoc) {
           $(document)
-            .bind('mousemove.jcrop',trackMove)
-            .bind('mouseup.jcrop',trackUp);
+            .on('mousemove.jcrop',trackMove)
+            .on('mouseup.jcrop',trackUp);
         }
-      } 
+      }
       //}}}
       function toBack() //{{{
       {
         $trk.css({
           zIndex: 290
         });
-        $(document).unbind('.jcrop');
-      } 
+        $(document).off('.jcrop');
+      }
       //}}}
       function trackMove(e) //{{{
       {
         onMove(mouseAbs(e));
         return false;
-      } 
+      }
       //}}}
       function trackUp(e) //{{{
       {
@@ -2834,21 +2834,21 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
 
     function completeCheck(){
       if (img.complete) {
-        $img.unbind('.jcloader');
+        $img.off('.jcloader');
         if ($.isFunction(success)) success.call(img);
       }
       else window.setTimeout(completeCheck,50);
     }
 
     $img
-      .bind('load.jcloader',completeCheck)
-      .bind('error.jcloader',function(e){
-        $img.unbind('.jcloader');
+      .on('load.jcloader',completeCheck)
+      .on('error.jcloader',function(e){
+        $img.off('.jcloader');
         if ($.isFunction(error)) error.call(img);
       });
 
     if (img.complete && $.isFunction(success)){
-      $img.unbind('.jcloader');
+      $img.off('.jcloader');
       success.call(img);
     }
   };
@@ -10538,6 +10538,22 @@ this.Pusher = Pusher;
             line2: 'Apenas informe o link.',
             input: 'Cole seu link aqui...',
             button: 'Upload'
+          },
+          camera: {
+            capture: 'Tirar uma foto',
+            mirror: 'Espelhar',
+            startRecord: 'Gravar um vídeo',
+            stopRecord: 'Parar',
+            cancelRecord: 'Cancelar',
+            retry: 'Requisitar permissão novamente',
+            pleaseAllow: {
+              title: 'Por favor permita o acesso a sua câmera',
+              text: 'Você foi solicitado a permitir o acesso à câmera a partir deste site. ' + 'Para tirar fotos com sua câmera, você deve aprovar este pedido.'
+            },
+            notFoud: {
+              title: 'Câmera não detectada',
+              text: 'Parece que você não tem uma câmera conectada a este dispositivo'
+            }
           },
           preview: {
             unknownName: 'desconhecido',

@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.3)
- * Date: 2017-01-16 15:48:16 +0000
- * Rev: 75cd9d2537
+ * Uploadcare (2.10.4)
+ * Date: 2017-06-22 14:37:01 +0000
+ * Rev: 74d1f4d6cb
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.10.3';
+  uploadcare.version = '2.10.4';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -423,7 +423,7 @@ if ( window.XDomainRequest ) {
     return ns.videoLoader = function(src) {
       var def;
       def = $.Deferred();
-      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).load();
+      $('<video/>').on('loadeddata', def.resolve).on('error', def.reject).attr('src', src).get(0).load();
       return def.promise();
     };
   });
