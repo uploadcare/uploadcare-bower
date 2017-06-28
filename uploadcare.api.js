@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.4)
- * Date: 2017-06-22 14:37:01 +0000
- * Rev: 74d1f4d6cb
+ * Uploadcare (3.0.0)
+ * Date: 2017-06-28 19:10:54 +0000
+ * Rev: 630442bc61
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '2.10.4';
+  uploadcare.version = '3.0.0';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -1110,7 +1110,7 @@ if ( window.XDomainRequest ) {
 
     })();
     uploadcare.tabsCss = new ns.CssCollector;
-    return defaults['_emptyKeyText'] = "<div class=\"uploadcare-dialog-message-center\">\n<div class=\"uploadcare-dialog-big-title\">Hello!</div>\n<div class=\"uploadcare-dialog-large-text\">\n  <div>Your <a class=\"uploadcare-link\" href=\"https://uploadcare.com/dashboard/\">public key</a> is not set.</div>\n  <div>Add this to the &lt;head&gt; tag to start uploading files:</div>\n  <div class=\"uploadcare-pre\">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n&lt;/script&gt;</div>\n</div>\n</div>";
+    return defaults['_emptyKeyText'] = "<div class=\"uploadcare--tab__content\">\n<div class=\"uploadcare--text uploadcare--text_size_large uploadcare--tab__title\">Hello!</div>\n<div class=\"uploadcare--text\">Your <a class=\"uploadcare--link\" href=\"https://uploadcare.com/dashboard/\">public key</a> is not set.</div>\n<div class=\"uploadcare--text\">Add this to the &lt;head&gt; tag to start uploading files:</div>\n<div class=\"uploadcare--text uploadcare--text_pre\">&lt;script&gt;\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n&lt;/script&gt;</div>\n</div>";
   });
 
 }).call(this);
@@ -1150,6 +1150,8 @@ if ( window.XDomainRequest ) {
         }
       },
       dialog: {
+        close: 'Close',
+        openMenu: 'Open menu',
         done: 'Done',
         showFiles: 'Show files',
         tabs: {
@@ -1157,7 +1159,7 @@ if ( window.XDomainRequest ) {
             'empty-pubkey': 'Welcome',
             preview: 'Preview',
             file: 'Local Files',
-            url: 'Arbitrary Links',
+            url: 'Direct Link',
             camera: 'Camera',
             facebook: 'Facebook',
             dropbox: 'Dropbox',
@@ -1172,12 +1174,12 @@ if ( window.XDomainRequest ) {
             huddle: 'Huddle'
           },
           file: {
-            drag: 'Drop a file here',
-            nodrop: 'Upload files from your computer',
+            drag: 'drag & drop<br>any files',
+            nodrop: 'Upload files from your&nbsp;computer',
             cloudsTip: 'Cloud storages<br>and social networks',
             or: 'or',
             button: 'Choose a local file',
-            also: 'You can also choose it from'
+            also: 'or choose from'
           },
           url: {
             title: 'Files from the Web',
@@ -1187,6 +1189,7 @@ if ( window.XDomainRequest ) {
             button: 'Upload'
           },
           camera: {
+            title: 'File from web camera',
             capture: 'Take a photo',
             mirror: 'Mirror',
             startRecord: 'Record a video',
@@ -1195,7 +1198,7 @@ if ( window.XDomainRequest ) {
             retry: 'Request permissions again',
             pleaseAllow: {
               title: 'Please allow access to your camera',
-              text: 'You have been prompted to allow camera access from this site. ' + 'In order to take pictures with your camera you must approve this request.'
+              text: 'You have been prompted to allow camera access from this site.<br>' + 'In order to take pictures with your camera you must approve this request.'
             },
             notFound: {
               title: 'No camera detected',
@@ -1250,12 +1253,16 @@ if ( window.XDomainRequest ) {
               }
             },
             multiple: {
-              title: 'You’ve chosen %files%',
-              question: 'Do you want to add all of these files?',
+              title: 'You’ve chosen %files%.',
+              question: 'Add %files%?',
               tooManyFiles: 'You’ve chosen too many files. %max% is maximum.',
               tooFewFiles: 'You’ve chosen %files%. At least %min% required.',
               clear: 'Remove all',
-              done: 'Done'
+              done: 'Add',
+              file: {
+                preview: 'Preview %file%',
+                remove: 'Remove %file%'
+              }
             }
           }
         },
@@ -2270,7 +2277,7 @@ if ( window.XDomainRequest ) {
         var df, formParam, iframeId, targetUrl;
         df = $.Deferred();
         targetUrl = "" + this.settings.urlBase + "/iframe/";
-        iframeId = "uploadcare-iframe-" + this.fileId;
+        iframeId = "uploadcare--iframe-" + this.fileId;
         this.__iframe = $('<iframe>').attr({
           id: iframeId,
           name: iframeId
