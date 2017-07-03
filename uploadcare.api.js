@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.0.0)
- * Date: 2017-06-28 19:10:54 +0000
- * Rev: 630442bc61
+ * Uploadcare (3.0.1)
+ * Date: 2017-07-03 17:57:51 +0000
+ * Rev: d50c05c5e4
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '3.0.0';
+  uploadcare.version = '3.0.1';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
@@ -1632,7 +1632,7 @@ if ( window.XDomainRequest ) {
           return ns.getExif(file).always(function(exif) {
             var e, isJPEG;
             df.notify(.2);
-            isJPEG = this.state() === 'resolved';
+            isJPEG = op.state() === 'resolved';
             op = ns.shrinkImage(img, settings);
             op.progress(function(progress) {
               return df.notify(.2 + progress * .6);
