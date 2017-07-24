@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.1.0)
- * Date: 2017-07-19 14:45:59 +0000
- * Rev: 7452115f5b
+ * Uploadcare (3.1.1)
+ * Date: 2017-07-24 15:39:10 +0000
+ * Rev: adfce87d92
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -53,7 +53,7 @@
 (function() {
   var expose;
 
-  uploadcare.version = '3.1.0';
+  uploadcare.version = '3.1.1';
 
   uploadcare.jQuery = jQuery || window.jQuery;
 
