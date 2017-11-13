@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.2.0)
- * Date: 2017-10-30 13:19:07 +0000
- * Rev: 7fb5e6be90
+ * Uploadcare (3.2.1)
+ * Date: 2017-11-13 12:27:13 +0000
+ * Rev: 810dcc9e5f
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -56,24 +56,26 @@
 
 }).call(this);
 (function() {
-  var expose;
+  var expose, uc;
 
-  uploadcare.version = '3.2.0';
+  uc = uploadcare;
 
-  uploadcare.jQuery = jQuery || window.jQuery;
+  uc.version = '3.2.1';
 
-  if (typeof uploadcare.jQuery === 'undefined') {
+  uc.jQuery = jQuery || window.jQuery;
+
+  if (typeof uc.jQuery === 'undefined') {
     throw new ReferenceError('jQuery is not defined');
   }
 
-  expose = uploadcare.expose;
+  expose = uc.expose;
 
   expose('version');
 
   expose('jQuery');
 
   expose('plugin', function(fn) {
-    return fn(uploadcare);
+    return fn(uc);
   });
 
 }).call(this);
@@ -288,6 +290,7 @@ if ( window.XDomainRequest ) {
         this.anyDoneList = $.Callbacks();
         this.anyFailList = $.Callbacks();
         this.anyProgressList = $.Callbacks();
+        this._thenArgs = null;
         this.anyProgressList.add(function(item, firstArgument) {
           return $(item).data('lastProgress', firstArgument);
         });
@@ -357,6 +360,9 @@ if ( window.XDomainRequest ) {
         if (!(item && item.then)) {
           return;
         }
+        if (this._thenArgs) {
+          item = item.then.apply(item, this._thenArgs);
+        }
         CollectionOfPromises.__super__.add.apply(this, arguments);
         return this.__watchItem(item);
       };
@@ -381,6 +387,21 @@ if ( window.XDomainRequest ) {
           };
         };
         return item.then(handler(this.anyDoneList), handler(this.anyFailList), handler(this.anyProgressList));
+      };
+
+      CollectionOfPromises.prototype.autoThen = function() {
+        var i, item, _i, _len, _ref1, _results;
+        if (this._thenArgs) {
+          throw new Error("CollectionOfPromises.then() could be used only once");
+        }
+        this._thenArgs = arguments;
+        _ref1 = this.__items;
+        _results = [];
+        for (i = _i = 0, _len = _ref1.length; _i < _len; i = ++_i) {
+          item = _ref1[i];
+          _results.push(this.__replace(item, item.then.apply(item, this._thenArgs), i));
+        }
+        return _results;
       };
 
       return CollectionOfPromises;
@@ -685,9 +706,8 @@ if ( window.XDomainRequest ) {
         return objSize.slice();
       }
     };
-    ns.applyCropSelectionToFile = function(file, crop, size, coords) {
-      var downscale, h, modifiers, prefered, upscale, w, wholeImage,
-        _this = this;
+    ns.applyCropCoordsToInfo = function(info, crop, size, coords) {
+      var downscale, h, modifiers, prefered, upscale, w, wholeImage;
       w = coords.width, h = coords.height;
       prefered = crop.preferedSize;
       modifiers = '';
@@ -703,12 +723,11 @@ if ( window.XDomainRequest ) {
       } else if (!wholeImage) {
         modifiers += "-/preview/";
       }
-      return file.then(function(info) {
-        info.cdnUrlModifiers = modifiers;
-        info.cdnUrl = "" + info.originalUrl + (modifiers || '');
-        info.crop = coords;
-        return info;
-      });
+      info = $.extend({}, info);
+      info.cdnUrlModifiers = modifiers;
+      info.cdnUrl = "" + info.originalUrl + (modifiers || '');
+      info.crop = coords;
+      return info;
     };
     ns.fileInput = function(container, settings, fn) {
       var accept, input, run;
@@ -3002,7 +3021,10 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
       };
 
       CropWidget.prototype.applySelectionToFile = function(file) {
-        return utils.applyCropSelectionToFile(file, this.crop, this.originalSize, this.getSelection());
+        var _this = this;
+        return file.then(function(info) {
+          return utils.applyCropCoordsToInfo(info, _this.crop, _this.originalSize, _this.getSelection());
+        });
       };
 
       return CropWidget;
@@ -5959,33 +5981,28 @@ this.Pusher = Pusher;
         });
       };
       ns.watchDragging = function(el, receiver) {
-        var active, changeState, delayedEnter;
-        delayedEnter = false;
-        active = false;
-        changeState = function(newActive) {
-          if (active !== newActive) {
-            return $(el).toggleClass('uploadcare--dragging', active = newActive);
+        var changeState, counter, lastActive;
+        lastActive = false;
+        counter = 0;
+        changeState = function(active) {
+          if (lastActive !== active) {
+            return $(el).toggleClass('uploadcare--dragging', lastActive = active);
           }
         };
         return $(receiver || el).on({
           dragenter: function() {
-            return delayedEnter = utils.defer(function() {
-              delayedEnter = false;
-              return changeState(true);
-            });
+            counter += 1;
+            return changeState(true);
           },
           dragleave: function() {
-            if (!delayedEnter) {
+            counter -= 1;
+            if (counter === 0) {
               return changeState(false);
             }
           },
           'drop mouseenter': function() {
-            if (delayedEnter) {
-              clearTimeout(delayedEnter);
-            }
-            return utils.defer(function() {
-              return changeState(false);
-            });
+            counter = 0;
+            return changeState(false);
           }
         });
       };
@@ -7348,12 +7365,14 @@ this.Pusher = Pusher;
   $.fn.extend(extend);
 })(uploadcare.jQuery);
 (function() {
-  var $, progress, t, tpl, utils, _ref, _ref1, _ref2,
+  var $, progress, t, tpl, uc, utils, _ref, _ref1, _ref2,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   utils = uploadcare.utils, (_ref = uploadcare.ui, progress = _ref.progress), (_ref1 = uploadcare.templates, tpl = _ref1.tpl), $ = uploadcare.jQuery, (_ref2 = uploadcare.locale, t = _ref2.t);
+
+  uc = uploadcare;
 
   uploadcare.namespace('widget.tabs', function(ns) {
     return ns.PreviewTabMultiple = (function(_super) {
@@ -7456,7 +7475,7 @@ this.Pusher = Pusher;
         }
         fileEl.find('.uploadcare--file__preview').html(filePreview);
         return fileEl.find('.uploadcare--file__description').on('click', function() {
-          return uploadcare.openPreviewDialog(file, _this.settings).done(function(newFile) {
+          return uc.openPreviewDialog(file, _this.settings).done(function(newFile) {
             return _this.dialogApi.fileColl.replace(file, newFile);
           });
         });
@@ -7762,20 +7781,19 @@ this.Pusher = Pusher;
             return;
           }
         }
-        return files.onAnyDone(function(file, fileInfo) {
-          var info, newFile, size;
+        return files.autoThen(function(fileInfo) {
+          var info, size;
           if (!fileInfo.isImage || fileInfo.cdnUrlModifiers || fileInfo.crop) {
-            return;
+            return fileInfo;
           }
           info = fileInfo.originalImageInfo;
-          size = uploadcare.utils.fitSize(_this.settings.crop[0].preferedSize, [info.width, info.height], true);
-          newFile = utils.applyCropSelectionToFile(file, _this.settings.crop[0], [info.width, info.height], {
+          size = utils.fitSize(_this.settings.crop[0].preferedSize, [info.width, info.height], true);
+          return utils.applyCropCoordsToInfo(fileInfo, _this.settings.crop[0], [info.width, info.height], {
             width: size[0],
             height: size[1],
             left: Math.round((info.width - size[0]) / 2),
             top: Math.round((info.height - size[1]) / 2)
           });
-          return files.replace(file, newFile);
         });
       };
 

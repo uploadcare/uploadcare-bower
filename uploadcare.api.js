@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.2.0)
- * Date: 2017-10-30 13:19:07 +0000
- * Rev: 7fb5e6be90
+ * Uploadcare (3.2.1)
+ * Date: 2017-11-13 12:27:13 +0000
+ * Rev: 810dcc9e5f
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -51,24 +51,26 @@
 
 }).call(this);
 (function() {
-  var expose;
+  var expose, uc;
 
-  uploadcare.version = '3.2.0';
+  uc = uploadcare;
 
-  uploadcare.jQuery = jQuery || window.jQuery;
+  uc.version = '3.2.1';
 
-  if (typeof uploadcare.jQuery === 'undefined') {
+  uc.jQuery = jQuery || window.jQuery;
+
+  if (typeof uc.jQuery === 'undefined') {
     throw new ReferenceError('jQuery is not defined');
   }
 
-  expose = uploadcare.expose;
+  expose = uc.expose;
 
   expose('version');
 
   expose('jQuery');
 
   expose('plugin', function(fn) {
-    return fn(uploadcare);
+    return fn(uc);
   });
 
 }).call(this);
@@ -283,6 +285,7 @@ if ( window.XDomainRequest ) {
         this.anyDoneList = $.Callbacks();
         this.anyFailList = $.Callbacks();
         this.anyProgressList = $.Callbacks();
+        this._thenArgs = null;
         this.anyProgressList.add(function(item, firstArgument) {
           return $(item).data('lastProgress', firstArgument);
         });
@@ -352,6 +355,9 @@ if ( window.XDomainRequest ) {
         if (!(item && item.then)) {
           return;
         }
+        if (this._thenArgs) {
+          item = item.then.apply(item, this._thenArgs);
+        }
         CollectionOfPromises.__super__.add.apply(this, arguments);
         return this.__watchItem(item);
       };
@@ -376,6 +382,21 @@ if ( window.XDomainRequest ) {
           };
         };
         return item.then(handler(this.anyDoneList), handler(this.anyFailList), handler(this.anyProgressList));
+      };
+
+      CollectionOfPromises.prototype.autoThen = function() {
+        var i, item, _i, _len, _ref1, _results;
+        if (this._thenArgs) {
+          throw new Error("CollectionOfPromises.then() could be used only once");
+        }
+        this._thenArgs = arguments;
+        _ref1 = this.__items;
+        _results = [];
+        for (i = _i = 0, _len = _ref1.length; _i < _len; i = ++_i) {
+          item = _ref1[i];
+          _results.push(this.__replace(item, item.then.apply(item, this._thenArgs), i));
+        }
+        return _results;
       };
 
       return CollectionOfPromises;
@@ -680,9 +701,8 @@ if ( window.XDomainRequest ) {
         return objSize.slice();
       }
     };
-    ns.applyCropSelectionToFile = function(file, crop, size, coords) {
-      var downscale, h, modifiers, prefered, upscale, w, wholeImage,
-        _this = this;
+    ns.applyCropCoordsToInfo = function(info, crop, size, coords) {
+      var downscale, h, modifiers, prefered, upscale, w, wholeImage;
       w = coords.width, h = coords.height;
       prefered = crop.preferedSize;
       modifiers = '';
@@ -698,12 +718,11 @@ if ( window.XDomainRequest ) {
       } else if (!wholeImage) {
         modifiers += "-/preview/";
       }
-      return file.then(function(info) {
-        info.cdnUrlModifiers = modifiers;
-        info.cdnUrl = "" + info.originalUrl + (modifiers || '');
-        info.crop = coords;
-        return info;
-      });
+      info = $.extend({}, info);
+      info.cdnUrlModifiers = modifiers;
+      info.cdnUrl = "" + info.originalUrl + (modifiers || '');
+      info.crop = coords;
+      return info;
     };
     ns.fileInput = function(container, settings, fn) {
       var accept, input, run;
