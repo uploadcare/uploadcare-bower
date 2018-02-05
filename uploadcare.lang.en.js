@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.2.1)
- * Date: 2017-11-13 12:27:13 +0000
- * Rev: 810dcc9e5f
+ * Uploadcare (3.2.2)
+ * Date: 2018-02-05 10:03:15 +0000
+ * Rev: 086542ab0c
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.2.1';
+  uc.version = '3.2.2';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -3865,6 +3865,7 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
               xhr: function() {
                 var xhr;
                 xhr = $.ajaxSettings.xhr();
+                xhr.responseType = 'text';
                 if (xhr.upload) {
                   xhr.upload.addEventListener('progress', function(e) {
                     return updateProgress(partNo, e.loaded);
@@ -3882,7 +3883,7 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
                 attempts += 1;
                 if (attempts > _this.settings.multipartMaxAttempts) {
                   if (_this.settings.debugUploads) {
-                    utils.info("Part #" + partNo + " and file upload is failed.", uuid);
+                    utils.log("Part #" + partNo + " and file upload is failed.", uuid);
                   }
                   return df.reject();
                 } else {
