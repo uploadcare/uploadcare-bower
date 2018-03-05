@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.2.2)
- * Date: 2018-02-05 10:03:15 +0000
- * Rev: 086542ab0c
+ * Uploadcare (3.2.3)
+ * Date: 2018-03-05 11:18:06 +0000
+ * Rev: bd8106fc33
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.2.2';
+  uc.version = '3.2.3';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -761,13 +761,16 @@ if ( window.XDomainRequest ) {
         });
       });
     };
-    ns.fileSelectDialog = function(container, settings, fn) {
+    ns.fileSelectDialog = function(container, settings, fn, attributes) {
       var accept;
+      if (attributes == null) {
+        attributes = {};
+      }
       accept = settings.inputAcceptTypes;
       if (accept === '') {
         accept = settings.imagesOnly ? 'image/*' : null;
       }
-      return $(settings.multiple ? '<input type="file" multiple>' : '<input type="file">').attr('accept', accept).css({
+      return $(settings.multiple ? '<input type="file" multiple>' : '<input type="file">').attr('accept', accept).attr(attributes).css({
         position: 'fixed',
         bottom: 0,
         opacity: 0
