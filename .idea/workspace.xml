@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="690bf75e-d124-48ab-a3cb-245e33033898" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/uploadcare.full.js" beforeDir="false" afterPath="$PROJECT_DIR$/uploadcare.full.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploadcare.full.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/uploadcare.full.min.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploadcare.js" beforeDir="false" afterPath="$PROJECT_DIR$/uploadcare.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uploadcare.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/uploadcare.min.js" afterDir="false" />
-    </list>
+    <list default="true" id="690bf75e-d124-48ab-a3cb-245e33033898" name="Default" comment="" />
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
     <ignored path="$PROJECT_DIR$/tmp/" />
@@ -4429,16 +4424,16 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="uploadcare.full.min.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="uploadcare.full.min.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/uploadcare.full.min.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="911">
-              <caret column="300779" selection-start-column="300779" selection-end-column="300779" />
+            <state relative-caret-position="641">
+              <caret column="297207" lean-forward="true" selection-start-column="297207" selection-end-column="297207" />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package.json" pinned="false" current-in-tab="false">
+      <file leaf-file-name="package.json" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="432">
@@ -4453,8 +4448,8 @@
     <findStrings>
       <find>0.1.4</find>
       <find>uploadcare-node</find>
-      <find>Has escogido %files%</find>
       <find>.es</find>
+      <find>Has escogido %files%</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -4525,12 +4520,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1524076148720</updated>
-      <workItem from="1524076149952" duration="5155000" />
+      <workItem from="1524076149952" duration="5425000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="5155000" />
+    <option name="totallyTimeSpent" value="5425000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="2576" height="1416" extended-state="6" />
@@ -4542,7 +4537,7 @@
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info anchor="bottom" id="Version Control" weight="0.32942098" />
       <window_info id="npm" side_tool="true" />
-      <window_info active="true" anchor="bottom" id="Terminal" visible="true" weight="0.17918622" />
+      <window_info active="true" anchor="bottom" id="Terminal" visible="true" weight="0.20422535" />
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.18676123" />
       <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -4568,13 +4563,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="10" column="13" lean-forward="true" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/package.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="24" column="1" lean-forward="true" selection-start-line="24" selection-start-column="1" selection-end-line="24" selection-end-column="1" />
         </state>
       </provider>
     </entry>
@@ -8984,8 +8972,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/uploadcare.full.min.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="911">
-          <caret column="300779" selection-start-column="300779" selection-end-column="300779" />
+        <state relative-caret-position="641">
+          <caret column="297207" lean-forward="true" selection-start-column="297207" selection-end-column="297207" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/package.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="24" column="1" lean-forward="true" selection-start-line="24" selection-start-column="1" selection-end-line="24" selection-end-column="1" />
         </state>
       </provider>
     </entry>
