@@ -3491,16 +3491,16 @@ this.Pusher = Pusher;
                 title: 'Error',
                 text: 'No se pudo cargar la imangen'
               }
+            },
+            multiple: {
+              title: 'Has escogido %files%',
+              question: '¿Quieres añadir todos estos archivos?',
+              tooManyFiles: 'Has escogido demasiados archivos. %max% es el máximo.',
+              tooFewFiles: 'Has escogido %files%. Hacen falta al menos %min%.',
+              clear: 'Eliminar todo',
+              done: 'Hecho'
             }
           },
-          multiple: {
-            title: 'Has escogido %files%',
-            question: '¿Quieres añadir todos estos archivos?',
-            tooManyFiles: 'Has escogido demasiados archivos. %max% es el máximo.',
-            tooFewFiles: 'Has escogido %files%. Hacen falta al menos %min%.',
-            clear: 'Eliminar todo',
-            done: 'Hecho'
-          }
         },
         footer: {
           text: 'Los archivos ha sido subidos, gestionados y procesados por'
