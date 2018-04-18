@@ -3422,6 +3422,8 @@ this.Pusher = Pusher;
         remove: 'Eliminar'
       },
       dialog: {
+        done: 'Hecho',
+        showFiles: 'Mostrar archivos',
         tabs: {
           names: {
             preview: 'Avance',
@@ -3485,6 +3487,14 @@ this.Pusher = Pusher;
                 text: 'No se pudo cargar la imangen'
               }
             }
+          },
+          multiple: {
+            title: 'Has escogido %files%',
+            question: '¿Quieres añadir todos estos archivos?',
+            tooManyFiles: 'Has escogido demasiados archivos. %max% es el máximo.',
+            tooFewFiles: 'Has escogido %files%. Hacen falta al menos %min%.',
+            clear: 'Eliminar todo',
+            done: 'Hecho'
           }
         },
         footer: {
