@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.2.3)
- * Date: 2018-03-05 11:18:06 +0000
- * Rev: bd8106fc33
+ * Uploadcare (3.3.0)
+ * Date: 2018-04-25 11:31:05 +0000
+ * Rev: a4bf9aadfa
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -60,7 +60,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.2.3';
+  uc.version = '3.3.0';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -817,16 +817,15 @@ if ( window.XDomainRequest ) {
       crossDomain: true,
       cache: false
     };
-    ns.jsonp = function(url, type, data) {
-      if ($.isPlainObject(type)) {
-        data = type;
-        type = 'GET';
+    ns.jsonp = function(url, type, data, settings) {
+      if (settings == null) {
+        settings = {};
       }
       return $.ajax($.extend({
         url: url,
         type: type,
         data: data
-      }, ns.ajaxDefaults)).then(function(data) {
+      }, settings, ns.ajaxDefaults)).then(function(data) {
         var text;
         if (data.error) {
           text = data.error.content || data.error;
@@ -907,13 +906,13 @@ if ( window.XDomainRequest ) {
 
 }).call(this);
 (function() {
-  var $, expose, utils,
+  var $, expose, utils, version,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery;
+  expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery, version = uploadcare.version;
 
   uploadcare.namespace('settings', function(ns) {
-    var arrayOptions, defaults, flagOptions, intOptions, normalize, parseCrop, parseShrink, presets, str2arr, urlOptions;
+    var arrayOptions, constrainOptions, constraints, defaults, flagOptions, intOptions, integration, integrationToUserAgent, normalize, parseCrop, parseShrink, presets, script, str2arr, transformOptions, transforms, urlOptions;
     defaults = {
       live: true,
       manualStart: false,
@@ -926,7 +925,7 @@ if ( window.XDomainRequest ) {
       imagesOnly: false,
       clearable: false,
       multiple: false,
-      multipleMax: 0,
+      multipleMax: 1000,
       multipleMin: 1,
       multipleMaxStrict: false,
       imageShrink: false,
@@ -951,7 +950,20 @@ if ( window.XDomainRequest ) {
       parallelDirectUploads: 10,
       passWindowOpen: false,
       scriptBase: "//ucarecdn.com/widget/" + uploadcare.version + "/uploadcare/",
-      debugUploads: false
+      debugUploads: false,
+      integration: ''
+    };
+    transforms = {
+      multipleMax: {
+        from: 0,
+        to: 1000
+      }
+    };
+    constraints = {
+      multipleMax: {
+        min: 1,
+        max: 1000
+      }
     };
     presets = {
       tabs: {
@@ -959,6 +971,17 @@ if ( window.XDomainRequest ) {
         "default": defaults.tabs
       }
     };
+    script = document.currentScript || (function() {
+      var scripts;
+      scripts = document.getElementsByTagName('script');
+      return scripts[scripts.length - 1];
+    })();
+    integration = $(script).data('integration');
+    if (integration !== void 0) {
+      defaults = $.extend(defaults, {
+        integration: integration
+      });
+    }
     str2arr = function(value) {
       if (!$.isArray(value)) {
         value = $.trim(value);
@@ -1023,6 +1046,32 @@ if ( window.XDomainRequest ) {
       }
       return settings;
     };
+    integrationToUserAgent = function(settings) {
+      settings['_userAgent'] = "UploadcareWidget/" + version + "/" + settings['publicKey'] + " (JavaScript" + (settings['integration'] ? "; " + settings['integration'] : '') + ")";
+      return settings;
+    };
+    transformOptions = function(settings, transforms) {
+      var key, transform;
+      for (key in transforms) {
+        transform = transforms[key];
+        if (settings[key] != null) {
+          if (settings[key] === transform.from) {
+            settings[key] = transform.to;
+          }
+        }
+      }
+      return settings;
+    };
+    constrainOptions = function(settings, constraints) {
+      var key, max, min, _ref;
+      for (key in constraints) {
+        _ref = constraints[key], min = _ref.min, max = _ref.max;
+        if (settings[key] != null) {
+          settings[key] = Math.min(Math.max(settings[key], min), max);
+        }
+      }
+      return settings;
+    };
     parseCrop = function(val) {
       var ratio, reRatio;
       reRatio = /^([0-9]+)([x:])([0-9]+)\s*(|upscale|minimum)$/i;
@@ -1056,6 +1105,9 @@ if ( window.XDomainRequest ) {
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
       flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads', 'multipleMaxStrict']);
       intOptions(settings, ['multipleMax', 'multipleMin', 'multipartMinSize', 'multipartPartSize', 'multipartMinLastPartSize', 'multipartConcurrency', 'multipartMaxAttempts', 'parallelDirectUploads']);
+      transformOptions(settings, transforms);
+      constrainOptions(settings, constraints);
+      integrationToUserAgent(settings);
       if (settings.crop !== false && !$.isArray(settings.crop)) {
         if (/^(disabled?|false|null)$/i.test(settings.crop)) {
           settings.crop = false;
@@ -1083,15 +1135,15 @@ if ( window.XDomainRequest ) {
       allTabs: presets.tabs.all
     }, defaults));
     ns.globals = function() {
-      var key, value, values;
-      values = {};
+      var key, scriptSettings, value;
+      scriptSettings = {};
       for (key in defaults) {
         value = window["UPLOADCARE_" + (utils.upperCase(key))];
         if (value !== void 0) {
-          values[key] = value;
+          scriptSettings[key] = value;
         }
       }
-      return values;
+      return scriptSettings;
     };
     ns.common = utils.once(function(settings, ignoreGlobals) {
       var result;
@@ -3107,11 +3159,15 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
 
       BaseFile.prototype.__updateInfo = function() {
         var _this = this;
-        return utils.jsonp("" + this.settings.urlBase + "/info/", {
+        return utils.jsonp("" + this.settings.urlBase + "/info/", 'GET', {
           jsonerrors: 1,
           file_id: this.fileId,
           pub_key: this.settings.publicKey,
           wait_is_ready: +this.onInfoReady.fired()
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             utils.log("Can't load file info. Probably removed.", _this.fileId, _this.settings.publicKey, reason);
@@ -3762,7 +3818,7 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
             type: 'POST',
             url: "" + _this.settings.urlBase + "/base/?jsonerrors=1",
             headers: {
-              'X-PINGOTHER': 'pingpong'
+              'X-UC-User-Agent': _this.settings._userAgent
             },
             contentType: false,
             processData: false,
@@ -3819,7 +3875,11 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
           part_size: this.settings.multipartPartSize,
           UPLOADCARE_STORE: this.settings.doNotStore ? '' : 'auto'
         };
-        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data).fail(function(reason) {
+        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
+        }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             return utils.log("Can't start multipart upload.", reason, data);
           }
@@ -3882,6 +3942,9 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
                 return xhr;
               },
               url: parts[partNo],
+              headers: {
+                'X-UC-User-Agent': _this.settings._userAgent
+              },
               crossDomain: true,
               type: 'PUT',
               processData: false,
@@ -3924,7 +3987,11 @@ uploadcare.templates.JST["dialog"] = function(obj){var __p=[],print=function(){_
           UPLOADCARE_PUB_KEY: this.settings.publicKey,
           uuid: uuid
         };
-        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/complete/?jsonerrors=1", "POST", data).fail(function(reason) {
+        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/complete/?jsonerrors=1", "POST", data, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
+        }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             return utils.log("Can't complete multipart upload.", uuid, _this.settings.publicKey, reason);
           }
@@ -5412,7 +5479,11 @@ this.Pusher = Pusher;
           if (_this.apiDeferred.state() !== 'pending') {
             return;
           }
-          return utils.jsonp("" + _this.settings.urlBase + "/from_url/", data).fail(function(reason) {
+          return utils.jsonp("" + _this.settings.urlBase + "/from_url/", 'GET', data, {
+            headers: {
+              'X-UC-User-Agent': _this.settings._userAgent
+            }
+          }).fail(function(reason) {
             if (_this.settings.debugUploads) {
               utils.debug("Can't start upload from URL.", reason, data);
             }
@@ -5534,8 +5605,12 @@ this.Pusher = Pusher;
 
       PollWatcher.prototype.__updateStatus = function() {
         var _this = this;
-        return utils.jsonp(this.poolUrl, {
+        return utils.jsonp(this.poolUrl, 'GET', {
           token: this.token
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           return $(_this).trigger('error');
         }).done(function(data) {
@@ -5759,6 +5834,10 @@ this.Pusher = Pusher;
                 }
                 return _results;
               })()
+            }, {
+              headers: {
+                'X-UC-User-Agent': _this.settings._userAgent
+              }
             }).fail(function(reason) {
               if (_this.settings.debugUploads) {
                 utils.log("Can't create group.", _this.settings.publicKey, reason);
@@ -5829,10 +5908,14 @@ this.Pusher = Pusher;
       df = $.Deferred();
       id = utils.groupIdRegex.exec(groupIdOrUrl);
       if (id) {
-        utils.jsonp("" + settings.urlBase + "/group/info/", {
+        utils.jsonp("" + settings.urlBase + "/group/info/", 'GET', {
           jsonerrors: 1,
           pub_key: settings.publicKey,
           group_id: id[0]
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           if (settings.debugUploads) {
             utils.log("Can't load group info. Probably removed.", id[0], settings.publicKey, reason);
@@ -7475,7 +7558,7 @@ this.Pusher = Pusher;
       PreviewTabMultiple.prototype.__updateContainerView = function() {
         var errorContainer, files, hasWrongNumberFiles, title, tooFewFiles, tooManyFiles, wrongNumberFilesMessage;
         files = this.dialogApi.fileColl.length();
-        tooManyFiles = this.settings.multipleMax !== 0 && files > this.settings.multipleMax;
+        tooManyFiles = files > this.settings.multipleMax;
         tooFewFiles = files < this.settings.multipleMin;
         hasWrongNumberFiles = tooManyFiles || tooFewFiles;
         this.doneBtnEl.attr('disabled', hasWrongNumberFiles);
@@ -7715,6 +7798,9 @@ this.Pusher = Pusher;
     });
     ns.registerTab('preview', function(tabPanel, tabButton, dialogApi, settings, name) {
       var tabCls;
+      if (!settings.previewStep && dialogApi.fileColl.length() === 0) {
+        return;
+      }
       tabCls = settings.multiple ? tabs.PreviewTabMultiple : tabs.PreviewTab;
       return new tabCls(tabPanel, tabButton, dialogApi, settings, name);
     });
@@ -7794,7 +7880,7 @@ this.Pusher = Pusher;
         }
         for (_i = 0, _len = files.length; _i < _len; _i++) {
           file = files[_i];
-          if (this.settings.multipleMaxStrict && this.settings.multipleMax !== 0) {
+          if (this.settings.multipleMaxStrict) {
             if (this.files.length() >= this.settings.multipleMax) {
               file.cancel();
               continue;
@@ -7887,7 +7973,7 @@ this.Pusher = Pusher;
       Panel.prototype.__updateFooter = function() {
         var footer, tooFewFiles, tooManyFiles;
         files = this.files.length();
-        tooManyFiles = this.settings.multipleMax !== 0 && files > this.settings.multipleMax;
+        tooManyFiles = files > this.settings.multipleMax;
         tooFewFiles = files < this.settings.multipleMin;
         this.footer.find('.uploadcare--panel__done').attr('disabled', tooManyFiles || tooFewFiles);
         this.footer.find('.uploadcare--panel__show-files').attr('disabled', files === 0);
@@ -10708,7 +10794,7 @@ this.Pusher = Pusher;
   uploadcare.namespace('locale.translations', function(ns) {
     return ns.pl = {
       uploading: 'Przesyłanie... Proszę czekać.',
-      loadingInfo: 'Loading info...',
+      loadingInfo: 'Ładowanie...',
       errors: {
         "default": 'Błąd',
         baddata: 'Niepoprawna wartość',
@@ -10741,6 +10827,8 @@ this.Pusher = Pusher;
         }
       },
       dialog: {
+        close: 'Zamknij',
+        openMenu: 'Otwórz menu',
         done: 'Wykonano',
         showFiles: 'Pokaż pliki',
         tabs: {
@@ -10767,8 +10855,12 @@ this.Pusher = Pusher;
             button: 'Prześlij'
           },
           camera: {
+            title: 'Plik z kamery internetowej',
             capture: 'Zrób zdjęcie',
-            mirror: 'Lustro',
+            mirror: 'Odbicie lustrzane',
+            startRecord: 'Nagraj film',
+            stopRecord: 'Zakończ',
+            cancelRecord: 'Anuluj',
             retry: 'Poproś ponownie o dostęp',
             pleaseAllow: {
               title: 'Prośba o udostępnienie aparatu',
@@ -10802,6 +10894,10 @@ this.Pusher = Pusher;
               done: 'Wykonano',
               free: 'wolny'
             },
+            video: {
+              title: 'Dodać ten film?',
+              change: 'Anuluj'
+            },
             error: {
               "default": {
                 title: 'Oops!',
@@ -10828,7 +10924,11 @@ this.Pusher = Pusher;
               tooManyFiles: 'Wybrałeś zbyt wiele plików. Maksimum to %max%.',
               tooFewFiles: 'Wybrałeś %files%. Wymagane jest co najmniej %min%.',
               clear: 'Usuń wszystkie',
-              done: 'Wykonano'
+              done: 'Wykonano',
+              file: {
+                preview: 'Zobacz %file%',
+                remove: 'Usuń %file%'
+              }
             }
           }
         }
@@ -10981,6 +11081,176 @@ this.Pusher = Pusher;
 
   uploadcare.namespace('locale.pluralize', function(ns) {
     return ns.pt = function(n) {
+      if (n === 1) {
+        return 'one';
+      }
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('locale.translations', function(ns) {
+    return ns.ro = {
+      uploading: 'Se încarcă... Răbdare.',
+      loadingInfo: 'Info încărcare...',
+      errors: {
+        "default": 'Eroare',
+        baddata: 'Valoare incorectă',
+        size: 'Fișier prea mare',
+        upload: 'Nu pot încărca',
+        user: 'Încărcare anulată',
+        info: 'Nu pot încărca info',
+        image: 'Doar imagini, vă rog',
+        createGroup: 'Nu pot crea grup de fișiere',
+        deleted: 'Fișierul a fost șters'
+      },
+      draghere: 'Trage un fișier aici',
+      file: {
+        one: '%1 fișier',
+        other: '%1 fișiere'
+      },
+      buttons: {
+        cancel: 'Anulare',
+        remove: 'Șterge',
+        choose: {
+          files: {
+            one: 'Alege un fișier',
+            other: 'Alege fișiere'
+          },
+          images: {
+            one: 'Alege o imagine',
+            other: 'Alege imagini'
+          }
+        }
+      },
+      dialog: {
+        close: 'Închide',
+        openMenu: 'Deschide meniu',
+        done: 'Gata',
+        showFiles: 'Arată fișiere',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Bine ai venit',
+            preview: 'Previzualizare',
+            file: 'Fișiere locale',
+            url: 'Link direct',
+            camera: 'Camera',
+            facebook: 'Facebook',
+            dropbox: 'Dropbox',
+            gdrive: 'Google Drive',
+            gphotos: 'Google Photos',
+            instagram: 'Instagram',
+            vk: 'VK',
+            evernote: 'Evernote',
+            box: 'Box',
+            skydrive: 'OneDrive',
+            flickr: 'Flickr',
+            huddle: 'Huddle'
+          },
+          file: {
+            drag: 'trage aici<br>fișierele',
+            nodrop: 'Încarcă fișiere din computer',
+            cloudsTip: 'Cloud <br>și rețle sociale',
+            or: 'sau',
+            button: 'Alege un fișier local',
+            also: 'sau alege din'
+          },
+          url: {
+            title: 'Fișiere din Web',
+            line1: 'Ia orice fișier din Web.',
+            line2: 'Trebuie să ai doar linkul.',
+            input: 'Lipește linkul aici...',
+            button: 'Încarcă'
+          },
+          camera: {
+            title: 'Fișier din camera web',
+            capture: 'Fă o fotografie',
+            mirror: 'Mirror',
+            startRecord: 'Înregistrează un video',
+            stopRecord: 'Stop',
+            cancelRecord: 'Anulează',
+            retry: 'Cere permisiune din nou',
+            pleaseAllow: {
+              title: 'Te rog sa-mi dai acces la cameră',
+              text: 'Ai fost rugat să dai acces la cameră de acest site.<br>' + 'Pentru a putea face fotografii cu camera, trebuie să aprobi această cerere.'
+            },
+            notFound: {
+              title: 'Nicio cameră detectată',
+              text: 'Se pare că nu ai nicio cameră atașată acestui device.'
+            }
+          },
+          preview: {
+            unknownName: 'necunoscut',
+            change: 'Anulează',
+            back: 'Înapoi',
+            done: 'Adaugă',
+            unknown: {
+              title: 'Se încarcă... Te rog așteaptă previzualizarea.',
+              done: 'Sari peste previzualizare și acceptă'
+            },
+            regular: {
+              title: 'Adaug acest fișier?',
+              line1: 'Ești pe punctul de a adăuga fișierul de mai sus.',
+              line2: 'Te rog confirmă.'
+            },
+            image: {
+              title: 'Adaug această imagine?',
+              change: 'Anulează'
+            },
+            crop: {
+              title: 'Decupează și adaugă aceasta imagine',
+              done: 'Gata',
+              free: 'gratis'
+            },
+            video: {
+              title: 'Adaug acest video?',
+              change: 'anulează'
+            },
+            error: {
+              "default": {
+                title: 'Oops!',
+                text: 'A intervenit o problemă la încărcare.',
+                back: 'te rog încearcă din nou'
+              },
+              image: {
+                title: 'Sunt acceptate doar imagini.',
+                text: 'Te rog încearcă din nou cu un alt fișier.',
+                back: 'Alege imagine'
+              },
+              size: {
+                title: 'Fișierul selectat de tine este prea mare.',
+                text: 'Te rog să încerci cu alt fișier.'
+              },
+              loadImage: {
+                title: 'Eroare',
+                text: 'Nu pot încărca imaginea'
+              }
+            },
+            multiple: {
+              title: 'Ai ales %files%.',
+              question: 'Adaug %files%?',
+              tooManyFiles: 'Ai ales prea multe fișiere. %max% is maximum.',
+              tooFewFiles: 'Ai ales %files%. Minimul este %min% .',
+              clear: 'Șterge toate',
+              done: 'Adaugă',
+              file: {
+                preview: 'Previzualizare %file%',
+                remove: 'Șterge %file%'
+              }
+            }
+          }
+        },
+        footer: {
+          text: 'powered by',
+          link: 'uploadcare'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('locale.pluralize', function(ns) {
+    return ns.ro = function(n) {
       if (n === 1) {
         return 'one';
       }
@@ -11145,11 +11415,351 @@ this.Pusher = Pusher;
 }).call(this);
 (function() {
   uploadcare.namespace('locale.translations', function(ns) {
+    return ns.sk = {
+      uploading: 'Nahrávam... Prosím počkajte.',
+      loadingInfo: 'Nahrávam informácie...',
+      errors: {
+        "default": 'Chyba',
+        baddata: 'Nesprávna hodnota',
+        size: 'Súbor je príliš veľký',
+        upload: 'Nedá sa nahrať',
+        user: 'Nahrávanie bolo zrušené',
+        info: 'Informácie sa nedajú nahrať',
+        image: 'Povolené sú len obrázky',
+        createGroup: 'Nie je možné vytvoriť priečinok',
+        deleted: 'Súbor bol odstránený'
+      },
+      draghere: 'Sem presuňte súbor',
+      file: {
+        one: '%1 súbor',
+        few: '%1 súbory',
+        other: '%1 súborov'
+      },
+      buttons: {
+        cancel: 'Zrušiť',
+        remove: 'Odstrániť',
+        choose: {
+          files: {
+            one: 'Vyberte súbor',
+            other: 'Vyberte súbory'
+          },
+          images: {
+            one: 'Vyberte obrázok',
+            other: 'Vyberte obrázky'
+          }
+        }
+      },
+      dialog: {
+        close: 'Zavrieť',
+        openMenu: 'Otvoriť menu',
+        done: 'Hotovo',
+        showFiles: 'Ukázať súbory',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Vitajte',
+            preview: 'Náhľad',
+            file: 'Z počítača',
+            url: 'Z internetu',
+            camera: 'Kamera',
+            facebook: 'Facebook',
+            dropbox: 'Dropbox',
+            gdrive: 'Disk Google',
+            gphotos: 'Google Obrázky',
+            instagram: 'Instagram',
+            vk: 'VK',
+            evernote: 'Evernote',
+            box: 'Box',
+            skydrive: 'OneDrive',
+            flickr: 'Flickr',
+            huddle: 'Huddle'
+          },
+          file: {
+            drag: 'presuňte a vložte<br>akékoľvek súbory',
+            nodrop: 'Nahrajte súbory z vášho&nbsp;počítača',
+            cloudsTip: 'Cloud úložiská<br>a sociálne siete',
+            or: 'alebo',
+            button: 'Vyberte súbor z počítača',
+            also: 'alebo vyberte z'
+          },
+          url: {
+            title: 'Súbory z internetu',
+            line1: 'Uložte akýkoľvek súbor z internetu.',
+            line2: 'Stačí pridať odkaz na neho.',
+            input: 'Vložte svoj odkaz sem...',
+            button: 'Nahrať'
+          },
+          camera: {
+            title: 'Súbor z webkamery',
+            capture: 'Odfotiť',
+            mirror: 'Zrkadliť',
+            startRecord: 'Natočte video',
+            stopRecord: 'Prestať natáčať',
+            cancelRecord: 'Zrušiť',
+            retry: 'Znovu požiadať o prístup',
+            pleaseAllow: {
+              title: 'Prosím povoľte prístup k vašej kamere',
+              text: 'Boli ste vyzvaní aby ste umožnili tejto stránke prístup ku kamere.<br>' + 'Prístup musíte povolit aby ste mohli fotiť s vašou kamerou.'
+            },
+            notFound: {
+              title: 'Kamera nebola nájdená',
+              text: 'Zdá sa, že k tomuto zariadeniu nemáte pripojenú kameru.'
+            }
+          },
+          preview: {
+            unknownName: 'neznámy',
+            change: 'Zrušiť',
+            back: 'Späť',
+            done: 'Pridať',
+            unknown: {
+              title: 'Nahráva sa... Prosím počkajte na náhľad.',
+              done: 'Preskočiť náhľad a nahrať'
+            },
+            regular: {
+              title: 'Pridať tento súbor?',
+              line1: 'Chystáte sa pridať vyššie uvedený súbor.',
+              line2: 'Prosím potvrďte váš výber.'
+            },
+            image: {
+              title: 'Pridať tento obrázok?',
+              change: 'Zrušiť'
+            },
+            crop: {
+              title: 'Orezať a pridať túto fotku',
+              done: 'Hotovo',
+              free: 'obnoviť'
+            },
+            video: {
+              title: 'Pridať toto video?',
+              change: 'Zrušiť'
+            },
+            error: {
+              "default": {
+                title: 'Ejha!',
+                text: 'Pri nahrávaní sa vyskytla chyba.',
+                back: 'Skúste to znovu'
+              },
+              image: {
+                title: 'Je možné nahrávať len obrázky',
+                text: 'Skúste to znovu s iným súborom.',
+                back: 'Vybrať obrázok'
+              },
+              size: {
+                title: 'Súbor, ktorý ste vybrali presahuje povolenú veľkosť.',
+                text: 'Skúste to znovu s iným súborom.'
+              },
+              loadImage: {
+                title: 'Chyba',
+                text: 'Obrázok nie je možné vyhľadať'
+              }
+            },
+            multiple: {
+              title: 'Vybrali ste %files%.',
+              question: 'Pridať %files%?',
+              tooManyFiles: 'Vybrali ste príliš veľa súborov. Maximum je %max%.',
+              tooFewFiles: 'Vybrali ste %files%. Potrebných je aspoň %min%.',
+              clear: 'Odstrániť všetky',
+              done: 'Pridať',
+              file: {
+                preview: 'Nahliadnuť na %file%',
+                remove: 'Odstrániť %file%'
+              }
+            }
+          }
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('locale.pluralize', function(ns) {
+    return ns.sk = function(n) {
+      if (n === 1) {
+        return 'one';
+      } else if ((2 <= n && n <= 4)) {
+        return 'few';
+      } else {
+        return 'many';
+      }
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('locale.translations', function(ns) {
+    return ns.sr = {
+      uploading: 'Шаљем... Молимо сачекајте.',
+      loadingInfo: 'Учитавам информације...',
+      errors: {
+        "default": 'Грешка',
+        baddata: 'Погрешна вредност',
+        size: 'Фајл је сувише велик',
+        upload: 'Не могу да пошаљем',
+        user: 'Слање прекинуто',
+        info: 'Не могу да учитам информације',
+        image: 'Дозвољене су само слике',
+        createGroup: 'Не могу да направим групу фајлова',
+        deleted: 'Фајл је обрисан'
+      },
+      draghere: 'Убаците фајл овде',
+      file: {
+        one: '%1 фајл',
+        other: '%1 фајлова'
+      },
+      buttons: {
+        cancel: 'Поништи',
+        remove: 'Избаци',
+        choose: {
+          files: {
+            one: 'Изабери фајл',
+            other: 'Изабери фајлове'
+          },
+          images: {
+            one: 'Изабери слику',
+            other: 'Изабери слике'
+          }
+        }
+      },
+      dialog: {
+        close: 'Затвори',
+        openMenu: 'Отвори мени',
+        done: 'Готово',
+        showFiles: 'Покажи фајлове',
+        tabs: {
+          names: {
+            'empty-pubkey': 'Добродошли',
+            preview: 'Погледај',
+            file: 'Локални фајлови',
+            url: 'Директан линк',
+            camera: 'Камера',
+            facebook: 'Фејсбук',
+            dropbox: 'Dropbox',
+            gdrive: 'Google Drive',
+            gphotos: 'Google Photos',
+            instagram: 'Инстаграм',
+            vk: 'VK',
+            evernote: 'Evernote',
+            box: 'Box',
+            skydrive: 'OneDrive',
+            flickr: 'Flickr',
+            huddle: 'Huddle'
+          },
+          file: {
+            drag: 'превуци<br>било које фајлове',
+            nodrop: 'Пошаљи фајлове са твог&nbsp;компјутера',
+            cloudsTip: 'Клауд<br>и социјалне мреже',
+            or: 'или',
+            button: 'Изабери локални фајл',
+            also: 'или изабери'
+          },
+          url: {
+            title: 'Фајлове са Интернета',
+            line1: 'Изабери било који фајл са Интернета.',
+            line2: 'Само убаци линк.',
+            input: 'Убаци линк овде...',
+            button: 'Пошаљи'
+          },
+          camera: {
+            title: 'Фајл са камере',
+            capture: 'Усликај',
+            mirror: 'Огледало',
+            startRecord: 'Сними видео',
+            stopRecord: 'Заустави',
+            cancelRecord: 'Поништи',
+            retry: 'Тражи дозволу поново',
+            pleaseAllow: {
+              title: 'Молимо вас да дозволите приступ вашој камери',
+              text: 'Упитани сте да дозволите приступ вашој камери са овог сајта.<br>' + 'Уколико желите да сликате, морате одобрити овај захтев.'
+            },
+            notFound: {
+              title: 'Камера није препозната',
+              text: 'Изгледа да немате камеру на овом уређају.'
+            }
+          },
+          preview: {
+            unknownName: 'непознато',
+            change: 'Поништи',
+            back: 'Назад',
+            done: 'Додај',
+            unknown: {
+              title: 'Шаљем... Сачекајте за приказ.',
+              done: 'Прескочи приказ и прихвати'
+            },
+            regular: {
+              title: 'Додај овај фајл?',
+              line1: 'Управо ћете додати овај фајл изнад.',
+              line2: 'Молимо потврдите.'
+            },
+            image: {
+              title: 'Додај ову слику?',
+              change: 'Поништи'
+            },
+            crop: {
+              title: 'Кропуј и додај ову слику',
+              done: 'Урађено',
+              free: 'слободно'
+            },
+            video: {
+              title: 'Додај овај видео?',
+              change: 'Поништи'
+            },
+            error: {
+              "default": {
+                title: 'Ооопс!',
+                text: 'Нешто је искрсло у току слања.',
+                back: 'Молимо покушајте поново'
+              },
+              image: {
+                title: 'Дозвљене су само слике.',
+                text: 'Молимо покушајте са другим фајлом.',
+                back: 'Изабери слику'
+              },
+              size: {
+                title: 'Фајл који сте изабрали премашује лимит.',
+                text: 'Молимо покушајте са другим фајлом.'
+              },
+              loadImage: {
+                title: 'Грешка',
+                text: 'Не могу да учитам слику'
+              }
+            },
+            multiple: {
+              title: 'Изабрали сте %files%.',
+              question: 'Додај %files%?',
+              tooManyFiles: 'Изабрали сте превише фајлова. %max% је максимално.',
+              tooFewFiles: 'Изабрали сте %files%. Морате најмање %min% фајла.',
+              clear: 'Избаци све',
+              done: 'Додај',
+              file: {
+                preview: 'Прегледај %file%',
+                remove: 'Избаци %file%'
+              }
+            }
+          }
+        },
+        footer: {
+          text: 'направио',
+          link: 'uploadcare'
+        }
+      }
+    };
+  });
+
+  uploadcare.namespace('locale.pluralize', function(ns) {
+    return ns.sr = function(n) {
+      if (n === 1) {
+        return 'one';
+      }
+      return 'other';
+    };
+  });
+
+}).call(this);
+(function() {
+  uploadcare.namespace('locale.translations', function(ns) {
     return ns.sv = {
       uploading: 'Laddar... Var god vänta.',
       loadingInfo: 'Laddar info...',
       errors: {
-        "default": 'Error',
+        "default": 'Fel',
         baddata: 'Felaktigt värde',
         size: 'Filen är för stor',
         upload: 'Kan inte ladda upp',
@@ -11213,8 +11823,8 @@ this.Pusher = Pusher;
               text: 'Du har uppmanats att tillåta att denna webbplats får tillgång till din kamera.' + 'För att ta bilder med din kamera måste du godkänna denna begäran.'
             },
             notFound: {
-              title: 'Ingen kamera funnen',
-              text: 'Det varkar som att du inte har något kamera ansluten till denna enheten.'
+              title: 'Ingen kamera hittades',
+              text: 'Det verkar som att du inte har någon kamera ansluten till denna enheten.'
             }
           },
           preview: {
@@ -11238,7 +11848,7 @@ this.Pusher = Pusher;
             crop: {
               title: 'Beskär och lägg till denna bild',
               done: 'Klar',
-              free: 'free'
+              free: 'fri'
             },
             error: {
               "default": {
@@ -11256,7 +11866,7 @@ this.Pusher = Pusher;
                 text: 'Vänligen försök igen med en annan fil.'
               },
               loadImage: {
-                title: 'Error',
+                title: 'Fel',
                 text: 'Kan inte ladda bild'
               }
             },
