@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.10.4)
- * Date: 2017-06-22 14:37:01 +0000
- * Rev: 74d1f4d6cb
+ * Uploadcare (2.11.0)
+ * Date: 2018-04-27 18:32:45 +0000
+ * Rev: 23d7ca8fff
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -51,24 +51,26 @@
 
 }).call(this);
 (function() {
-  var expose;
+  var expose, uc;
 
-  uploadcare.version = '2.10.4';
+  uc = uploadcare;
 
-  uploadcare.jQuery = jQuery || window.jQuery;
+  uc.version = '2.11.0';
 
-  if (typeof uploadcare.jQuery === 'undefined') {
+  uc.jQuery = jQuery || window.jQuery;
+
+  if (typeof uc.jQuery === 'undefined') {
     throw new ReferenceError('jQuery is not defined');
   }
 
-  expose = uploadcare.expose;
+  expose = uc.expose;
 
   expose('version');
 
   expose('jQuery');
 
   expose('plugin', function(fn) {
-    return fn(uploadcare);
+    return fn(uc);
   });
 
 }).call(this);
@@ -283,6 +285,7 @@ if ( window.XDomainRequest ) {
         this.anyDoneList = $.Callbacks();
         this.anyFailList = $.Callbacks();
         this.anyProgressList = $.Callbacks();
+        this._thenArgs = null;
         this.anyProgressList.add(function(item, firstArgument) {
           return $(item).data('lastProgress', firstArgument);
         });
@@ -352,6 +355,9 @@ if ( window.XDomainRequest ) {
         if (!(item && item.then)) {
           return;
         }
+        if (this._thenArgs) {
+          item = item.then.apply(item, this._thenArgs);
+        }
         CollectionOfPromises.__super__.add.apply(this, arguments);
         return this.__watchItem(item);
       };
@@ -376,6 +382,21 @@ if ( window.XDomainRequest ) {
           };
         };
         return item.then(handler(this.anyDoneList), handler(this.anyFailList), handler(this.anyProgressList));
+      };
+
+      CollectionOfPromises.prototype.autoThen = function() {
+        var i, item, _i, _len, _ref1, _results;
+        if (this._thenArgs) {
+          throw new Error("CollectionOfPromises.then() could be used only once");
+        }
+        this._thenArgs = arguments;
+        _ref1 = this.__items;
+        _results = [];
+        for (i = _i = 0, _len = _ref1.length; _i < _len; i = ++_i) {
+          item = _ref1[i];
+          _results.push(this.__replace(item, item.then.apply(item, this._thenArgs), i));
+        }
+        return _results;
       };
 
       return CollectionOfPromises;
@@ -680,9 +701,8 @@ if ( window.XDomainRequest ) {
         return objSize.slice();
       }
     };
-    ns.applyCropSelectionToFile = function(file, crop, size, coords) {
-      var downscale, h, modifiers, prefered, upscale, w, wholeImage,
-        _this = this;
+    ns.applyCropCoordsToInfo = function(info, crop, size, coords) {
+      var downscale, h, modifiers, prefered, upscale, w, wholeImage;
       w = coords.width, h = coords.height;
       prefered = crop.preferedSize;
       modifiers = '';
@@ -698,12 +718,11 @@ if ( window.XDomainRequest ) {
       } else if (!wholeImage) {
         modifiers += "-/preview/";
       }
-      return file.then(function(info) {
-        info.cdnUrlModifiers = modifiers;
-        info.cdnUrl = "" + info.originalUrl + (modifiers || '');
-        info.crop = coords;
-        return info;
-      });
+      info = $.extend({}, info);
+      info.cdnUrlModifiers = modifiers;
+      info.cdnUrl = "" + info.originalUrl + (modifiers || '');
+      info.crop = coords;
+      return info;
     };
     ns.fileInput = function(container, settings, fn) {
       var accept, input, run;
@@ -742,13 +761,16 @@ if ( window.XDomainRequest ) {
         });
       });
     };
-    ns.fileSelectDialog = function(container, settings, fn) {
+    ns.fileSelectDialog = function(container, settings, fn, attributes) {
       var accept;
+      if (attributes == null) {
+        attributes = {};
+      }
       accept = settings.inputAcceptTypes;
       if (accept === '') {
         accept = settings.imagesOnly ? 'image/*' : null;
       }
-      return $(settings.multiple ? '<input type="file" multiple>' : '<input type="file">').attr('accept', accept).css({
+      return $(settings.multiple ? '<input type="file" multiple>' : '<input type="file">').attr('accept', accept).attr(attributes).css({
         position: 'fixed',
         bottom: 0,
         opacity: 0
@@ -790,16 +812,15 @@ if ( window.XDomainRequest ) {
       crossDomain: true,
       cache: false
     };
-    ns.jsonp = function(url, type, data) {
-      if ($.isPlainObject(type)) {
-        data = type;
-        type = 'GET';
+    ns.jsonp = function(url, type, data, settings) {
+      if (settings == null) {
+        settings = {};
       }
       return $.ajax($.extend({
         url: url,
         type: type,
         data: data
-      }, ns.ajaxDefaults)).then(function(data) {
+      }, settings, ns.ajaxDefaults)).then(function(data) {
         var text;
         if (data.error) {
           text = data.error.content || data.error;
@@ -880,13 +901,13 @@ if ( window.XDomainRequest ) {
 
 }).call(this);
 (function() {
-  var $, expose, utils,
+  var $, expose, utils, version,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery;
+  expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery, version = uploadcare.version;
 
   uploadcare.namespace('settings', function(ns) {
-    var arrayOptions, defaults, flagOptions, intOptions, normalize, parseCrop, parseShrink, presets, str2arr, urlOptions;
+    var arrayOptions, constrainOptions, constraints, defaults, flagOptions, intOptions, integration, integrationToUserAgent, normalize, parseCrop, parseShrink, presets, script, str2arr, transformOptions, transforms, urlOptions;
     defaults = {
       live: true,
       manualStart: false,
@@ -899,7 +920,7 @@ if ( window.XDomainRequest ) {
       imagesOnly: false,
       clearable: false,
       multiple: false,
-      multipleMax: 0,
+      multipleMax: 1000,
       multipleMin: 1,
       multipleMaxStrict: false,
       imageShrink: false,
@@ -924,7 +945,20 @@ if ( window.XDomainRequest ) {
       parallelDirectUploads: 10,
       passWindowOpen: false,
       scriptBase: "//ucarecdn.com/widget/" + uploadcare.version + "/uploadcare/",
-      debugUploads: false
+      debugUploads: false,
+      integration: ''
+    };
+    transforms = {
+      multipleMax: {
+        from: 0,
+        to: 1000
+      }
+    };
+    constraints = {
+      multipleMax: {
+        min: 1,
+        max: 1000
+      }
     };
     presets = {
       tabs: {
@@ -932,6 +966,17 @@ if ( window.XDomainRequest ) {
         "default": defaults.tabs
       }
     };
+    script = document.currentScript || (function() {
+      var scripts;
+      scripts = document.getElementsByTagName('script');
+      return scripts[scripts.length - 1];
+    })();
+    integration = $(script).data('integration');
+    if (integration !== void 0) {
+      defaults = $.extend(defaults, {
+        integration: integration
+      });
+    }
     str2arr = function(value) {
       if (!$.isArray(value)) {
         value = $.trim(value);
@@ -996,6 +1041,32 @@ if ( window.XDomainRequest ) {
       }
       return settings;
     };
+    transformOptions = function(settings, transforms) {
+      var key, transform;
+      for (key in transforms) {
+        transform = transforms[key];
+        if (settings[key] != null) {
+          if (settings[key] === transform.from) {
+            settings[key] = transform.to;
+          }
+        }
+      }
+      return settings;
+    };
+    constrainOptions = function(settings, constraints) {
+      var key, max, min, _ref;
+      for (key in constraints) {
+        _ref = constraints[key], min = _ref.min, max = _ref.max;
+        if (settings[key] != null) {
+          settings[key] = Math.min(Math.max(settings[key], min), max);
+        }
+      }
+      return settings;
+    };
+    integrationToUserAgent = function(settings) {
+      settings['_userAgent'] = "UploadcareWidget/" + version + "/" + settings['publicKey'] + " (JavaScript" + (settings['integration'] ? "; " + settings['integration'] : '') + ")";
+      return settings;
+    };
     parseCrop = function(val) {
       var ratio, reRatio;
       reRatio = /^([0-9]+)([x:])([0-9]+)\s*(|upscale|minimum)$/i;
@@ -1029,6 +1100,9 @@ if ( window.XDomainRequest ) {
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
       flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads', 'multipleMaxStrict']);
       intOptions(settings, ['multipleMax', 'multipleMin', 'multipartMinSize', 'multipartPartSize', 'multipartMinLastPartSize', 'multipartConcurrency', 'multipartMaxAttempts', 'parallelDirectUploads']);
+      transformOptions(settings, transforms);
+      constrainOptions(settings, constraints);
+      integrationToUserAgent(settings);
       if (settings.crop !== false && !$.isArray(settings.crop)) {
         if (/^(disabled?|false|null)$/i.test(settings.crop)) {
           settings.crop = false;
@@ -1414,11 +1488,15 @@ if ( window.XDomainRequest ) {
 
       BaseFile.prototype.__updateInfo = function() {
         var _this = this;
-        return utils.jsonp("" + this.settings.urlBase + "/info/", {
+        return utils.jsonp("" + this.settings.urlBase + "/info/", 'GET', {
           jsonerrors: 1,
           file_id: this.fileId,
           pub_key: this.settings.publicKey,
           wait_is_ready: +this.onInfoReady.fired()
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             utils.log("Can't load file info. Probably removed.", _this.fileId, _this.settings.publicKey, reason);
@@ -2069,7 +2147,7 @@ if ( window.XDomainRequest ) {
             type: 'POST',
             url: "" + _this.settings.urlBase + "/base/?jsonerrors=1",
             headers: {
-              'X-PINGOTHER': 'pingpong'
+              'X-UC-User-Agent': _this.settings._userAgent
             },
             contentType: false,
             processData: false,
@@ -2126,7 +2204,11 @@ if ( window.XDomainRequest ) {
           part_size: this.settings.multipartPartSize,
           UPLOADCARE_STORE: this.settings.doNotStore ? '' : 'auto'
         };
-        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data).fail(function(reason) {
+        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/start/?jsonerrors=1", 'POST', data, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
+        }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             return utils.log("Can't start multipart upload.", reason, data);
           }
@@ -2180,6 +2262,7 @@ if ( window.XDomainRequest ) {
               xhr: function() {
                 var xhr;
                 xhr = $.ajaxSettings.xhr();
+                xhr.responseType = 'text';
                 if (xhr.upload) {
                   xhr.upload.addEventListener('progress', function(e) {
                     return updateProgress(partNo, e.loaded);
@@ -2188,6 +2271,9 @@ if ( window.XDomainRequest ) {
                 return xhr;
               },
               url: parts[partNo],
+              headers: {
+                'X-UC-User-Agent': _this.settings._userAgent
+              },
               crossDomain: true,
               type: 'PUT',
               processData: false,
@@ -2197,7 +2283,7 @@ if ( window.XDomainRequest ) {
                 attempts += 1;
                 if (attempts > _this.settings.multipartMaxAttempts) {
                   if (_this.settings.debugUploads) {
-                    utils.info("Part #" + partNo + " and file upload is failed.", uuid);
+                    utils.log("Part #" + partNo + " and file upload is failed.", uuid);
                   }
                   return df.reject();
                 } else {
@@ -2230,7 +2316,11 @@ if ( window.XDomainRequest ) {
           UPLOADCARE_PUB_KEY: this.settings.publicKey,
           uuid: uuid
         };
-        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/complete/?jsonerrors=1", "POST", data).fail(function(reason) {
+        return this.__autoAbort(utils.jsonp("" + this.settings.urlBase + "/multipart/complete/?jsonerrors=1", "POST", data, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
+        }).fail(function(reason) {
           if (_this.settings.debugUploads) {
             return utils.log("Can't complete multipart upload.", uuid, _this.settings.publicKey, reason);
           }
@@ -3718,7 +3808,11 @@ this.Pusher = Pusher;
           if (_this.apiDeferred.state() !== 'pending') {
             return;
           }
-          return utils.jsonp("" + _this.settings.urlBase + "/from_url/", data).fail(function(reason) {
+          return utils.jsonp("" + _this.settings.urlBase + "/from_url/", 'GET', data, {
+            headers: {
+              'X-UC-User-Agent': _this.settings._userAgent
+            }
+          }).fail(function(reason) {
             if (_this.settings.debugUploads) {
               utils.debug("Can't start upload from URL.", reason, data);
             }
@@ -3840,8 +3934,12 @@ this.Pusher = Pusher;
 
       PollWatcher.prototype.__updateStatus = function() {
         var _this = this;
-        return utils.jsonp(this.poolUrl, {
+        return utils.jsonp(this.poolUrl, 'GET', {
           token: this.token
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           return $(_this).trigger('error');
         }).done(function(data) {
@@ -4065,6 +4163,10 @@ this.Pusher = Pusher;
                 }
                 return _results;
               })()
+            }, {
+              headers: {
+                'X-UC-User-Agent': _this.settings._userAgent
+              }
             }).fail(function(reason) {
               if (_this.settings.debugUploads) {
                 utils.log("Can't create group.", _this.settings.publicKey, reason);
@@ -4135,10 +4237,14 @@ this.Pusher = Pusher;
       df = $.Deferred();
       id = utils.groupIdRegex.exec(groupIdOrUrl);
       if (id) {
-        utils.jsonp("" + settings.urlBase + "/group/info/", {
+        utils.jsonp("" + settings.urlBase + "/group/info/", 'GET', {
           jsonerrors: 1,
           pub_key: settings.publicKey,
           group_id: id[0]
+        }, {
+          headers: {
+            'X-UC-User-Agent': this.settings._userAgent
+          }
         }).fail(function(reason) {
           if (settings.debugUploads) {
             utils.log("Can't load group info. Probably removed.", id[0], settings.publicKey, reason);
