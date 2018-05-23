@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.11.0)
- * Date: 2018-04-27 18:32:45 +0000
- * Rev: 23d7ca8fff
+ * Uploadcare (2.11.1)
+ * Date: 2018-05-23 18:02:01 +0000
+ * Rev: e70ca9fef5
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '2.11.0';
+  uc.version = '2.11.1';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -2271,9 +2271,6 @@ if ( window.XDomainRequest ) {
                 return xhr;
               },
               url: parts[partNo],
-              headers: {
-                'X-UC-User-Agent': _this.settings._userAgent
-              },
               crossDomain: true,
               type: 'PUT',
               processData: false,
@@ -4243,7 +4240,7 @@ this.Pusher = Pusher;
           group_id: id[0]
         }, {
           headers: {
-            'X-UC-User-Agent': this.settings._userAgent
+            'X-UC-User-Agent': settings._userAgent
           }
         }).fail(function(reason) {
           if (settings.debugUploads) {
