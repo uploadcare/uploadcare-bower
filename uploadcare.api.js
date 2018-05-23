@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.3.0)
- * Date: 2018-04-25 11:31:05 +0000
- * Rev: a4bf9aadfa
+ * Uploadcare (3.4.0)
+ * Date: 2018-05-23 20:21:32 +0000
+ * Rev: 8ac5c290f0
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.3.0';
+  uc.version = '3.4.0';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -907,7 +907,7 @@ if ( window.XDomainRequest ) {
   expose = uploadcare.expose, utils = uploadcare.utils, $ = uploadcare.jQuery, version = uploadcare.version;
 
   uploadcare.namespace('settings', function(ns) {
-    var arrayOptions, constrainOptions, constraints, defaults, flagOptions, intOptions, integration, integrationToUserAgent, normalize, parseCrop, parseShrink, presets, script, str2arr, transformOptions, transforms, urlOptions;
+    var arrayOptions, constrainOptions, constraints, defaultPreviewUrlCallback, defaults, flagOptions, intOptions, integration, integrationToUserAgent, normalize, parseCrop, parseShrink, presets, script, str2arr, transformOptions, transforms, urlOptions;
     defaults = {
       live: true,
       manualStart: false,
@@ -936,6 +936,8 @@ if ( window.XDomainRequest ) {
       cdnBase: 'https://ucarecdn.com',
       urlBase: 'https://upload.uploadcare.com',
       socialBase: 'https://social.uploadcare.com',
+      previewProxy: null,
+      previewUrlCallback: null,
       imagePreviewMaxSize: 25 * 1024 * 1024,
       multipartMinSize: 25 * 1024 * 1024,
       multipartPartSize: 5 * 1024 * 1024,
@@ -1095,6 +1097,26 @@ if ( window.XDomainRequest ) {
         size: size
       };
     };
+    defaultPreviewUrlCallback = function(url, info) {
+      var addAmpersand, addName, addQuery, queryPart;
+      if (!this.previewProxy) {
+        return url;
+      }
+      addQuery = !/\?/.test(this.previewProxy);
+      addName = addQuery || !/\=$/.test(this.previewProxy);
+      addAmpersand = !addQuery && !/[\&\?\=]$/.test(this.previewProxy);
+      queryPart = encodeURIComponent(url);
+      if (addName) {
+        queryPart = 'url=' + queryPart;
+      }
+      if (addAmpersand) {
+        queryPart = '&' + queryPart;
+      }
+      if (addQuery) {
+        queryPart = '?' + queryPart;
+      }
+      return this.previewProxy + queryPart;
+    };
     normalize = function(settings) {
       arrayOptions(settings, ['tabs', 'preferredTypes']);
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
@@ -1123,6 +1145,9 @@ if ( window.XDomainRequest ) {
       }
       if (settings.validators) {
         settings.validators = settings.validators.slice();
+      }
+      if (settings.previewProxy && !settings.previewUrlCallback) {
+        settings.previewUrlCallback = defaultPreviewUrlCallback;
       }
       return settings;
     };
@@ -2278,9 +2303,6 @@ if ( window.XDomainRequest ) {
                 return xhr;
               },
               url: parts[partNo],
-              headers: {
-                'X-UC-User-Agent': _this.settings._userAgent
-              },
               crossDomain: true,
               type: 'PUT',
               processData: false,
@@ -4250,7 +4272,7 @@ this.Pusher = Pusher;
           group_id: id[0]
         }, {
           headers: {
-            'X-UC-User-Agent': this.settings._userAgent
+            'X-UC-User-Agent': settings._userAgent
           }
         }).fail(function(reason) {
           if (settings.debugUploads) {
