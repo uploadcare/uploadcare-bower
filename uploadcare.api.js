@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.4.0)
- * Date: 2018-05-23 20:21:32 +0000
- * Rev: 8ac5c290f0
+ * Uploadcare (3.5.0)
+ * Date: 2018-06-28 12:51:25 +0000
+ * Rev: 46469e8332
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.4.0';
+  uc.version = '3.5.0';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -946,6 +946,8 @@ if ( window.XDomainRequest ) {
       multipartMaxAttempts: 3,
       parallelDirectUploads: 10,
       passWindowOpen: false,
+      audioBitsPerSecond: null,
+      videoBitsPerSecond: null,
       scriptBase: "//ucarecdn.com/widget/" + uploadcare.version + "/uploadcare/",
       debugUploads: false,
       integration: ''
