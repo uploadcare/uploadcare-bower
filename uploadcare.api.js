@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.5.0)
- * Date: 2018-06-28 12:51:25 +0000
- * Rev: 46469e8332
+ * Uploadcare (3.5.1)
+ * Date: 2018-07-10 12:18:09 +0000
+ * Rev: c636dc1395
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.5.0';
+  uc.version = '3.5.1';
 
   uc.jQuery = jQuery || window.jQuery;
 
