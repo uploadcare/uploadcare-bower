@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.11.1)
- * Date: 2018-05-23 18:02:01 +0000
- * Rev: e70ca9fef5
+ * Uploadcare (2.11.2)
+ * Date: 2018-09-24 10:36:20 +0000
+ * Rev: 8bcc5cd69f
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '2.11.1';
+  uc.version = '2.11.2';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -516,7 +516,7 @@ if ( window.XDomainRequest ) {
       } catch (_error) {
         return;
       }
-      if (message.type in callbacks) {
+      if ((message != null ? message.type : void 0) && message.type in callbacks) {
         _ref = callbacks[message.type];
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
