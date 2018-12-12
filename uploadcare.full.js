@@ -1,7 +1,7 @@
 /*
- * Uploadcare (2.11.2)
- * Date: 2018-09-24 10:36:20 +0000
- * Rev: 8bcc5cd69f
+ * Uploadcare (2.11.3)
+ * Date: 2018-12-12 15:32:17 +0000
+ * Rev: 5faa565a25
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -60,7 +60,7 @@
 
   uc = uploadcare;
 
-  uc.version = '2.11.2';
+  uc.version = '2.11.3';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -942,7 +942,7 @@ if ( window.XDomainRequest ) {
       urlBase: 'https://upload.uploadcare.com',
       socialBase: 'https://social.uploadcare.com',
       imagePreviewMaxSize: 25 * 1024 * 1024,
-      multipartMinSize: 25 * 1024 * 1024,
+      multipartMinSize: 10 * 1024 * 1024,
       multipartPartSize: 5 * 1024 * 1024,
       multipartMinLastPartSize: 1024 * 1024,
       multipartConcurrency: 4,
@@ -3113,7 +3113,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         this.mimeType = null;
         this.s3Bucket = null;
         (_base = this.sourceInfo).source || (_base.source = this.sourceName);
-        this.onInfoReady = $.Callbacks('once memory');
         this.__setupValidation();
         this.__initApi();
       }
@@ -3155,7 +3154,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           jsonerrors: 1,
           file_id: this.fileId,
           pub_key: this.settings.publicKey,
-          wait_is_ready: +this.onInfoReady.fired()
+          wait_is_ready: +(this.isImage === null)
         }, {
           headers: {
             'X-UC-User-Agent': this.settings._userAgent
@@ -3183,9 +3182,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         if (this.s3Bucket && this.cdnUrlModifiers) {
           this.__rejectApi('baddata');
         }
-        if (!this.onInfoReady.fired()) {
-          this.onInfoReady.fire(this.__fileInfo());
-        }
+        this.__runValidators();
         if (data.is_ready) {
           return this.__resolveApi();
         }
@@ -3226,18 +3223,17 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       BaseFile.prototype.__setupValidation = function() {
         this.validators = this.settings.validators || this.settings.__validators || [];
         if (this.settings.imagesOnly) {
-          this.validators.push(function(info) {
+          return this.validators.push(function(info) {
             if (info.isImage === false) {
               throw new Error('image');
             }
           });
         }
-        return this.onInfoReady.add(this.__runValidators);
       };
 
-      BaseFile.prototype.__runValidators = function(info) {
-        var err, v, _i, _len, _ref, _results;
-        info = info || this.__fileInfo();
+      BaseFile.prototype.__runValidators = function() {
+        var err, info, v, _i, _len, _ref, _results;
+        info = this.__fileInfo();
         try {
           _ref = this.validators;
           _results = [];
@@ -3401,7 +3397,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
       return df.promise();
     };
     ns.shrinkImage = function(img, settings) {
-      var cx, df, h, isChrome, maxSize, maxSquare, originalW, ratio, run, runNative, sH, sW, step, w;
+      var cx, df, h, maxSize, maxSquare, originalW, ratio, run, runNative, sH, sW, step, w;
       df = $.Deferred();
       step = 0.71;
       if (img.width * step * img.height * step < settings.size) {
@@ -3463,8 +3459,7 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
         return df.resolve(canvas);
       };
       cx = document.createElement('canvas').getContext('2d');
-      isChrome = navigator.userAgent.match(/\ Chrome\//);
-      if ('imageSmoothingQuality' in cx && !isChrome) {
+      if ('imageSmoothingQuality' in cx) {
         runNative();
       } else {
         run();
@@ -3835,10 +3830,6 @@ uploadcare.templates.JST["circle-text"] = function(obj){var __p=[],print=functio
           _this = this;
         df = $.Deferred();
         if (!this.__file) {
-          return df;
-        }
-        if (this.settings.imagesOnly) {
-          this.__rejectApi('image');
           return df;
         }
         this.multipartStart().done(function(data) {
@@ -6738,13 +6729,12 @@ this.Pusher = Pusher;
         var _this = this;
         this.__setState('ready');
         this.__recorder.onstop = function() {
-          var blob, mime;
-          mime = _this.__recorder.mimeType;
-          mime = mime ? mime.split('/')[1] : 'webm';
+          var blob, ext;
           blob = new Blob(_this.__chunks, {
-            'type': "video/" + mime
+            'type': _this.__recorder.mimeType
           });
-          blob.name = "record." + mime;
+          ext = _this.__guessExtensionByMime(_this.__recorder.mimeType);
+          blob.name = "record." + ext;
           _this.dialogApi.addFiles('object', [
             [
               blob, {
@@ -6762,6 +6752,31 @@ this.Pusher = Pusher;
         this.__setState('ready');
         this.__recorder.stop();
         return this.__chunks = [];
+      };
+
+      CameraTab.prototype.__guessExtensionByMime = function(mime) {
+        var container, known_containers;
+        known_containers = {
+          'mp4': 'mp4',
+          'ogg': 'ogg',
+          'webm': 'webm',
+          'quicktime': 'mov',
+          'x-matroska': 'mkv'
+        };
+        if (mime === '') {
+          return 'webm';
+        }
+        if (mime) {
+          mime = mime.split('/');
+          if (mime[0] === 'video') {
+            mime = mime.slice(1).join('/');
+            container = mime.split(';')[0];
+            if (known_containers[container]) {
+              return known_containers[container];
+            }
+          }
+        }
+        return 'avi';
       };
 
       return CameraTab;
