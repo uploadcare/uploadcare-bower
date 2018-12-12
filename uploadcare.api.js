@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.6.1)
- * Date: 2018-09-21 12:11:35 +0000
- * Rev: 543ad74649
+ * Uploadcare (3.6.2)
+ * Date: 2018-12-12 15:58:47 +0000
+ * Rev: 09719f18ef
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.6.1';
+  uc.version = '3.6.2';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -939,7 +939,7 @@ if ( window.XDomainRequest ) {
       previewProxy: null,
       previewUrlCallback: null,
       imagePreviewMaxSize: 25 * 1024 * 1024,
-      multipartMinSize: 25 * 1024 * 1024,
+      multipartMinSize: 10 * 1024 * 1024,
       multipartPartSize: 5 * 1024 * 1024,
       multipartMinLastPartSize: 1024 * 1024,
       multipartConcurrency: 4,
@@ -1484,7 +1484,6 @@ if ( window.XDomainRequest ) {
         this.mimeType = null;
         this.s3Bucket = null;
         (_base = this.sourceInfo).source || (_base.source = this.sourceName);
-        this.onInfoReady = $.Callbacks('once memory');
         this.__setupValidation();
         this.__initApi();
       }
@@ -1526,7 +1525,7 @@ if ( window.XDomainRequest ) {
           jsonerrors: 1,
           file_id: this.fileId,
           pub_key: this.settings.publicKey,
-          wait_is_ready: +this.onInfoReady.fired()
+          wait_is_ready: +(this.isImage === null)
         }, {
           headers: {
             'X-UC-User-Agent': this.settings._userAgent
@@ -1554,9 +1553,7 @@ if ( window.XDomainRequest ) {
         if (this.s3Bucket && this.cdnUrlModifiers) {
           this.__rejectApi('baddata');
         }
-        if (!this.onInfoReady.fired()) {
-          this.onInfoReady.fire(this.__fileInfo());
-        }
+        this.__runValidators();
         if (data.is_ready) {
           return this.__resolveApi();
         }
@@ -1597,18 +1594,17 @@ if ( window.XDomainRequest ) {
       BaseFile.prototype.__setupValidation = function() {
         this.validators = this.settings.validators || this.settings.__validators || [];
         if (this.settings.imagesOnly) {
-          this.validators.push(function(info) {
+          return this.validators.push(function(info) {
             if (info.isImage === false) {
               throw new Error('image');
             }
           });
         }
-        return this.onInfoReady.add(this.__runValidators);
       };
 
-      BaseFile.prototype.__runValidators = function(info) {
-        var err, v, _i, _len, _ref, _results;
-        info = info || this.__fileInfo();
+      BaseFile.prototype.__runValidators = function() {
+        var err, info, v, _i, _len, _ref, _results;
+        info = this.__fileInfo();
         try {
           _ref = this.validators;
           _results = [];
@@ -1772,7 +1768,7 @@ if ( window.XDomainRequest ) {
       return df.promise();
     };
     ns.shrinkImage = function(img, settings) {
-      var cx, df, h, isChrome, maxSize, maxSquare, originalW, ratio, run, runNative, sH, sW, step, w;
+      var cx, df, h, maxSize, maxSquare, originalW, ratio, run, runNative, sH, sW, step, w;
       df = $.Deferred();
       step = 0.71;
       if (img.width * step * img.height * step < settings.size) {
@@ -1834,8 +1830,7 @@ if ( window.XDomainRequest ) {
         return df.resolve(canvas);
       };
       cx = document.createElement('canvas').getContext('2d');
-      isChrome = navigator.userAgent.match(/\ Chrome\//);
-      if ('imageSmoothingQuality' in cx && !isChrome) {
+      if ('imageSmoothingQuality' in cx) {
         runNative();
       } else {
         run();
@@ -2206,10 +2201,6 @@ if ( window.XDomainRequest ) {
           _this = this;
         df = $.Deferred();
         if (!this.__file) {
-          return df;
-        }
-        if (this.settings.imagesOnly) {
-          this.__rejectApi('image');
           return df;
         }
         this.multipartStart().done(function(data) {
