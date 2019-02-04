@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.6.2)
- * Date: 2018-12-12 15:58:47 +0000
- * Rev: 09719f18ef
+ * Uploadcare (3.7.0)
+ * Date: 2019-02-04 11:47:57 +0000
+ * Rev: c5790751b4
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.6.2';
+  uc.version = '3.7.0';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -925,7 +925,7 @@ if ( window.XDomainRequest ) {
       multipleMaxStrict: false,
       imageShrink: false,
       pathValue: true,
-      tabs: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr skydrive',
+      tabs: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr onedrive',
       preferredTypes: '',
       inputAcceptTypes: '',
       doNotStore: false,
@@ -966,7 +966,7 @@ if ( window.XDomainRequest ) {
     };
     presets = {
       tabs: {
-        all: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr skydrive box vk huddle',
+        all: 'file camera url facebook gdrive gphotos dropbox instagram evernote flickr onedrive box vk huddle',
         "default": defaults.tabs
       }
     };
@@ -1120,6 +1120,7 @@ if ( window.XDomainRequest ) {
       return this.previewProxy + queryPart;
     };
     normalize = function(settings) {
+      var skydriveIndex;
       arrayOptions(settings, ['tabs', 'preferredTypes']);
       urlOptions(settings, ['cdnBase', 'socialBase', 'urlBase', 'scriptBase']);
       flagOptions(settings, ['doNotStore', 'imagesOnly', 'multiple', 'clearable', 'pathValue', 'previewStep', 'systemDialog', 'debugUploads', 'multipleMaxStrict']);
@@ -1150,6 +1151,10 @@ if ( window.XDomainRequest ) {
       }
       if (settings.previewProxy && !settings.previewUrlCallback) {
         settings.previewUrlCallback = defaultPreviewUrlCallback;
+      }
+      skydriveIndex = settings.tabs.indexOf('skydrive');
+      if (skydriveIndex !== -1) {
+        settings.tabs[skydriveIndex] = 'onedrive';
       }
       return settings;
     };
@@ -1270,7 +1275,7 @@ if ( window.XDomainRequest ) {
             vk: 'VK',
             evernote: 'Evernote',
             box: 'Box',
-            skydrive: 'OneDrive',
+            onedrive: 'OneDrive',
             flickr: 'Flickr',
             huddle: 'Huddle'
           },
