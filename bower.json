@@ -1,6 +1,6 @@
 {
   "name": "Uploadcare",
-  "version": "2.11.3",
+  "version": "2.11.4",
   "homepage": "https://uploadcare.com/",
   "authors": [
     "Uploadcare <support@uploadcare.com>"
@@ -17,7 +17,7 @@
     "cdn",
     "crop"
   ],
-  "license": "MIT",
+  "license": "BSD-2-Clause",
   "ignore": [
     "**/.*",
     "node_modules",
