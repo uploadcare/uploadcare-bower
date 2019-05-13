@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.7.0)
- * Date: 2019-02-04 11:47:57 +0000
- * Rev: c5790751b4
+ * Uploadcare (3.7.1)
+ * Date: 2019-05-13 18:13:10 +0300
+ * Rev: 760ddece81
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.7.0';
+  uc.version = '3.7.1';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -1026,7 +1026,7 @@ if ( window.XDomainRequest ) {
           continue;
         }
         value = settings[key];
-        if ($.type(value) === 'string') {
+        if (typeof value === 'string') {
           value = $.trim(value).toLowerCase();
           settings[key] = !(value === 'false' || value === 'disabled');
         } else {
@@ -2249,14 +2249,14 @@ if ( window.XDomainRequest ) {
         var df, i, inProgress, lastUpdate, progress, submit, submittedBytes, submittedParts, updateProgress, _i, _ref,
           _this = this;
         progress = [];
-        lastUpdate = $.now();
+        lastUpdate = Date.now();
         updateProgress = function(i, loaded) {
           var total, _i, _len;
           progress[i] = loaded;
-          if ($.now() - lastUpdate < 250) {
+          if (Date.now() - lastUpdate < 250) {
             return;
           }
-          lastUpdate = $.now();
+          lastUpdate = Date.now();
           total = 0;
           for (_i = 0, _len = progress.length; _i < _len; _i++) {
             loaded = progress[_i];
