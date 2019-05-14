@@ -1,6 +1,6 @@
 /*
- * Uploadcare (3.7.2)
- * Date: 2019-05-14 13:51:00 +0300
+ * Uploadcare (3.7.3)
+ * Date: 2019-05-14 14:03:59 +0300
  * Rev: ffc3fa0348
  */
 ;(function(global, factory) {
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.7.2';
+  uc.version = '3.7.3';
 
   uc.jQuery = jQuery || window.jQuery;
 
