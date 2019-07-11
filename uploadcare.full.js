@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.7.5)
- * Date: 2019-05-15 17:54:21 +0300
- * Rev: 77561af58a
+ * Uploadcare (3.7.6)
+ * Date: 2019-07-11 16:13:15 +0300
+ * Rev: 0581a4a365
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -58,7 +58,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.7.5';
+  uc.version = '3.7.6';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -457,7 +457,7 @@ if ( window.XDomainRequest ) {
   var __slice = [].slice;
 
   uploadcare.namespace('utils', function(ns) {
-    var common, messages;
+    var messages;
     ns.log = function() {
       var _ref;
       try {
@@ -485,18 +485,10 @@ if ( window.XDomainRequest ) {
       }
     };
     messages = {};
-    ns.warnOnce = function(msg) {
+    return ns.warnOnce = function(msg) {
       if (messages[msg] == null) {
         messages[msg] = true;
         return ns.warn(msg);
-      }
-    };
-    common = {
-      publicKey: "Global public key not set. Uploads may not work!\nAdd this to the <head> tag to set your key:\n\n<script>\nUPLOADCARE_PUBLIC_KEY = 'your_public_key';\n</script>"
-    };
-    return ns.commonWarning = function(name) {
-      if (common[name] != null) {
-        return ns.warnOnce(common[name]);
       }
     };
   });
@@ -1181,9 +1173,6 @@ if ( window.XDomainRequest ) {
         defaults = $.extend(defaults, ns.globals());
       }
       result = normalize($.extend(defaults, settings || {}));
-      if (!result.publicKey) {
-        utils.commonWarning('publicKey');
-      }
       ns.waitForSettings.fire(result);
       return result;
     });
