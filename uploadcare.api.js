@@ -1,7 +1,7 @@
 /*
- * Uploadcare (3.7.6)
- * Date: 2019-07-11 16:13:15 +0300
- * Rev: 0581a4a365
+ * Uploadcare (3.7.7)
+ * Date: 2019-07-31 14:45:42 +0300
+ * Rev: 3eaac1473a
  */
 ;(function(global, factory) {
   // Not a browser enviroment at all: not Browserify/Webpack.
@@ -55,7 +55,7 @@
 
   uc = uploadcare;
 
-  uc.version = '3.7.6';
+  uc.version = '3.7.7';
 
   uc.jQuery = jQuery || window.jQuery;
 
@@ -1723,11 +1723,12 @@ if ( window.XDomainRequest ) {
           return df.reject('not image');
         });
         return op.done(function(img) {
+          var exifOp;
           df.notify(.10);
-          return ns.getExif(file).always(function(exif) {
+          return exifOp = ns.getExif(file).always(function(exif) {
             var e, isJPEG;
             df.notify(.2);
-            isJPEG = op.state() === 'resolved';
+            isJPEG = exifOp.state() === 'resolved';
             op = ns.shrinkImage(img, settings);
             op.progress(function(progress) {
               return df.notify(.2 + progress * .6);
