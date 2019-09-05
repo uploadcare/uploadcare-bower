@@ -1,3 +1,7 @@
+# DEPRECATED! Bower is no longer supported
+
+Please consider using another installation method. See our [docs](https://uploadcare.com/docs/file_uploads/widget/install/) for details.
+
 Uploadcare Widget
 =================
 
